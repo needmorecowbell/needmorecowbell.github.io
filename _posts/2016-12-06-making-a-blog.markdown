@@ -14,5 +14,5 @@ goals, and reflections. Thank you for reading!!
 <br>
 
 <div style="text-align:center;">
-  <iframe src="//giphy.com/embed/3o7TKnqKj5vE0kC0ik?html5=true" width="480" height="330" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
+  <iframe width="560" height="315" src="https://www.youtube.com/embed/drXNPy23Xco" frameborder="0" allowfullscreen></iframe>
 </div>
