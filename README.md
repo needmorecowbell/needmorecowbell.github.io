@@ -1,4 +1,36 @@
-jekyll serve --host $IP --port $PORT --baseurl ''
+#Jekyll Server
+
+##common server commands
+```
+jekyll build (compiles program)
+jekyll serve --host $IP --port $PORT --baseurl ''  (runs server on c9)
+jekyll serve (runs server)
+
+```
+
+#Jekyll-Compose
+
+##commands
+```
+draft      # Creates a new draft post with the given NAME
+post       # Creates a new post with the given NAME
+publish    # Moves a draft into the _posts directory and sets the date
+unpublish  # Moves a post back into the _drafts directory
+page       # Creates a new page with the given NAME
+```
+
+##Common usage
+```
+bundle exec jekyll page "My New Page"
+bundle exec jekyll post "My New Post"
+bundle exec jekyll draft "My new draft"
+
+$ bundle exec jekyll publish _drafts/my-new-draft.md
+# or specify a specific date on which to publish it
+$ bundle exec jekyll publish _drafts/my-new-draft.md --date 2014-01-24
+bundle exec jekyll unpublish _posts/2014-01-24-my-new-draft.md
+```
+
 
 
 #Clean Blog by Start Bootstrap - Jekyll Version
