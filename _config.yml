@@ -1,0 +1,26 @@
+# Site settings
+title: The Wonderful Adventures of Adam
+header-img: img/home-bg.jpg
+email: amusciano@gmail.com
+copyright_name: Alces Studios
+description: "Full Stack? Yeah, maybe kinda."
+baseurl: ""
+url: "http://adammusciano.com"
+twitter_username: 
+github_username:  needmorecowbell
+facebook_username:  adam.musciano
+email_username:  amusciano@gmail.com
+
+# Google Analytics
+# To enable google analytics, uncomment below line with a valid Google Tracking ID
+# google_tracking_id:
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+permalink: pretty
+paginate: 5
+exclude: ["less","node_modules","Gruntfile.js","package.json","README.md"]
+
+gems: [jekyll-paginate, jekyll-feed]
+
