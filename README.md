@@ -25,9 +25,9 @@ bundle exec jekyll page "My New Page"
 bundle exec jekyll post "My New Post"
 bundle exec jekyll draft "My new draft"
 
-$ bundle exec jekyll publish _drafts/my-new-draft.md
+bundle exec jekyll publish _drafts/my-new-draft.md
 # or specify a specific date on which to publish it
-$ bundle exec jekyll publish _drafts/my-new-draft.md --date 2014-01-24
+bundle exec jekyll publish _drafts/my-new-draft.md --date 2014-01-24
 bundle exec jekyll unpublish _posts/2014-01-24-my-new-draft.md
 ```
 
