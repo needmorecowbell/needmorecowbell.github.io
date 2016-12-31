@@ -3,7 +3,7 @@ layout: post
 title: On the future of Apps
 subtitle: "Spoiler: They're gonna die."
 author:     "Adam Musciano"
-header-img: "img/post-bg-04.jpg"
+header-img: "img/post-bg-02.jpg"
 ---
 
 

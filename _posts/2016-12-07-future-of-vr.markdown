@@ -4,7 +4,7 @@ title:  "On the Future of VR"
 subtitle:   "It's looking \"too\" good"
 
 author:     "Adam Musciano"
-header-img: "img/post-bg-06.jpg"
+header-img: "img/post-bg-01.jpg"
 ---
 
 
