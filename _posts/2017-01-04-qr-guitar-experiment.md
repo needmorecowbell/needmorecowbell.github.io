@@ -42,5 +42,4 @@ If you'd like to see what has happened with this guitar, please go to: [http://m
 
 <div style="text-align:center">
   <iframe width="560" height="315" src="https://www.youtube.com/embed/Y2XEQ0lDrfg" frameborder="0" allowfullscreen></iframe>
-  
 </div>
