@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+      xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+<!-- created with Free Online Sitemap Generator www.xml-sitemaps.com -->
+
+<url>
+  <loc>https://needmorecowbell.github.io/</loc>
+  <lastmod>2017-01-04T23:15:39+00:00</lastmod>
+  <changefreq>weekly</changefreq>
+</url>
+<url>
+  <loc>https://needmorecowbell.github.io/about/</loc>
+  <lastmod>2017-01-04T23:15:39+00:00</lastmod>
+  <changefreq>weekly</changefreq>
+</url>
+<url>
+  <loc>https://needmorecowbell.github.io/contact/</loc>
+  <lastmod>2017-01-04T23:15:39+00:00</lastmod>
+  <changefreq>weekly</changefreq>
+</url>
+<url>
+  <loc>https://needmorecowbell.github.io/2017/01/04/qr-guitar-experiment/</loc>
+  <lastmod>2017-01-04T23:15:39+00:00</lastmod>
+  <changefreq>weekly</changefreq>
+</url>
+<url>
+  <loc>https://needmorecowbell.github.io/2016/12/07/future-of-vr/</loc>
+  <lastmod>2017-01-04T23:15:39+00:00</lastmod>
+  <changefreq>weekly</changefreq>
+</url>
+<url>
+  <loc>https://needmorecowbell.github.io/2016/12/05/making-a-blog/</loc>
+  <lastmod>2017-01-04T23:15:39+00:00</lastmod>
+  <changefreq>weekly</changefreq>
+</url>
+</urlset>
