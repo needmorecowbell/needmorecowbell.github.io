@@ -88,6 +88,7 @@ Supplies
 As of now, I'm fairly clueless on what I'm going to need. I'll be buying things as I need them, and will be recycling old parts as much as possible.
 
 The Supplies List is as Follows:
+
 1. One Big Chest
 2. Raspberry Pi
 3. An old computer power supply
