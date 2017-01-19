@@ -106,7 +106,7 @@ Idea
 
 I'd like to chip the paint off of all sides, exposing the raw wood. After that, my thoughts were to either stain the raw wood, paint it black again, or leave it raw and have friends paint over it. Here is a poll for your opinions:
 
-<script type="text/javascript" src="http://www.websitegoodies.com/poll.php?id=114229"></script>
+<script type="text/javascript" src="//www.websitegoodies.com/poll.php?id=114229"></script>
 
 So far Ive scraped some of the paint off the sides. It is very dry, it cracks off in some places when I'm lucky. I'll be buying a chisel ASAP, an old pocket knife and some sandpaper isn't cutting it.
 
