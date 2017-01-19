@@ -67,21 +67,21 @@ The goals in their designated immediacy are...
 
 **Most Important**
 
-- Convenient way to transport
-- Surround sound / device network connectivity
-- Controlled Speakers
-- Easy access to inside storage
-- Aesthetic repairs
+* Convenient way to transport
+* Surround sound / device network connectivity
+* Controlled Speakers
+* Easy access to inside storage
+* Aesthetic repairs
 
 **Important**
 
-- USB charging
-- Cooler for iced beverages
+* USB charging
+* Cooler for iced beverages
 
 **Optional**
 
-- Amazon Echo support
-- Temperature display
+* Amazon Echo support
+* Temperature display
 
 -----------------
 
