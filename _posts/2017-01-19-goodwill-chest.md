@@ -46,6 +46,7 @@ header-img: "img/goodwill-chest/post-goodwill-chest-closed.jpg"
       </div>
     </div>
     <div class="col-sm-4">
+        <div class="col-padding">
         <img src="/img/goodwill-chest/post-goodwill-chest-closed.jpg" width="100%" height="100%">
     </div>
    </div>
