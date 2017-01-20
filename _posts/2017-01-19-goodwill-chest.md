@@ -26,32 +26,34 @@ header-img: "img/goodwill-chest/post-goodwill-chest-closed.jpg"
         padding: 0 15px;
     }
 }
-
-
-}
-
 </style>
 
 <div style="text-align:center">
-<b>A search for cheap Goodwill sweaters led me to 0 sweaters and 1 chest too big to fit in my car.</b>
+    <b>A search for cheap Goodwill sweaters led me to 0 sweaters and 1 chest too big to fit in my car.</b>
 </div>
 <br>
 
 <div class="container">
     <div class="row grid-divider">
-    <div class="col-sm-4">
-      <div class="col-padding">  
-        <p>4 days ago, I bought a 13$ rusty/chipped chest from Goodwill. I had no plans when I bought it, and no expectations for it other than as a bench for my apartment balcony. But, as my roommate and I were trying to fit this oversized crate into my car, I came up with some interesting ideas for it.
-        </p>
-      </div>
+    
+        <div class="col-sm-4">
+          <div class="col-padding">  
+            <p>4 days ago, I bought a 13$ rusty/chipped chest from Goodwill. I had no plans when I bought it, and no expectations for it other than as a bench for my apartment balcony. But, as my roommate and I were trying to fit this oversized crate into my car, I came up with some interesting ideas for it.
+            </p>
+          </div>
+        </div>
+    
+        <div class="col-sm-4">
+            <div class="col-padding">
+                <img src="/img/goodwill-chest/post-goodwill-chest-closed.jpg" width="100%" height="100%">
+            </div>
+        </div>
+    
     </div>
-    <div class="col-sm-4">
-        <div class="col-padding">
-        <img src="/img/goodwill-chest/post-goodwill-chest-closed.jpg" width="100%" height="100%">
-    </div>
-   </div>
-
+    
 </div>
+
+
 
 ------------------------
 
