@@ -20,13 +20,18 @@ In High School, I would have told you that a position like this would be my drea
 
 I had first heard of the job through a woman in passing, who had overheard me talking to my roommate about coral. She introduced herself as a grad student, and said they were looking for someone with the experiences and goals that I had. I am very grateful for this person, you can check out her portfolio website [here](http://www.allisymbiosis.com/)
 
------------------------------------
+
+---------------------------------------
+
 <div style="text-align: center">
   <iframe src="//giphy.com/embed/AW2FY8fUL1QHu?hideSocial=true" width="480" height="246" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
 
   <p>It's easy to see the allure to reef keeping with species such as this</p>
+
 </div>
------------------------------------
+
+
+-------------------------------------
 
 
 Prior Experiences
@@ -43,9 +48,10 @@ Reef keeping also gave me my first entrance into practical programming. No more 
 
 To give you a picture of how important the health of coral is to some hobbyists, [here](http://uniquecorals.com/coral/sps/acropora-sp-jason-fox-fox-flame-acro-3-wysiwyg-grwout-colony.html) is a listing for 3 inches of a collector's edition acropora, priced at 900$.
 
------------------------
+---------------------------------------------
+
+
 <div style="text-align: center">
   <iframe src="//giphy.com/embed/mLmURHYltc7Dy?hideSocial=true" width="480" height="270" frameborder="0" class="giphy-embed" allowfullscreen=""></iframe>
   <p>Yes, these are real</p>
 </div>
------------------------
