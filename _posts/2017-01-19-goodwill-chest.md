@@ -104,7 +104,7 @@ Yes, I know, not much to go off of. These items may be replaced by other things 
 <div style="text-align:center">
     <img src="/img/goodwill-chest/post-goodwill-psu.jpg" >
 </div>
-``
+
 --------------------------
 
 Idea  
