@@ -132,4 +132,4 @@ I plan to put the speakers on both sides of the chest, mostly because I think it
 
 ---------------------------------
 
-I have no idea how this will turn out, or if I will need to throw it out But for 13$ and some old parts, its worth a shot. I'll be giving updates in new posts as I go.
+I have no idea how this will turn out, or if I will need to throw it out. But for 13$ and some old parts, its worth a shot. I'll be giving updates in new posts as I go.
