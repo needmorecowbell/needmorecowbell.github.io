@@ -104,7 +104,7 @@ Yes, I know, not much to go off of. These items may be replaced by other things 
 <div style="text-align:center">
     <img src="/img/goodwill-chest/post-goodwill-psu.jpg" >
 </div>
-
+``
 --------------------------
 
 Idea  
@@ -127,7 +127,7 @@ I've also cut out most of the old floral canvas on the inside, leaving the expos
 
 As for the electronics, I'd like to mount some sort of power to the inside and allow for the chest itself to plug in to a wall outlet for power. This way it can be run permanently during the winter, and turned on when needed in the summer. A power strip might be the easiest solution; a battery would be inconvenient for this application.
 
-I plan to put the speakers on both sides of the chest, mostly because I think it would look aesthetically pleasing. As of now, this is planned to be controlled by a raspberry with a wifi and bluetooth dongle so devices can connect, and it can stream. I may also look at separate solutions that avoid using an ARM processor, as it can be inconvenient due to most software being 32bit/64bit dependent.
+I plan to put the speakers on both sides of the chest, mostly because I think it would look aesthetically pleasing. As of now, this is planned to be controlled by a raspberry pi with a wifi and bluetooth dongle so devices can connect, and it can stream. I may also look at separate solutions that avoid using an ARM processor, as it can be inconvenient due to most software being 32bit/64bit dependent.
 
 
 ---------------------------------
