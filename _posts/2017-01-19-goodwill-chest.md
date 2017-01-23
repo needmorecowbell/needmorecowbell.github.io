@@ -35,22 +35,22 @@ header-img: "img/goodwill-chest/post-goodwill-chest-closed.jpg"
 
 <div class="container">
     <div class="row grid-divider">
-    
+
         <div class="col-sm-4">
           <div class="col-padding">  
             <p>4 days ago, I bought a 13$ rusty/chipped chest from Goodwill. I had no plans when I bought it, and no expectations for it other than as a bench for my apartment balcony. But, as my roommate and I were trying to fit this oversized crate into my car, I came up with some interesting ideas for it.
             </p>
           </div>
         </div>
-    
+
         <div class="col-sm-4">
             <div class="col-padding">
                 <img src="/img/goodwill-chest/post-goodwill-chest-closed.jpg" width="100%" height="100%">
             </div>
         </div>
-    
+
     </div>
-    
+
 </div>
 
 
@@ -99,7 +99,7 @@ The Supplies List is as Follows:
 2. Raspberry Pi
 3. An old computer power supply
 
-Yes. I know, not much to go off of. These items may be replace by other things depending on what makes sense.
+Yes, I know, not much to go off of. These items may be replaced by other things depending on what makes sense.
 
 <div style="text-align:center">
     <img src="/img/goodwill-chest/post-goodwill-psu.jpg" >
@@ -125,9 +125,9 @@ I've also cut out most of the old floral canvas on the inside, leaving the expos
     <img src="/img/goodwill-chest/post-goodwill-chest-inner.jpg" >
 </div>
 
-As for the electronics, I'd like to mount some sort of power to the inside and allow for the chest itself to plug in to a wall outlet for power. This way it can be run permanently during the winter, and turned on when needed in the summer. A battery would be inconvenient for this application.
+As for the electronics, I'd like to mount some sort of power to the inside and allow for the chest itself to plug in to a wall outlet for power. This way it can be run permanently during the winter, and turned on when needed in the summer. A power strip might be the easiest solution; a battery would be inconvenient for this application.
 
-I plan to put the speakers on both sides of the chest, mostly because I think it would look aesthetically pleasing. As of now, this is planned to be Controlled by a raspberry with a wifi and bluetooth dongle so devices can connect, and it can stream. I may also look at separate solutions that avoid using an ARM processor, as it can be inconvenient.
+I plan to put the speakers on both sides of the chest, mostly because I think it would look aesthetically pleasing. As of now, this is planned to be controlled by a raspberry with a wifi and bluetooth dongle so devices can connect, and it can stream. I may also look at separate solutions that avoid using an ARM processor, as it can be inconvenient due to most software being 32bit/64bit dependent.
 
 
 ---------------------------------
