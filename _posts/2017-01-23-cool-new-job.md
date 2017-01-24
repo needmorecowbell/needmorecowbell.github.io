@@ -7,7 +7,7 @@ header-img: "img/post-bg-07.jpg"
 ---
 
 <div style="text-align: center">
-  <b>Being geeky in Petco ended up getting my dream job</b>
+  <b>Being geeky in Petco ended up getting me my dream job</b>
 </div>
 <br>
 
