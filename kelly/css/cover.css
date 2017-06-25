@@ -30,6 +30,9 @@ body {
   height: 100%;
   background-color:` #33;
 }
+.lead{
+  text-shadow: 1px 1px darkslategrey;
+}
 body {
   color: #fff;
   text-align: center;
