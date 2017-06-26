@@ -1,0 +1,10 @@
+.site-wrapper{
+  background-color: seagreen;
+}
+
+.lead{
+  font-family: 'Roboto', sans-serif;
+  font-size:40px;
+  text-shadow: 1px 1px darkslategrey;
+}
+
