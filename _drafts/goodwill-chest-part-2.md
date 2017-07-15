@@ -11,7 +11,7 @@ header-img: "img/goodwill-chest/post-goodwill-chest-closed.jpg"
  Well that took a while!!
 ============================
 
-4 months later, and I'm still working on this project. In quick summary, I've finished everything but the electric parts, and most of the ideas for the project have changed. In this post, I will cover what goals have changed, the supplies that have been added or removed, and an estimated price of the project so far.
+8 months later, and I'm still working on this project. In quick summary, I've finished everything but the electric parts, and most of the ideas for the project have changed. In this post, I will cover what goals have changed, the supplies that have been added or removed, and an estimated price of the project so far.
 
 The Goals
 ===========
@@ -64,6 +64,27 @@ While chiseling, I found a small metal badge, which I later found out was a list
 </div>
 
 --------------------------
+
+**Reinforcing the Chest**
+
+After removing the thin veneer from the sides and top of the chest, I noticed that it had become significantly less sturdy. I decided to reinforce the top of the chest by nailing a few planks across the inside. Fortunately I found a wooden pallet in the apartment complex's garbage, I took it apart and denailed it up on the balcony. After some use, I think I will need to do a better job nailing these in -- the top is slightly bowed now.
+
+
+**Staining the Chest**
+
+With the chest reinforced and ready to go, all that was left was to make it a little prettier. I ended up using a cabernet wood stain that I found at Michael's. It was much thicker than the liquid stains I've used before, which helped with not accidentally staining my balcony and it's walls, but in turn was much harder to spread.
+
+**"Finished" Project**
+
+While this is by no means the final design, it is at a point where I think I can say it serves a purpose and is no longer a work in progress. While it is not realistic to be used as an indoor table, the goals of the project changed and in the end I'm statisfied with how it's turned out.
+
+
+**Future Ideas**
+
+Currently, the chest is good as-is for use as a bench or table, and the inside is used as storage. In the future, I would like to work more on the inside of the chest to give it speakers. I had found a mini fridge that I thought could be converted into something like a small kegorator to be put inside with a tap on the outer side, but decided it would not be worth the additional weight and resources.
+
+Aesthetically, I like the looks but I think I'd like to now work on wood burning designs into the sides. First I need to find/make a woodburner, but this is definitely going to happen at some point.
+
 
 
 Patent: [patentLink](https://www.google.com/search?tbo=p&tbm=pts&hl=en&q=ininventor:%22Eugene+W+Hawley%22)
