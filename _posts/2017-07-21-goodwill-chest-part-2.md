@@ -59,9 +59,6 @@ After receiving input from the kind people who listen to my nonsense, I decided 
 
 While chiseling, I found a small metal badge, which I later found out was a list of patents. It turns out that this chest is from the beginning of the 1900's! After searching for the patent logs, [I found it, and the inventor.](https://www.google.com/search?tbo=p&tbm=pts&hl=en&q=ininventor:%22Eugene+W+Hawley%22)
 
-<div style="text-align:center">
-    <img src="/img/goodwill-chest/post-goodwill-psu.jpg" >
-</div>
 
 --------------------------
 
