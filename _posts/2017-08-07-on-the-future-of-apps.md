@@ -7,7 +7,9 @@ header-img: "img/post-bg-02.jpg"
 ---
 
 
-#The Death of the App as We Know It
+The Death of the App as We Know It
+===================================
+
 
 As phone technology progressed, apps became the standard for deploying neatly packaged software to the end user. With the data saved locally and the size of average app constantly increasing, phone manufacturers were forced to focus on storage as a main feature of a phone. Batteries became thinner, storage became lighter -- but we've reached a standstill that calls for a different approach instead of upgraded parts. 
 
@@ -36,9 +38,7 @@ I think that these negatives are already problems for most users, and because of
 Let me know what you think!
 
 
-[super cool link that inspired me](https://www.youtube.com/watch?v=drXNPy23Xco&t=383s)
-
-
 <div style="text-align:center;">
   <iframe width="560" height="315" src="https://www.youtube.com/embed/drXNPy23Xco" frameborder="0" allowfullscreen></iframe>
+  <p>This youtube video covers a lot of what I talk about</p>
 </div>
