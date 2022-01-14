@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>coding-livestream on Adam&#39;s Dev Log</title>
+    <link>https://needmorecowbell.github.io/series/coding-livestream/</link>
+    <description>Recent content in coding-livestream on Adam&#39;s Dev Log</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <lastBuildDate>Tue, 13 Nov 2018 00:00:00 +0000</lastBuildDate><atom:link href="https://needmorecowbell.github.io/series/coding-livestream/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Coding Livestream 1: Find Every Arby&#39;s in America</title>
+      <link>https://needmorecowbell.github.io/post/2018-11-13-coding-livestream-1-find-every-arby-s-in-america/</link>
+      <pubDate>Tue, 13 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://needmorecowbell.github.io/post/2018-11-13-coding-livestream-1-find-every-arby-s-in-america/</guid>
+      
+        <description>In this stream I work on scraping Arby&#39;s location information.</description>
+      
+    </item>
+    
+    <item>
+      <title>Coding Livestream 2: Let&#39;s Deploy an SSH Honeypot</title>
+      <link>https://needmorecowbell.github.io/post/2018-11-13-coding-livestream-2-let-s-deploy-an-ssh-honeypot/</link>
+      <pubDate>Tue, 13 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://needmorecowbell.github.io/post/2018-11-13-coding-livestream-2-let-s-deploy-an-ssh-honeypot/</guid>
+      
+        <description>In this stream I deploy an SSH Honeypot called Cowrie</description>
+      
+    </item>
+    
+    <item>
+      <title>Coding Livestream 3: Let&#39;s Learn About YARA</title>
+      <link>https://needmorecowbell.github.io/post/2018-11-13-coding-livestream-3-let-s-learn-about-yara/</link>
+      <pubDate>Tue, 13 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://needmorecowbell.github.io/post/2018-11-13-coding-livestream-3-let-s-learn-about-yara/</guid>
+      
+        <description>In this stream I go over the way YARA rules work and how to apply them.</description>
+      
+    </item>
+    
+    <item>
+      <title>Coding Livestream 4: Computer Vision on Public IP Cams</title>
+      <link>https://needmorecowbell.github.io/post/2018-11-13-coding-livestream-4-computer-vision-on-public-ip-cams/</link>
+      <pubDate>Tue, 13 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://needmorecowbell.github.io/post/2018-11-13-coding-livestream-4-computer-vision-on-public-ip-cams/</guid>
+      
+        <description>In this stream I cover how to harvest IP cameras for computer vision exercises.</description>
+      
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Adam&#39;s Dev Log</title>
+    <link>https://needmorecowbell.github.io/</link>
+    <description>Recent content on Adam&#39;s Dev Log</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <lastBuildDate>Wed, 04 Mar 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://needmorecowbell.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Clear Your Terminal in Style</title>
+      <link>https://needmorecowbell.github.io/post/2020-03-04-2020-03-04-clear-your-terminal-in-style/</link>
+      <pubDate>Wed, 04 Mar 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://needmorecowbell.github.io/post/2020-03-04-2020-03-04-clear-your-terminal-in-style/</guid>
+      
+        <description>If you&amp;rsquo;re someone like me who habitually clears their terminal, sometimes you want a little excitement in your life.</description>
+      
+    </item>
+    
+    <item>
+      <title>Coding Livestream 1: Find Every Arby&#39;s in America</title>
+      <link>https://needmorecowbell.github.io/post/2018-11-13-coding-livestream-1-find-every-arby-s-in-america/</link>
+      <pubDate>Tue, 13 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://needmorecowbell.github.io/post/2018-11-13-coding-livestream-1-find-every-arby-s-in-america/</guid>
+      
+        <description>In this stream I work on scraping Arby&#39;s location information.</description>
+      
+    </item>
+    
+    <item>
+      <title>Coding Livestream 2: Let&#39;s Deploy an SSH Honeypot</title>
+      <link>https://needmorecowbell.github.io/post/2018-11-13-coding-livestream-2-let-s-deploy-an-ssh-honeypot/</link>
+      <pubDate>Tue, 13 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://needmorecowbell.github.io/post/2018-11-13-coding-livestream-2-let-s-deploy-an-ssh-honeypot/</guid>
+      
+        <description>In this stream I deploy an SSH Honeypot called Cowrie</description>
+      
+    </item>
+    
+    <item>
+      <title>Coding Livestream 3: Let&#39;s Learn About YARA</title>
+      <link>https://needmorecowbell.github.io/post/2018-11-13-coding-livestream-3-let-s-learn-about-yara/</link>
+      <pubDate>Tue, 13 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://needmorecowbell.github.io/post/2018-11-13-coding-livestream-3-let-s-learn-about-yara/</guid>
+      
+        <description>In this stream I go over the way YARA rules work and how to apply them.</description>
+      
+    </item>
+    
+    <item>
+      <title>Coding Livestream 4: Computer Vision on Public IP Cams</title>
+      <link>https://needmorecowbell.github.io/post/2018-11-13-coding-livestream-4-computer-vision-on-public-ip-cams/</link>
+      <pubDate>Tue, 13 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://needmorecowbell.github.io/post/2018-11-13-coding-livestream-4-computer-vision-on-public-ip-cams/</guid>
+      
+        <description>In this stream I cover how to harvest IP cameras for computer vision exercises.</description>
+      
+    </item>
+    
+    <item>
+      <title>On the future of Apps</title>
+      <link>https://needmorecowbell.github.io/post/2017-08-07-on-the-future-of-apps/</link>
+      <pubDate>Mon, 07 Aug 2017 00:00:00 +0000</pubDate>
+      
+      <guid>https://needmorecowbell.github.io/post/2017-08-07-on-the-future-of-apps/</guid>
+      
+        <description>The Death of the App as We Know It As phone technology progressed, apps became the standard for deploying neatly packaged software to the end user.</description>
+      
+    </item>
+    
+    <item>
+      <title>Linux Tips: Easy Aliases</title>
+      <link>https://needmorecowbell.github.io/post/2017-08-01-linux-tips-easy-aliases/</link>
+      <pubDate>Tue, 01 Aug 2017 00:00:00 +0000</pubDate>
+      
+      <guid>https://needmorecowbell.github.io/post/2017-08-01-linux-tips-easy-aliases/</guid>
+      
+        <description>What is an Alias? An alias is a global variable set by linux that can be freely called in terminals and scripts once defined.</description>
+      
+    </item>
+    
+    <item>
+      <title>Goodwill Chest Upgrade - Part 2 Electric Boogaloo</title>
+      <link>https://needmorecowbell.github.io/post/2017-07-21-goodwill-chest-part-2/</link>
+      <pubDate>Fri, 21 Jul 2017 00:00:00 +0000</pubDate>
+      
+      <guid>https://needmorecowbell.github.io/post/2017-07-21-goodwill-chest-part-2/</guid>
+      
+        <description>Well that took a while!! 8 months later, and I&amp;rsquo;m still working on this project.</description>
+      
+    </item>
+    
+    <item>
+      <title>Cool New Job</title>
+      <link>https://needmorecowbell.github.io/post/2017-01-23-cool-new-job/</link>
+      <pubDate>Mon, 23 Jan 2017 00:00:00 +0000</pubDate>
+      
+      <guid>https://needmorecowbell.github.io/post/2017-01-23-cool-new-job/</guid>
+      
+        <description>Being geeky in Petco ended up getting me my dream job  Job Description I am working under a Professor that has assigned me to designing the setup of the currently empty lab meant for doing tests on sps coral.</description>
+      
+    </item>
+    
+    <item>
+      <title>Goodwill Chest Upgrade</title>
+      <link>https://needmorecowbell.github.io/post/2017-01-19-goodwill-chest/</link>
+      <pubDate>Thu, 19 Jan 2017 00:00:00 +0000</pubDate>
+      
+      <guid>https://needmorecowbell.github.io/post/2017-01-19-goodwill-chest/</guid>
+      
+        <description>A search for cheap Goodwill sweaters led me to 0 sweaters and 1 chest too big to fit in my car.</description>
+      
+    </item>
+    
+    <item>
+      <title>QR Guitar Experiment</title>
+      <link>https://needmorecowbell.github.io/post/2017-01-04-qr-guitar-experiment/</link>
+      <pubDate>Wed, 04 Jan 2017 00:00:00 +0000</pubDate>
+      
+      <guid>https://needmorecowbell.github.io/post/2017-01-04-qr-guitar-experiment/</guid>
+      
+        <description>Inception My first guitar was a beat up acoustic American Standard that had been through many years of not-so-great care.</description>
+      
+    </item>
+    
+    <item>
+      <title>On the Future of VR</title>
+      <link>https://needmorecowbell.github.io/post/2016-12-07-future-of-vr/</link>
+      <pubDate>Wed, 07 Dec 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://needmorecowbell.github.io/post/2016-12-07-future-of-vr/</guid>
+      
+        <description>While participating in HackPSU Spring &amp;lsquo;16, my team decided to stretch the idea of immersive gaming to another level.</description>
+      
+    </item>
+    
+    <item>
+      <title>A New Blog!</title>
+      <link>https://needmorecowbell.github.io/post/2016-12-05-making-a-blog/</link>
+      <pubDate>Mon, 05 Dec 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://needmorecowbell.github.io/post/2016-12-05-making-a-blog/</guid>
+      
+        <description>My name is Adam Musciano, and I&#39;m a developer. I&#39;ve decided to start a blog to act as a repository for my ideas, goals, and reflections.</description>
+      
+    </item>
+    
+    <item>
+      <title>Contact</title>
+      <link>https://needmorecowbell.github.io/contact/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://needmorecowbell.github.io/contact/</guid>
+      
+        <description>Want to get in touch with me? Fill out the form below to send me a message and I will try to get back to you within 24 hours!</description>
+      
+    </item>
+    
+    <item>
+      <title>Gallery</title>
+      <link>https://needmorecowbell.github.io/gallery/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://needmorecowbell.github.io/gallery/</guid>
+      
+        <description>Visualized Algorithms Insertion Sort  Selection Sort  Num Islands (BFS)  Grid Expand from Center  Grid Expand from Random     Generative Art Perlin Circles     </description>
+      
+    </item>
+    
+    <item>
+      <title>Resume</title>
+      <link>https://needmorecowbell.github.io/resume/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://needmorecowbell.github.io/resume/</guid>
+      
+        <description>Resume   Awards    Code PSU &#39;16 Top 5   HackDartmouth Best Medical Hack   IST IdeamakerChallenge &#39;16 Top 5   Pittsburgh Data Jams &#39;15 Big Data Competition First Place   Gannon Programming Competition &#39;15 First Place    </description>
+      
+    </item>
+    
+  </channel>
+</rss>

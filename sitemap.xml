@@ -1,39 +1,68 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset
-      xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
-            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
-<!-- created with Free Online Sitemap Generator www.xml-sitemaps.com -->
-
-<url>
-  <loc>https://needmorecowbell.github.io/</loc>
-  <lastmod>2017-01-04T23:15:39+00:00</lastmod>
-  <changefreq>weekly</changefreq>
-</url>
-<url>
-  <loc>https://needmorecowbell.github.io/about/</loc>
-  <lastmod>2017-01-04T23:15:39+00:00</lastmod>
-  <changefreq>weekly</changefreq>
-</url>
-<url>
-  <loc>https://needmorecowbell.github.io/contact/</loc>
-  <lastmod>2017-01-04T23:15:39+00:00</lastmod>
-  <changefreq>weekly</changefreq>
-</url>
-<url>
-  <loc>https://needmorecowbell.github.io/2017/01/04/qr-guitar-experiment/</loc>
-  <lastmod>2017-01-04T23:15:39+00:00</lastmod>
-  <changefreq>weekly</changefreq>
-</url>
-<url>
-  <loc>https://needmorecowbell.github.io/2016/12/07/future-of-vr/</loc>
-  <lastmod>2017-01-04T23:15:39+00:00</lastmod>
-  <changefreq>weekly</changefreq>
-</url>
-<url>
-  <loc>https://needmorecowbell.github.io/2016/12/05/making-a-blog/</loc>
-  <lastmod>2017-01-04T23:15:39+00:00</lastmod>
-  <changefreq>weekly</changefreq>
-</url>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://needmorecowbell.github.io/</loc>
+    <lastmod>2020-03-04T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://needmorecowbell.github.io/post/2020-03-04-2020-03-04-clear-your-terminal-in-style/</loc>
+    <lastmod>2020-03-04T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://needmorecowbell.github.io/post/</loc>
+    <lastmod>2020-03-04T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://needmorecowbell.github.io/post/2018-11-13-coding-livestream-1-find-every-arby-s-in-america/</loc>
+    <lastmod>2018-11-13T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://needmorecowbell.github.io/post/2018-11-13-coding-livestream-2-let-s-deploy-an-ssh-honeypot/</loc>
+    <lastmod>2018-11-13T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://needmorecowbell.github.io/post/2018-11-13-coding-livestream-3-let-s-learn-about-yara/</loc>
+    <lastmod>2018-11-13T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://needmorecowbell.github.io/post/2018-11-13-coding-livestream-4-computer-vision-on-public-ip-cams/</loc>
+    <lastmod>2018-11-13T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://needmorecowbell.github.io/series/coding-livestream/</loc>
+    <lastmod>2018-11-13T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://needmorecowbell.github.io/series/</loc>
+    <lastmod>2018-11-13T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://needmorecowbell.github.io/post/2017-08-07-on-the-future-of-apps/</loc>
+    <lastmod>2017-08-07T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://needmorecowbell.github.io/post/2017-08-01-linux-tips-easy-aliases/</loc>
+    <lastmod>2017-08-01T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://needmorecowbell.github.io/post/2017-07-21-goodwill-chest-part-2/</loc>
+    <lastmod>2017-07-21T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://needmorecowbell.github.io/post/2017-01-23-cool-new-job/</loc>
+    <lastmod>2017-01-23T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://needmorecowbell.github.io/post/2017-01-19-goodwill-chest/</loc>
+    <lastmod>2017-01-19T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://needmorecowbell.github.io/post/2017-01-04-qr-guitar-experiment/</loc>
+    <lastmod>2017-01-04T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://needmorecowbell.github.io/post/2016-12-07-future-of-vr/</loc>
+    <lastmod>2016-12-07T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://needmorecowbell.github.io/post/2016-12-05-making-a-blog/</loc>
+    <lastmod>2016-12-05T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://needmorecowbell.github.io/tags/first/</loc>
+    <lastmod>2016-12-05T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://needmorecowbell.github.io/tags/</loc>
+    <lastmod>2016-12-05T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://needmorecowbell.github.io/contact/</loc>
+  </url><url>
+    <loc>https://needmorecowbell.github.io/gallery/</loc>
+  </url><url>
+    <loc>https://needmorecowbell.github.io/resume/</loc>
+  </url>
 </urlset>
