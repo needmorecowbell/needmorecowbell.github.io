@@ -1,0 +1,29 @@
+  [[main]]
+  name = "Home"
+  identifier = "home"
+  weight = 100
+  url = "/"
+
+  [[main]]
+  name = "Posts"
+  weight = 200
+  identifier = "posts"
+  url = "/post/"
+
+  [[main]]
+  name = "Gallery"
+  weight = 400
+  identifier = "gallery"
+  url = "/gallery/"
+
+  [[main]]
+  name = "Resume"
+  weight = 500
+  identifier = "resume"
+  url = "/resume/"
+
+  [[footer]]
+  name = "adammusciano.com"
+  weight = 1
+  identifier = "adammusciano.com"
+  url = "https://adammusciano.com"
