@@ -25,7 +25,7 @@
   --content-width: calc(var(--content-ratio) * 100%);
   --sidebar-width: calc(var(--sidebar-ratio) * 100%);
   /* prettier-ignore */
-  --content-ratio: {{ .Site.Params.contentratio | default 0.6 }}
+  --content-ratio: {{ .Site.Params.contentratio | default 0.8 }}
 }
 
 html[data-theme='dark'] {
@@ -1497,4 +1497,39 @@ a.btn {
   border: 1px solid var(--form-button-hover-border-color);
 }
 
+.card-img-top {
+  max-height: 250px;
+  overflow: hidden;
+}
+
+.card-title a:link {
+  font-size: 30px;
+  background-color: transparent;
+  color: #000000;
+  text-decoration: none;
+}
+
+.card-title a:hover {
+  color: red;
+  background-color: transparent;
+  text-decoration: underline;
+}
 /* (CONTACT) FORM END */
+
+.card-img-top {
+  max-height: 250px;
+  overflow: hidden;
+}
+
+.card-title a:link {
+  font-size: 30px;
+  background-color: transparent;
+  color: #000000;
+  text-decoration: none;
+}
+
+.card-title a:hover {
+  color: red;
+  background-color: transparent;
+  text-decoration: underline;
+}

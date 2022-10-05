@@ -1,6 +1,6 @@
 ---
 title: "Gallery"
-description: "A visual gallery of my art and projects"
+description: "A visual gallery of art I've made"
 headerimg: ""
 ---
 
@@ -14,23 +14,23 @@ headerimg: ""
     <div class="column">
       <div class="gallery-card">
         <h3>Insertion Sort</h3>
-        <img src="/img/gallery/insertion_sort.gif">
+        <img src="https://amblog.s3.617a.net/assets/img/gallery/insertion_sort.gif">
       </div>
       <div class="gallery-card">
         <h3>Selection Sort</h3>
-        <img src="/img/gallery/selection_sort.gif">    
+        <img src="https://amblog.s3.617a.net/assets/img/gallery/selection_sort.gif">    
       </div>
       <div class="gallery-card">
         <h3>Num Islands (BFS)</h3>
-        <img src="/img/gallery/num_islands.gif">      
+        <img src="https://amblog.s3.617a.net/assets/img/gallery/num_islands.gif">      
       </div>
       <div class="gallery-card">
         <h3>Grid Expand from Center</h3>
-        <img src="/img/gallery/grid_expand_from_center.gif">
+        <img src="https://amblog.s3.617a.net/assets/img/gallery/grid_expand_from_center.gif">
       </div>
       <div class="gallery-card">
         <h3>Grid Expand from Random</h3>
-        <img src="/img/gallery/grid_expand_from_random.gif">
+        <img src="https://amblog.s3.617a.net/assets/img/gallery/grid_expand_from_random.gif">
       </div>
     </div>
   </div>
@@ -43,8 +43,33 @@ headerimg: ""
     <div class="column">
       <div class="gallery-card">
         <h3>Perlin Circles</h3>
-        <img src="/img/gallery/perlin.png">
-        <img src="/img/gallery/perlin_inverted.png">
+        <img src="https://amblog.s3.617a.net/assets/img/gallery/perlin.png">
+        <img src="https://amblog.s3.617a.net/assets/img/gallery/perlin_inverted.png">
+      </div>
+    </div>
+  </div>
+</div>
+
+# Travel
+
+<div class="gallery-container">
+  <div class="row">
+    <div class="column">
+      <div class="gallery-card">
+        <h3>San Juan County Islands</h3>
+        <img src="https://amblog.s3.617a.net/assets/img/gallery/travel/san_juan_1.JPG">
+        <img src="https://amblog.s3.617a.net/assets/img/gallery/travel/san_juan_2.JPG">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="gallery-container">
+  <div class="row">
+    <div class="column">
+      <div class="gallery-card">
+        <h3>Colorado</h3>
+        <img src="https://amblog.s3.617a.net/assets/img/gallery/travel/colorado_01.jpg">
       </div>
     </div>
   </div>

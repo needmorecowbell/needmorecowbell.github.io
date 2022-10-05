@@ -24,7 +24,7 @@ Quite Frankly, I had no idea what I was doing. I made every mistake possible, fr
 ---------------------------------------------------
 
 <div style="text-align:center">
-    <img src="/img/post-qrGuitar-GIF.gif" >
+    <img src="https://amblog.s3.617a.net/assets/img/post-qrGuitar-GIF.gif" >
 </div>
 
 --------------------------------------------------

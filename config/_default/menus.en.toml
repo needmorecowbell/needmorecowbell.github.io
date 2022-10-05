@@ -17,10 +17,17 @@
   url = "/gallery/"
 
   [[main]]
-  name = "Resume"
+  name = "Photgraphy"
   weight = 500
-  identifier = "resume"
-  url = "/resume/"
+  identifier = "photography"
+  url = "/photography/"
+
+  [[main]]
+  name = "Projects"
+  weight = 600
+  identifier = "projects"
+  url = "/projects/"
+
 
   [[footer]]
   name = "adammusciano.com"
