@@ -6,7 +6,7 @@ headerimg: "img/resume-bg-06.jpg"
 
 <hr>
 <div style="text-align: center">
-<img src="https://amblog.s3.617a.net/assets/img/resume.jpg" width="800" height="1000">
+<img src="https://s3cdn.617a.net/amblog/assets/img/resume.jpg" width="800" height="1000">
 <div style="text-align: left">
 
 <h1>Awards</h1>

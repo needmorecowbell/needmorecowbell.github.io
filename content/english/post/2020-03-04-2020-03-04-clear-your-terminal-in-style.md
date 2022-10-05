@@ -96,7 +96,7 @@ Here is a recording of a twilight zone animation I found particularly impressive
 
 <p align="center">
   <video width="700" height="500" controls muted>
-    <source src="https://amblog.s3.617a.net/assets/videos/twilightzone.mp4" type="video/mp4">
+    <source src="https://s3cdn.617a.net/amblog/assets/videos/twilightzone.mp4" type="video/mp4">
     Your browser does not support the video tag.
   </video> 
 </p>

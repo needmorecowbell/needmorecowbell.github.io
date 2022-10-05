@@ -12,7 +12,7 @@ headerimg: "img/goodwill-chest/post-goodwill-chest-closed.jpg"
 
 
 <div style="text-align:center">
-    <img src="https://amblog.s3.617a.net/assets/img/goodwill-chest/post-goodwill-chest-closed.jpg" >
+    <img src="https://s3cdn.617a.net/amblog/assets/img/goodwill-chest/post-goodwill-chest-closed.jpg" >
 </div>
 
 
@@ -64,7 +64,7 @@ The Supplies List is as Follows:
 Yes, I know, not much to go off of. These items may be replaced by other things depending on what makes sense.
 
 <div style="text-align:center">
-    <img src="https://amblog.s3.617a.net/assets/img/goodwill-chest/post-goodwill-psu.jpg" >
+    <img src="https://s3cdn.617a.net/amblog/assets/img/goodwill-chest/post-goodwill-psu.jpg" >
 </div>
 
 --------------------------
@@ -79,12 +79,12 @@ I'd like to chip the paint off of all sides, exposing the raw wood. After that, 
 So far Ive scraped some of the paint off the sides. It is very dry, it cracks off in some places when I'm lucky. I'll be buying a chisel ASAP, an old pocket knife and some sandpaper isn't cutting it.
 
 <div style="text-align:center">
-    <img src="https://amblog.s3.617a.net/assets/img/goodwill-chest/post-goodwill-chest-side-sanded.jpg" >
+    <img src="https://s3cdn.617a.net/amblog/assets/img/goodwill-chest/post-goodwill-chest-side-sanded.jpg" >
 </div>
 
 I've also cut out most of the old floral canvas on the inside, leaving the exposed wood. **Very** dusty.
 <div style="text-align:center">
-    <img src="https://amblog.s3.617a.net/assets/img/goodwill-chest/post-goodwill-chest-inner.jpg" >
+    <img src="https://s3cdn.617a.net/amblog/assets/img/goodwill-chest/post-goodwill-chest-inner.jpg" >
 </div>
 
 As for the electronics, I'd like to mount some sort of power to the inside and allow for the chest itself to plug in to a wall outlet for power. This way it can be run permanently during the winter, and turned on when needed in the summer. A power strip might be the easiest solution; a battery would be inconvenient for this application.

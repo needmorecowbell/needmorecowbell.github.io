@@ -3,7 +3,7 @@ title = "Adam's Dev Log"
 author = "Adam Musciano"
 copyright = "2017-2022"
 description = "A Developer's Ramblings"
-profilePicture = "img/prof.jpg"
+profilePicture = "https://s3cdn.617a.net/amblog/assets/img/prof.jpg"
 keywords = ""
 favicon = "favicons/"
 # example ["css/custom.css"]
