@@ -30,3 +30,15 @@ headerimg: ""
   </div>
 </div>
 
+<div class="gallery-container">
+  <div class="row">
+    <div class="column">
+      <div class="gallery-card">
+        <h3>Maine</h3>
+        <img src="https://s3cdn.617a.net/amblog/assets/img/gallery/travel/maine-trip-01.jpg">
+      </div>
+    </div>
+  </div>
+</div>
+
+
