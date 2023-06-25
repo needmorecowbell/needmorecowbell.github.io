@@ -8,6 +8,31 @@
 
     {{ end }}"
   >
+  <div class="favorites-preview">
+    <div ID="gallery-favorites" data-nanogallery2='{
+      "itemsBaseURL": "{{.Page.Site.Params.S3CDN}}/img/gallery/travel/",
+      "thumbnailWidth": "250",
+      "thumbnailHeight": "250",
+      "thumbnailBorderVertical": 1,
+      "thumbnailBorderHorizontal": 1,
+      "thumbnailLabel": {
+        "position": "overImageOnBottom",
+        "displayDescription": true
+      },
+      "thumbnailHoverEffect2": "labelAppear75|descriptionSlideUp",
+      "galleryDisplayMode": "pagination",
+      "galleryMaxRows": 2,
+      "thumbnailAlignment": "center",
+      "thumbnailOpenImage": true
+    }'>
+  <a href="san_juan_1.JPG" data-ngthumb="san_juan_1.JPG" data-ngdesc="Flight over San Juan Islands">San Juan Islands</a>
+  <a href="san_juan_2.JPG" data-ngthumb="san_juan_2.JPG" data-ngdesc="Flight over San Juan Islands">San Juan Islands</a>
+  <a href="colorado_01.jpg" data-ngthumb="colorado_01.jpg" data-ngdesc="Flight over Colorado">Colorado</a>
+  <a href="maine-trip-01.jpg" data-ngthumb="maine-trip-01.jpg" data-ngdesc="Maine Hike, Acadia National Park">Acadia, Maine</a>
+  </div>
+
+  </div>
+  <hr>
     <ul class="list-with-title">
       {{ range .Data.Pages.GroupByDate "2006" }}
         <div class="listing-title">{{ .Key }}</div>
