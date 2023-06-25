@@ -1,16 +1,17 @@
 
 title = "Adam's Dev Log"
 author = "Adam Musciano"
-copyright = "2017-2022"
+copyright = "2017-{{ YEAR }}"
 description = "A Developer's Ramblings"
 profilePicture = "https://s3cdn.617a.net/amblog/assets/img/prof.jpg"
+S3CDN = "https://s3cdn.617a.net/amblog/assets"
 keywords = ""
 favicon = "favicons/"
 # example ["css/custom.css"]
 #customCss = ['css/style.css']
 # example ["js/custom.js"]
 customJs = [] 
-mainSections = ["post"]
+mainSections = ["post","gallery"]
 images = ["img/site-feature-image.png"]
 doNotLoadAnimations = false
 # Form Spree Contact Form
