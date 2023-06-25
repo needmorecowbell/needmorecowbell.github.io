@@ -1,3 +1,9 @@
+---
+title: "Nova Scotia Trip"
+date: 2023-04-23
+draft: false
+---
+
 ## Nova Scotia 2023
 
   <div ID="gallery-travel-nova-scotia" data-nanogallery2='{

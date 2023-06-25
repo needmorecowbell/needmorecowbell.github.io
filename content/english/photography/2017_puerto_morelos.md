@@ -1,5 +1,5 @@
 ---
-title: "2017 Puerto Morelos Trip"
+title: "Puerto Morelos Unam University Lab Trip"
 date: 2017-05-01
 draft: false
 ---

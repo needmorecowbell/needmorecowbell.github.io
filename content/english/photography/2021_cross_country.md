@@ -1,5 +1,5 @@
 ---
-title: "2021 Cross Country"
+title: "Cross Country Road Trip"
 date: 2021-05-01
 draft: false
 ---

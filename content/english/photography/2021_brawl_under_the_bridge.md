@@ -1,5 +1,5 @@
 ---
-title: "2021 Brawl Under the Bridge"
+title: "2021 Brawl Under the Bridge Event"
 date: 2021-07-17
 draft: false
 ---
