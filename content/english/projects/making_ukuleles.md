@@ -2,6 +2,8 @@
 title: "Making Electric Ukuleles"
 date: 2014-05-01
 draft: false
+tags: ["luthier","woodwork","instruments"]
+description: "Made a couple electric ukuleles for fundraisers"
 ---
 
 ## Description

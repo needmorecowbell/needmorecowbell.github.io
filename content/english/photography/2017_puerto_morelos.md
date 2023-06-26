@@ -1,5 +1,6 @@
 ---
 title: "Puerto Morelos Unam University Lab Trip"
+tags: ["biology","coral", "mexico","travel","penn state"]
 date: 2017-05-01
 draft: false
 ---

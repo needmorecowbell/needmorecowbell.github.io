@@ -1,6 +1,7 @@
 ---
 title: "2021 Brawl Under the Bridge Event"
 date: 2021-07-17
+tags: ["wrestling","pittsburgh","event"]
 draft: false
 ---
 

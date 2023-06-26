@@ -1,6 +1,7 @@
 ---
 title: "Nova Scotia Trip"
 date: 2023-04-23
+tags: ["Canada","Travel","Nova Scotia"]
 draft: false
 ---
 
@@ -18,7 +19,7 @@ draft: false
       },
       "thumbnailHoverEffect2": "labelAppear75|descriptionSlideUp",
       "galleryDisplayMode": "pagination",
-      "galleryMaxRows": 1,
+      "galleryMaxRows": 2,
       "thumbnailAlignment": "center",
       "thumbnailOpenImage": true,
       "viewerTools":     {

@@ -2,6 +2,7 @@
 title: "Nashville Trip"
 date: 2021-07-04
 draft: false
+tags: ["Nashville","Travel"]
 ---
 
 ## Nashville Trip 2021

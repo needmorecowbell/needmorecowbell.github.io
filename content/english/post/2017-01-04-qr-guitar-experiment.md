@@ -40,7 +40,3 @@ I think the guitar's main purpose is still relevant today, and could see myself 
 
 -----------------------------------
 If you'd like to see what has happened with this guitar, please go to: [http://mooseprojects.wixsite.com/qrguitar](http://mooseprojects.wixsite.com/qrguitar)
-
-<div style="text-align:center">
-  <iframe width="560" height="315" src="https://www.youtube.com/embed/Y2XEQ0lDrfg" frameborder="0" allowfullscreen></iframe>
-</div>

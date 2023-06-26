@@ -1,6 +1,7 @@
 ---
 title: "Cross Country Road Trip"
 date: 2021-05-01
+tags: ["travel"]
 draft: false
 ---
 
@@ -19,7 +20,7 @@ draft: false
       },
       "thumbnailHoverEffect2": "labelAppear75|descriptionSlideUp",
       "galleryDisplayMode": "pagination",
-      "galleryMaxRows": 3,
+      "galleryMaxRows": 2,
       "thumbnailAlignment": "center",
       "thumbnailOpenImage": true,
        "viewerTools":     {
