@@ -20,7 +20,11 @@ draft: false
       "galleryDisplayMode": "pagination",
       "galleryMaxRows": 1,
       "thumbnailAlignment": "center",
-      "thumbnailOpenImage": true
+      "thumbnailOpenImage": true,
+      "viewerTools":     {
+        "topLeft":    "pageCounter, label",
+        "topRight":   "playPauseButton, rotateLeft, rotateRight, fullscreenButton, closeButton"
+       }   
     }'>
     <a href="brawl_03.mp4" data-ngthumb="brawl_03.mp4" data-ngdesc=""></a>
     <a href="brawl_02.mp4" data-ngthumb="brawl_02.mp4" data-ngdesc=""></a>

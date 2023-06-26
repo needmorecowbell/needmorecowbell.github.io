@@ -20,7 +20,11 @@ draft: false
       "galleryDisplayMode": "pagination",
       "galleryMaxRows": 2,
       "thumbnailAlignment": "center",
-      "thumbnailOpenImage": true
+      "thumbnailOpenImage": true,
+      "viewerTools":     {
+        "topLeft":    "pageCounter, label",
+        "topRight":   "playPauseButton, rotateLeft, rotateRight, fullscreenButton, closeButton"
+       }   
     }'>
     <a href="pm_08.jpg" data-ngthumb="pm_08.jpg" data-ngdesc="pm_08.jpg">pm_08.jpg</a>
     <a href="pm_10.jpg" data-ngthumb="pm_10.jpg" data-ngdesc="pm_10.jpg">pm_10.jpg</a>

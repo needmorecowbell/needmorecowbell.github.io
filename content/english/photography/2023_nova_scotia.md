@@ -20,7 +20,11 @@ draft: false
       "galleryDisplayMode": "pagination",
       "galleryMaxRows": 1,
       "thumbnailAlignment": "center",
-      "thumbnailOpenImage": true
+      "thumbnailOpenImage": true,
+      "viewerTools":     {
+        "topLeft":    "pageCounter, label",
+        "topRight":   "playPauseButton, rotateLeft, rotateRight, fullscreenButton, closeButton"
+       }   
     }'>
   <a href="nova_scotia_1.JPG" data-ngthumb="nova_scotia_1.JPG" data-ngdesc="Cabot Trail">Nova Scotia</a>
   <a href="nova_scotia_2.JPG" data-ngthumb="nova_scotia_2.JPG" data-ngdesc="Cabot Trail">Nova Scotia 2</a>

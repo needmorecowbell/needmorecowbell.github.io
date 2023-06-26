@@ -23,7 +23,11 @@ Put together a wii nunchuck, ir sensor, and an arduino to make a frankensteing c
       "galleryDisplayMode": "pagination",
       "galleryMaxRows": 1,
       "thumbnailAlignment": "center",
-      "thumbnailOpenImage": true
+      "thumbnailOpenImage": true,
+      "viewerTools":     {
+        "topLeft":    "pageCounter, label",
+        "topRight":   "playPauseButton, rotateLeft, rotateRight, fullscreenButton, closeButton"
+       }   
     }'>
   <a href="20191107125219_IMG_0100.JPG" data-ngthumb="20191107125219_IMG_0100.JPG" data-ngdesc=""></a>
   <a href="20191107125409_IMG_0104.JPG" data-ngthumb="20191107125409_IMG_0104.JPG" data-ngdesc=""></a>

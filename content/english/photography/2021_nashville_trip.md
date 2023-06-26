@@ -20,7 +20,11 @@ draft: false
       "galleryDisplayMode": "pagination",
       "galleryMaxRows": 1,
       "thumbnailAlignment": "center",
-      "thumbnailOpenImage": true
+      "thumbnailOpenImage": true,
+      "viewerTools":     {
+        "topLeft":    "pageCounter, label",
+        "topRight":   "playPauseButton, rotateLeft, rotateRight, fullscreenButton, closeButton"
+       }   
     }'>
     <a href="07_2021_Nashville_01.jpg" data-ngthumb="07_2021_Nashville_01.jpg" data-ngdesc="">Nashville, TN</a>
     <a href="07_2021_Nashville_02.jpg" data-ngthumb="07_2021_Nashville_02.jpg" data-ngdesc="">Nashville, TN</a>

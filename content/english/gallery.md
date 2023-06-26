@@ -18,7 +18,11 @@ headerimg: ""
       "galleryDisplayMode": "pagination",
       "galleryMaxRows": 3,
       "thumbnailAlignment": "center",
-      "thumbnailOpenImage": true
+      "thumbnailOpenImage": true,
+      "viewerTools":     {
+        "topLeft":    "pageCounter, label",
+        "topRight":   "playPauseButton, rotateLeft, rotateRight, fullscreenButton, closeButton"
+       }   
     }'>
     <a href="perlin.png" data-ngthumb="perlin.png" data-ngdesc="Perlin Noise Visualization">Perlin</a>
     <a href="perlin_inverted.png" data-ngthumb="perlin_inverted.png" data-ngdesc="Perlin Noise Visualization, inverted">Perlin Inverted</a>

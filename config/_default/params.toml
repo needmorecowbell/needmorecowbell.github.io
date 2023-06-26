@@ -11,7 +11,7 @@ favicon = "favicons/"
 #customCss = ['css/style.css']
 # example ["js/custom.js"]
 customJs = [] 
-mainSections = ["post","gallery"]
+mainSections = ["post","projects","photography"]
 images = ["img/site-feature-image.png"]
 doNotLoadAnimations = false
 # Form Spree Contact Form

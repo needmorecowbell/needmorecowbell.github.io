@@ -21,7 +21,11 @@ draft: false
       "galleryDisplayMode": "pagination",
       "galleryMaxRows": 3,
       "thumbnailAlignment": "center",
-      "thumbnailOpenImage": true
+      "thumbnailOpenImage": true,
+       "viewerTools":     {
+        "topLeft":    "pageCounter, label",
+        "topRight":   "playPauseButton, rotateLeft, rotateRight, fullscreenButton, closeButton"
+       }   
     }'>
     <a href="craterlake_oregon_03.JPG" data-ngthumb="craterlake_oregon_03.JPG" data-ngdesc="craterlake_oregon_03.JPG">craterlake_oregon_03.JPG</a>
     <a href="washington_06.jpg" data-ngthumb="washington_06.jpg" data-ngdesc="washington_06.jpg">washington_06.jpg</a>

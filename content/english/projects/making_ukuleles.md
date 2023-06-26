@@ -22,7 +22,11 @@ In 2014, I made some ukuleles:
       "galleryDisplayMode": "pagination",
       "galleryMaxRows": 1,
       "thumbnailAlignment": "center",
-      "thumbnailOpenImage": true
+      "thumbnailOpenImage": true,
+      "viewerTools":     {
+        "topLeft":    "pageCounter, label",
+        "topRight":   "playPauseButton, rotateLeft, rotateRight, fullscreenButton, closeButton"
+       }   
     }'>
     <a href="IMG_20140601_133538.jpg" data-ngthumb="IMG_20140601_133538.jpg" data-ngdesc=""></a>
     <a href="IMG_20140504_111812.jpg" data-ngthumb="IMG_20140504_111812.jpg" data-ngdesc=""></a>
