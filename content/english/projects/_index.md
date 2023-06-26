@@ -1,0 +1,3 @@
+---
+mainSectionTitle: "Projects"
+---
