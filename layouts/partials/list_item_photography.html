@@ -1,0 +1,58 @@
+<div
+class="post {{ with .Site.Params.doNotLoadAnimations }}
+  .
+
+{{ else }}
+  animated fadeInDown
+
+{{ end }}"
+>
+{{ if .Params.thumbnail }}
+  <div class="post-thumbnail">
+    <a href="{{ .RelPermalink }}">
+      <img src="{{ .Params.thumbnail | relURL }}" alt="Thumbnail image" loading="lazy" />
+    </a>
+  </div>
+
+{{ end }}
+  <h4>{{.Type}}</h4>
+  <div class="post-title">
+    <h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
+  </div>
+  <div class="post-content">
+    <div class="p_part">
+     {{ .Description }}
+    </div>
+  </div>
+
+  <!--  -->
+  <div class="post-footer">
+    <div class="meta">
+      <div class="info">
+        <em class="fas fa-calendar-day"></em>
+        <span class="date"
+          >{{ if isset .Site.Params "indexdateformat" }}
+            {{ .Date | time.Format .Site.Params.indexDateFormat }}
+
+
+          {{ else }}
+            {{ .Date.Format "Mon, Jan 2, 2006" }}
+
+
+          {{ end }}</span
+        >
+        {{ with .Page.Params.Categories }}
+          {{ partial "taxonomy/categories.html" . }}
+
+
+        {{ end }}
+
+        {{ with .Page.Params.Tags }}
+          {{ partial "taxonomy/tags.html" . }}
+
+
+        {{ end }}
+      </div>
+    </div>
+  </div>
+</div>
