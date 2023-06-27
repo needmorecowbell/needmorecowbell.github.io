@@ -1,6 +1,6 @@
 ---
 title: "Slab Computer Desk"
-tags: ["DIY","furniure","woodworking","art"]
+tags: ["DIY","furniure","woodwork","art"]
 date: 2020-06-15
 draft: true
 ---
