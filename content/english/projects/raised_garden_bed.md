@@ -7,7 +7,7 @@ draft: false
 
 
 <div ID="gallery" data-nanogallery2='{
-      "itemsBaseURL": "{{<s3cdn>}}/projects/rpi_glasses/",
+      "itemsBaseURL": "{{<s3cdn>}}/projects/raised_bed_project/",
       "thumbnailWidth": "250",
       "thumbnailHeight": "250",
       "thumbnailBorderVertical": 1,
