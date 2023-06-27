@@ -6,8 +6,6 @@ tags: ["luthier","woodwork","instruments"]
 description: "Made a couple electric ukuleles for fundraisers"
 ---
 
-## Description
-
 In 2014, I made some ukuleles:
 
   <div ID="gallery-travel-nashville2021" data-nanogallery2='{

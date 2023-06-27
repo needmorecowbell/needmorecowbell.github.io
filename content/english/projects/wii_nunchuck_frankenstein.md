@@ -5,8 +5,6 @@ date: 2013-03-01
 draft: false
 ---
 
-## Description
-
 Put together a wii nunchuck, ir sensor, and an arduino to make a frankensteing computer peripheral. Controlled the mouse, as well as some remote control commands to shut down the computer, and adjust the media controls, and open Pandora in a browser
 
   <div ID="gallery-project" data-nanogallery2='{

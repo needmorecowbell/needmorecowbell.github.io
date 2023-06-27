@@ -1,10 +1,9 @@
 ---
 title: "Rasperry Pi Camera Glasses"
+tags: ["tech","linux","raspberry pi"]
 date: 2015-01-15
 draft: true
 ---
-
-## Description
 
  A project that stemmed from a Latin class project. Meant to allow me to drive and take pictures by just pressing a button... Dash cams existed, I don't know what I was thinking. Maybe was trying to extend it into something with a holographic display (think smart hud while snowboarding/skiing) but I don't fully remember.
 

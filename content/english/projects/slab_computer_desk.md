@@ -1,9 +1,11 @@
 ---
-title: "Slab_computer_desk"
+title: "Slab Computer Desk"
+tags: ["DIY","furniure","woodworking","art"]
 date: 2020-06-15
 draft: true
 ---
 
+Found a cheap slab of black walnut for sale locally, used it to make a simple computer desk with hairpin legs.
 
   <div ID="gallery" data-nanogallery2='{
       "itemsBaseURL": "{{<s3cdn>}}/projects/slab_computer_desk/",

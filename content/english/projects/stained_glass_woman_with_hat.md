@@ -5,7 +5,6 @@ date: 2020-01-13
 draft: false
 ---
 
-## Description
 A half finished stained glass project, never could get the center of the face just right. Small mistakes compounded into something unfixable.
 
   <div ID="gallery" data-nanogallery2='{

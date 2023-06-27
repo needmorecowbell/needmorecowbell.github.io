@@ -5,8 +5,6 @@ tags: ["woodwork","zippo","art"]
 draft: false
 ---
 
-## Description
-
 A wooden zippo lighter, maple wood. used superglue for adhesion after roughing the surface. This ended up not being effective enough, although it lasted multiple months.
 
   <div ID="gallery" data-nanogallery2='{
