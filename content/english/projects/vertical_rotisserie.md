@@ -1,7 +1,8 @@
 ---
 title: "Vertical Rotisserie Rig"
 date: 2022-05-04
-draft: true
+tags: ["cooking","DIY"]
+draft: false
 ---
 
 Built a vertical rotisserie using a burn barrel, scrapped parts from a grill, and a low rpm motor. Wanted to recreate the best al pastor tacos I ever had

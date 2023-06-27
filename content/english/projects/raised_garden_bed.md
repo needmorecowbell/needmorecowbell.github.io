@@ -1,14 +1,13 @@
 ---
-title: "Slab Computer Desk"
-tags: ["DIY","furniure","woodwork","art"]
-date: 2020-06-15
+title: "Raised Garden Bed"
+date: 2022-06-26T21:21:21-04:00
+tags: ['gardening','DIY','woodwork']
 draft: false
 ---
 
-Found a cheap slab of black walnut for sale locally, used it to make a simple computer desk with hairpin legs.
 
-  <div ID="gallery" data-nanogallery2='{
-      "itemsBaseURL": "{{<s3cdn>}}/projects/slab_computer_desk/",
+<div ID="gallery" data-nanogallery2='{
+      "itemsBaseURL": "{{<s3cdn>}}/projects/rpi_glasses/",
       "thumbnailWidth": "250",
       "thumbnailHeight": "250",
       "thumbnailBorderVertical": 1,
@@ -27,8 +26,9 @@ Found a cheap slab of black walnut for sale locally, used it to make a simple co
         "topRight":   "playPauseButton, rotateLeft, rotateRight, fullscreenButton, closeButton"
        }   
     }'>
-    <a href="slab_03.jpg" data-ngthumb="slab_03.jpg" data-ngdesc=""></a>
-    <a href="slab_04.jpg" data-ngthumb="slab_04.jpg" data-ngdesc=""></a>
-    <a href="slab_01.jpg" data-ngthumb="slab_01.jpg" data-ngdesc=""></a>
-    <a href="slab_02.jpg" data-ngthumb="slab_02.jpg" data-ngdesc=""></a>
-  </div>
+    <a href="raised_bed_04.jpg" data-ngthumb="raised_bed_04.jpg" data-ngdesc=""></a>
+    <a href="raised_bed_02.jpg" data-ngthumb="raised_bed_02.jpg" data-ngdesc=""></a>
+    <a href="raised_bed_01.jpg" data-ngthumb="raised_bed_01.jpg" data-ngdesc=""></a>
+    <a href="raised_bed_03.jpg" data-ngthumb="raised_bed_03.jpg" data-ngdesc=""></a>
+</div>
+
