@@ -25,7 +25,12 @@ This phase establishes the development environment and builds a working CLI tool
   - Gracefully handles invalid YAML and unreadable files
   - Added 10 new unit tests (total now 23 tests passing)
 
-- [ ] Create `scripts/syntax_converter.py` module with a `convert_wikilinks()` function that transforms `[[Page Name]]` syntax to standard markdown `[Page Name](/post/page-name/)` links
+- [x] Create `scripts/syntax_converter.py` module with a `convert_wikilinks()` function that transforms `[[Page Name]]` syntax to standard markdown `[Page Name](/post/page-name/)` links
+  - Created `syntax_converter.py` with `convert_wikilinks()` and `slugify()` helper functions on 2026-01-02
+  - Handles aliased wikilinks: `[[Page Name|Display Text]]` becomes `[Display Text](/post/page-name/)`
+  - Correctly ignores embedded content syntax `![[...]]` (for images/media)
+  - Supports custom base paths for different content types (default: `/post/`)
+  - Added comprehensive test suite in `test_syntax_converter.py` (30 tests passing)
 
 - [ ] Add `convert_embedded_images()` function to `scripts/syntax_converter.py` that transforms `![[path/to/image.jpg]]` syntax to the Hugo shortcode format `{{</* s3cdn */>}}/path/to/image.jpg` (using a placeholder path for now)
 
