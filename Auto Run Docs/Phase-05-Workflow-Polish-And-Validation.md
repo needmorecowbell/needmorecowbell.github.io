@@ -16,7 +16,13 @@ This phase adds validation, error handling, and quality-of-life improvements to 
   - Returns ERROR-level `ValidationIssue` for each missing file with helpful error message showing the reference and expected path
   - Added 20 tests covering: valid/missing images, videos, audio files, nested paths, edge cases (empty content, duplicates, non-media wikilinks)
 
-- [ ] Add `validate_internal_links()` function that checks wikilinks point to notes that either exist in the vault or have already been published to Hugo
+- [x] Add `validate_internal_links()` function that checks wikilinks point to notes that either exist in the vault or have already been published to Hugo
+  - Added `find_wikilinks()` helper to extract non-media wikilinks from content (handles `[[Page]]` and `[[Page|Alias]]` syntax)
+  - Added `find_note_in_vault()` to search for notes by name in the Obsidian vault (case-insensitive, searches recursively)
+  - Added `find_note_in_hugo()` to search Hugo content directories for published posts (supports dated filenames like `2017-01-04-post-name.md`)
+  - Main `validate_internal_links()` validates links exist in either vault or Hugo content
+  - Returns ERROR-level `ValidationIssue` for each broken link with descriptive message
+  - Added 43 tests covering: wikilink extraction, vault search, Hugo search, link validation, edge cases (empty content, non-existent paths, aliased links, media exclusion)
 
 - [ ] Create a `validate` subcommand in `publish.py` that runs all validators on a note and displays a formatted report of any issues
 
