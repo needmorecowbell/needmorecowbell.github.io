@@ -6,8 +6,21 @@ Run with: python test_media_extractor.py
 Or with pytest: pytest test_media_extractor.py -v
 """
 
+import logging
+import os
+import tempfile
 import unittest
-from media_extractor import find_media_references, IMAGE_EXTENSIONS, VIDEO_EXTENSIONS, AUDIO_EXTENSIONS
+from pathlib import Path
+from unittest.mock import patch
+
+from media_extractor import (
+    find_media_references,
+    resolve_media_path,
+    IMAGE_EXTENSIONS,
+    VIDEO_EXTENSIONS,
+    AUDIO_EXTENSIONS,
+    DEFAULT_MEDIA_BASE,
+)
 
 
 class TestFindMediaReferences(unittest.TestCase):
@@ -189,6 +202,118 @@ Check out my notes on [[Travel Tips]] for more info.
             '2021/06/ocean-sounds.mp3',
             '2021/06/final-group-photo.png'
         ])
+
+
+class TestResolveMediaPath(unittest.TestCase):
+    """Tests for the resolve_media_path function."""
+
+    def setUp(self):
+        """Create a temporary directory structure for testing."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.media_base = Path(self.temp_dir)
+
+        # Create test directory structure
+        (self.media_base / "2021" / "06").mkdir(parents=True)
+        (self.media_base / "photos" / "vacation").mkdir(parents=True)
+
+        # Create test files
+        (self.media_base / "2021" / "06" / "image.jpg").touch()
+        (self.media_base / "2021" / "06" / "video.mp4").touch()
+        (self.media_base / "photos" / "vacation" / "sunset.png").touch()
+        (self.media_base / "simple.jpg").touch()
+
+    def tearDown(self):
+        """Clean up temporary directory."""
+        import shutil
+        shutil.rmtree(self.temp_dir)
+
+    def test_resolves_simple_path(self):
+        """Should resolve a simple media reference to full path."""
+        result = resolve_media_path("simple.jpg", media_base=self.media_base)
+        expected = str(self.media_base / "simple.jpg")
+        self.assertEqual(result, expected)
+
+    def test_resolves_nested_path(self):
+        """Should resolve nested path references."""
+        result = resolve_media_path("2021/06/image.jpg", media_base=self.media_base)
+        expected = str(self.media_base / "2021" / "06" / "image.jpg")
+        self.assertEqual(result, expected)
+
+    def test_resolves_deeply_nested_path(self):
+        """Should resolve deeply nested path references."""
+        result = resolve_media_path("photos/vacation/sunset.png", media_base=self.media_base)
+        expected = str(self.media_base / "photos" / "vacation" / "sunset.png")
+        self.assertEqual(result, expected)
+
+    def test_strips_leading_slash(self):
+        """Should strip leading slashes from reference."""
+        result = resolve_media_path("/2021/06/image.jpg", media_base=self.media_base)
+        expected = str(self.media_base / "2021" / "06" / "image.jpg")
+        self.assertEqual(result, expected)
+
+    def test_returns_none_for_missing_file_with_validation(self):
+        """Should return None when file doesn't exist and validation is enabled."""
+        result = resolve_media_path("nonexistent.jpg", media_base=self.media_base, validate=True)
+        self.assertIsNone(result)
+
+    def test_returns_path_for_missing_file_without_validation(self):
+        """Should return path even when file doesn't exist if validation is disabled."""
+        result = resolve_media_path("nonexistent.jpg", media_base=self.media_base, validate=False)
+        expected = str(self.media_base / "nonexistent.jpg")
+        self.assertEqual(result, expected)
+
+    def test_logs_warning_for_missing_file(self):
+        """Should log warning when file doesn't exist."""
+        with self.assertLogs('media_extractor', level='WARNING') as cm:
+            result = resolve_media_path("missing.jpg", media_base=self.media_base, validate=True)
+
+        self.assertIsNone(result)
+        self.assertTrue(any("Media file not found" in msg for msg in cm.output))
+        self.assertTrue(any("missing.jpg" in msg for msg in cm.output))
+
+    def test_returns_none_for_directory(self):
+        """Should return None when path is a directory, not a file."""
+        with self.assertLogs('media_extractor', level='WARNING') as cm:
+            result = resolve_media_path("2021/06", media_base=self.media_base, validate=True)
+
+        self.assertIsNone(result)
+        self.assertTrue(any("not a file" in msg for msg in cm.output))
+
+    def test_returns_directory_path_without_validation(self):
+        """Should return directory path if validation is disabled."""
+        result = resolve_media_path("2021/06", media_base=self.media_base, validate=False)
+        expected = str(self.media_base / "2021" / "06")
+        self.assertEqual(result, expected)
+
+    def test_uses_default_media_base(self):
+        """Should use DEFAULT_MEDIA_BASE when no base is provided."""
+        # We can't easily test the actual default path, but we can verify it's used
+        self.assertEqual(DEFAULT_MEDIA_BASE, Path.home() / "Notes" / "Media")
+
+    def test_resolves_symlink_in_base_path(self):
+        """Should resolve symlinks in the media base path."""
+        # Create a symlink to the media base
+        symlink_path = Path(self.temp_dir) / "symlink_media"
+        actual_media = Path(self.temp_dir) / "actual_media"
+        actual_media.mkdir()
+        (actual_media / "test.jpg").touch()
+        symlink_path.symlink_to(actual_media)
+
+        result = resolve_media_path("test.jpg", media_base=symlink_path)
+        # The result should be the resolved (actual) path
+        expected = str(actual_media / "test.jpg")
+        self.assertEqual(result, expected)
+
+    def test_handles_multiple_leading_slashes(self):
+        """Should handle multiple leading slashes."""
+        result = resolve_media_path("///2021/06/image.jpg", media_base=self.media_base)
+        expected = str(self.media_base / "2021" / "06" / "image.jpg")
+        self.assertEqual(result, expected)
+
+    def test_validation_default_is_true(self):
+        """Should validate by default (validate=True)."""
+        result = resolve_media_path("nonexistent.jpg", media_base=self.media_base)
+        self.assertIsNone(result)
 
 
 if __name__ == '__main__':

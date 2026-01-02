@@ -11,9 +11,17 @@ This phase adds media handling to the publish pipeline. The CLI will extract all
   - Supports all audio formats (mp3, wav, oga, m4a, flac, aac, wma)
   - 19 unit tests in `test_media_extractor.py`
 
-- [ ] Add `resolve_media_path()` function to `scripts/media_extractor.py` that takes an Obsidian media reference and resolves it to the actual file path via `~/Notes/Media` symlink (returning the full path like `/home/adam/Media/2021/06/image.jpg`)
+- [x] Add `resolve_media_path()` function to `scripts/media_extractor.py` that takes an Obsidian media reference and resolves it to the actual file path via `~/Notes/Media` symlink (returning the full path like `/home/adam/Media/2021/06/image.jpg`)
+  - Implemented with configurable `media_base` parameter (defaults to `~/Notes/Media`)
+  - Resolves symlinks in the base path for accurate final paths
+  - Strips leading slashes from references for proper path joining
+  - Returns full absolute path string (e.g., `/home/adam/Media/2021/06/image.jpg`)
 
-- [ ] Add validation to `resolve_media_path()` that checks if the resolved file actually exists and logs a warning for missing files
+- [x] Add validation to `resolve_media_path()` that checks if the resolved file actually exists and logs a warning for missing files
+  - `validate` parameter (default `True`) controls existence checking
+  - Logs warning via `logging` module for missing files or non-file paths
+  - Returns `None` when validation fails, path string otherwise
+  - 13 unit tests added to `test_media_extractor.py` (total now 32 tests)
 
 - [ ] Create `scripts/minio_uploader.py` module with MinIO client initialization using environment variables: `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET`
 
