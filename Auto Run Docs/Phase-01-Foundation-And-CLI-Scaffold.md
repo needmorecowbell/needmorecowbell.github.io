@@ -82,7 +82,16 @@ This phase establishes the development environment and builds a working CLI tool
   - Creates parent directories automatically, ensures files end with newline
   - Added comprehensive test suite in `test_hugo_writer.py` (46 tests passing, 248 total tests in scripts/)
 
-- [ ] Implement the `scan` subcommand in `publish.py` that calls `find_publishable_notes()` and prints a formatted table showing: filename, title, date, and tags for each publishable note found
+- [x] Implement the `scan` subcommand in `publish.py` that calls `find_publishable_notes()` and prints a formatted table showing: filename, title, date, and tags for each publishable note found
+  - Implemented `cmd_scan()` with `print_scan_table()` helper function on 2026-01-02
+  - Prints formatted table with columns: Filename, Title, Date, Tags
+  - Added helper functions: `format_tags()`, `format_date()`, `truncate()` for display formatting
+  - Supports `--vault` argument to specify custom Obsidian vault path
+  - Shows summary with count of publishable notes found
+  - Handles missing fields gracefully (displays dash for missing values)
+  - Truncates long values with ellipsis to maintain table alignment
+  - Proper error handling for FileNotFoundError and NotADirectoryError
+  - Added comprehensive test suite in `test_publish_cli.py` (25 tests passing, 273 total tests in scripts/)
 
 - [ ] Implement the `list` subcommand that shows the same information as `scan` but also displays where each note would be published in the Hugo content directory
 
