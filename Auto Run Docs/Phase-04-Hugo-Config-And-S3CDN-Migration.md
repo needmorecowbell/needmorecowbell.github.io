@@ -84,7 +84,13 @@ This phase updates the Hugo configuration and s3cdn shortcode to work with your 
   - Includes comprehensive `make help` target with documentation
   - Verified all targets work correctly
 
-- [ ] Add `make test-publish` target that runs the publish pipeline in dry-run mode and builds Hugo to verify the output is valid
+- [x] Add `make test-publish` target that runs the publish pipeline in dry-run mode and builds Hugo to verify the output is valid
+  - Added `test-publish` target to Makefile that runs two steps in sequence:
+    1. Runs `python3 scripts/publish.py publish --all --dry-run` to preview the publish pipeline
+    2. Runs `hugo -e production` to build the site and verify output is valid
+  - Added to `.PHONY` declaration and help output
+  - Target provides visual feedback with `==>` prefixed status messages
+  - Verified target works: successfully runs dry-run and builds 114 pages
 
 - [ ] Update `.gitignore` to exclude `scripts/.env` and `scripts/.published.json` from version control
 

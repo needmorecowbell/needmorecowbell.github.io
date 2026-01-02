@@ -1,7 +1,7 @@
 # Blog Development Makefile
 # Common commands for Hugo development and publishing workflow
 
-.PHONY: dev build publish-dry clean help
+.PHONY: dev build publish-dry test-publish clean help
 
 # Default target
 .DEFAULT_GOAL := help
@@ -50,6 +50,16 @@ publish-scan:
 publish-list:
 	python3 $(SCRIPTS_DIR)/publish.py list
 
+## Run publish pipeline dry-run and build Hugo to verify output is valid
+test-publish:
+	@echo "==> Running publish pipeline in dry-run mode..."
+	python3 $(SCRIPTS_DIR)/publish.py publish --all --dry-run
+	@echo ""
+	@echo "==> Building Hugo site to verify output..."
+	$(HUGO) -e $(HUGO_PROD_ENV)
+	@echo ""
+	@echo "==> Test publish completed successfully!"
+
 #------------------------------------------------------------------------------
 # Utilities
 #------------------------------------------------------------------------------
@@ -83,6 +93,7 @@ help:
 	@echo "  dev          - Start Hugo dev server with development config"
 	@echo "  build        - Build site for production"
 	@echo "  publish-dry  - Dry-run publish scan (preview only)"
+	@echo "  test-publish - Dry-run + Hugo build to verify output"
 	@echo ""
 	@echo "Other Targets:"
 	@echo "  publish-scan - Scan vault for publishable notes"
