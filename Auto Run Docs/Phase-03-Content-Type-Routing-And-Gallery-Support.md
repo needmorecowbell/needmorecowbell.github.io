@@ -21,7 +21,12 @@ This phase adds intelligent content routing so notes are published to the approp
   - Integrates with `content_router.py` to use `determine_content_type()` and `get_hugo_section_path()`
   - Added 25 new tests covering path generation, routing by tags, explicit content types, and integration scenarios
 
-- [ ] Create `scripts/gallery_generator.py` module with a `extract_pictures_section()` function that parses the `## Pictures` section from Obsidian notes and extracts all media references listed there
+- [x] Create `scripts/gallery_generator.py` module with a `extract_pictures_section()` function that parses the `## Pictures` section from Obsidian notes and extracts all media references listed there
+  - Implemented `extract_pictures_section()` that finds and extracts content from `## Pictures` or `## Picture` sections (case-insensitive)
+  - Added `extract_media_from_pictures_section()` to extract all Obsidian media embeds (![[...]]) from the Pictures section
+  - Added `find_media_in_section()` helper to parse media references with support for all image/video/audio extensions
+  - Added `has_pictures_section()`, `get_pictures_section_location()`, and `remove_pictures_section()` utility functions
+  - Created 57 comprehensive tests in `test_gallery_generator.py` covering edge cases and integration scenarios
 
 - [ ] Add `generate_nanogallery_html()` function to `scripts/gallery_generator.py` that creates the nanogallery2 HTML structure matching the format used in existing project pages (with thumbnails and full-size images)
 
