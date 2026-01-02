@@ -182,3 +182,74 @@ def print_publish_complete() -> None:
 def print_dry_run_banner() -> None:
     """Print a dry run notice."""
     console.print("[warning][DRY RUN][/warning] No changes will be made.")
+
+
+# ============================================================
+# Verbose Logging Support
+# ============================================================
+
+# Global verbose flag - controlled by CLI
+_verbose_mode = False
+
+
+def set_verbose(enabled: bool) -> None:
+    """Set the global verbose mode.
+
+    Args:
+        enabled: Whether verbose logging is enabled
+    """
+    global _verbose_mode
+    _verbose_mode = enabled
+
+
+def is_verbose() -> bool:
+    """Check if verbose mode is enabled.
+
+    Returns:
+        True if verbose mode is enabled
+    """
+    return _verbose_mode
+
+
+def print_verbose(message: str) -> None:
+    """Print a verbose log message (only if verbose mode is enabled).
+
+    Args:
+        message: The message to print
+    """
+    if _verbose_mode:
+        console.print(f"[dim]  → {message}[/dim]")
+
+
+def print_verbose_step(step: str, description: str) -> None:
+    """Print a verbose step indicator with description.
+
+    Args:
+        step: Short step identifier (e.g., "PARSE", "TRANSFORM")
+        description: What this step is doing
+    """
+    if _verbose_mode:
+        console.print(f"[dim]  [{step:12}][/dim] {description}")
+
+
+def print_verbose_detail(key: str, value: str) -> None:
+    """Print a verbose detail line (key: value format).
+
+    Args:
+        key: The label
+        value: The value
+    """
+    if _verbose_mode:
+        console.print(f"[dim]    {key}: {value}[/dim]")
+
+
+def print_verbose_list(items: list, prefix: str = "•") -> None:
+    """Print a list of items in verbose mode.
+
+    Args:
+        items: List of items to print
+        prefix: Prefix character for each item
+    """
+    if _verbose_mode:
+        for item in items:
+            console.print(f"[dim]    {prefix} {item}[/dim]")

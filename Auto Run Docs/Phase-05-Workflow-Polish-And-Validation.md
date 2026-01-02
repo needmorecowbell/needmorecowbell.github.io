@@ -82,7 +82,14 @@ This phase adds validation, error handling, and quality-of-life improvements to 
   - Added 21 new tests: 9 for `handle_error()`, 3 for `handle_warning()`, 5 for integration tests
   - All 179 tests pass
 
-- [ ] Implement `--verbose` flag for detailed logging of each step in the conversion and upload process
+- [x] Implement `--verbose` flag for detailed logging of each step in the conversion and upload process
+  - Added verbose logging functions to `console.py`: `set_verbose()`, `is_verbose()`, `print_verbose()`, `print_verbose_step()`, `print_verbose_detail()`, `print_verbose_list()`
+  - Added `-v/--verbose` flag to `publish`, `convert`, and `preview` subcommands
+  - Added step-by-step logging throughout the conversion pipeline (PARSE, TRANSFORM, GALLERY, ASSOCIATIONS, SYNTAX, OUTPUT)
+  - Added detailed logging for media extraction and MinIO upload initialization
+  - Verbose output shows frontmatter keys, body length, title, date, tags, gallery/associations status, slug, and target path
+  - Added 14 new tests covering verbose functionality (all passing)
+  - All 193 tests pass (2 skipped)
 
 - [ ] Add `--quiet` flag that suppresses all output except errors
 

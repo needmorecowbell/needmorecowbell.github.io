@@ -1522,13 +1522,16 @@ Just regular content.
             mock_args.output = str(output_dir)
             mock_args.skip_upload = True
             mock_args.no_gallery = False
+            mock_args.verbose = False  # Disable verbose mode
 
             with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
                 cmd_convert(mock_args)
                 output = mock_stdout.getvalue()
 
-                # Should NOT show gallery info
-                self.assertNotIn('Gallery:', output)
+                # Should NOT show gallery info (verbose steps may mention Gallery but not in [DRY RUN] output)
+                # Check that we don't show the gallery count line
+                self.assertNotIn('Gallery generated:', output)
+                self.assertNotIn('images)', output)
 
 
 class TestCmdConvertNoGalleryFlag(unittest.TestCase):
@@ -1704,13 +1707,15 @@ Just regular content, no Pictures section.
             mock_args.output = None
             mock_args.skip_upload = True
             mock_args.no_gallery = True
+            mock_args.verbose = False  # Disable verbose mode
 
             with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
                 cmd_convert(mock_args)
                 output = mock_stdout.getvalue()
 
-                # Should not mention gallery at all (no Pictures section)
-                self.assertNotIn('Gallery:', output)
+                # Should not mention gallery info (no Pictures section)
+                self.assertNotIn('Gallery generated:', output)
+                self.assertNotIn('images)', output)
 
 
 class TestCmdConvertIntegration(unittest.TestCase):
@@ -2600,13 +2605,15 @@ Just regular content, no Associations section.
             mock_args.skip_upload = True
             mock_args.no_gallery = False
             mock_args.keep_associations = True
+            mock_args.verbose = False  # Disable verbose mode
 
             with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
                 cmd_convert(mock_args)
                 output = mock_stdout.getvalue()
 
-                # Should not mention Associations at all
-                self.assertNotIn('Associations:', output)
+                # Should not mention Associations conversion in dry run output
+                self.assertNotIn('Associations converted:', output)
+                self.assertNotIn('links)', output)
 
 
 class TestConfirmPrompt(unittest.TestCase):
@@ -4727,6 +4734,252 @@ class TestErrorHandlingIntegration(unittest.TestCase):
             self.assertIn("Error during reading note", output)
             self.assertIn("How to fix", output)
             self.assertEqual(ctx.exception.code, 1)
+
+
+class TestVerboseLogging(unittest.TestCase):
+    """Tests for --verbose flag functionality."""
+
+    def setUp(self):
+        """Reset verbose mode before each test."""
+        from console import set_verbose
+        set_verbose(False)
+
+    def tearDown(self):
+        """Reset verbose mode after each test."""
+        from console import set_verbose
+        set_verbose(False)
+
+    def test_verbose_functions_exist(self):
+        """Verbose functions are importable from console module."""
+        from console import (
+            set_verbose,
+            is_verbose,
+            print_verbose,
+            print_verbose_step,
+            print_verbose_detail,
+            print_verbose_list
+        )
+        self.assertTrue(callable(set_verbose))
+        self.assertTrue(callable(is_verbose))
+        self.assertTrue(callable(print_verbose))
+        self.assertTrue(callable(print_verbose_step))
+        self.assertTrue(callable(print_verbose_detail))
+        self.assertTrue(callable(print_verbose_list))
+
+    def test_verbose_disabled_by_default(self):
+        """Verbose mode is disabled by default."""
+        from console import is_verbose
+        self.assertFalse(is_verbose())
+
+    def test_set_verbose_enables_verbose_mode(self):
+        """set_verbose(True) enables verbose mode."""
+        from console import set_verbose, is_verbose
+        set_verbose(True)
+        self.assertTrue(is_verbose())
+
+    def test_set_verbose_disables_verbose_mode(self):
+        """set_verbose(False) disables verbose mode."""
+        from console import set_verbose, is_verbose
+        set_verbose(True)
+        self.assertTrue(is_verbose())
+        set_verbose(False)
+        self.assertFalse(is_verbose())
+
+    def test_print_verbose_silent_when_disabled(self):
+        """print_verbose outputs nothing when verbose mode is disabled."""
+        from console import set_verbose, print_verbose
+        set_verbose(False)
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            print_verbose("This should not appear")
+            self.assertEqual(mock_stdout.getvalue(), "")
+
+    def test_print_verbose_outputs_when_enabled(self):
+        """print_verbose outputs message when verbose mode is enabled."""
+        from console import set_verbose, print_verbose
+
+        set_verbose(True)
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            print_verbose("This should appear")
+            output = mock_stdout.getvalue()
+            self.assertIn("This should appear", output)
+
+    def test_print_verbose_step_silent_when_disabled(self):
+        """print_verbose_step outputs nothing when verbose mode is disabled."""
+        from console import set_verbose, print_verbose_step
+        set_verbose(False)
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            print_verbose_step("PARSE", "Parsing note")
+            self.assertEqual(mock_stdout.getvalue(), "")
+
+    def test_print_verbose_step_outputs_when_enabled(self):
+        """print_verbose_step outputs step and description when enabled."""
+        from console import set_verbose, print_verbose_step
+
+        set_verbose(True)
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            print_verbose_step("PARSE", "Parsing note")
+            output = mock_stdout.getvalue()
+            self.assertIn("PARSE", output)
+            self.assertIn("Parsing note", output)
+
+    def test_print_verbose_detail_silent_when_disabled(self):
+        """print_verbose_detail outputs nothing when verbose mode is disabled."""
+        from console import set_verbose, print_verbose_detail
+        set_verbose(False)
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            print_verbose_detail("Key", "Value")
+            self.assertEqual(mock_stdout.getvalue(), "")
+
+    def test_print_verbose_detail_outputs_when_enabled(self):
+        """print_verbose_detail outputs key-value when enabled."""
+        from console import set_verbose, print_verbose_detail
+
+        set_verbose(True)
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            print_verbose_detail("Title", "My Test Note")
+            output = mock_stdout.getvalue()
+            self.assertIn("Title", output)
+            self.assertIn("My Test Note", output)
+
+    def test_cmd_convert_sets_verbose_mode(self):
+        """cmd_convert enables verbose mode when --verbose flag is set."""
+        from console import is_verbose
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test.md"
+            note_path.write_text("""---
+title: Verbose Test
+date: 2024-06-01
+publish: true
+---
+
+Test content.
+""")
+            output_dir = Path(tmpdir) / "output"
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.output = str(output_dir)
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.environment = None
+            mock_args.verbose = True  # Enable verbose
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_convert(mock_args)
+                output = mock_stdout.getvalue()
+                # Verbose output should include step details
+                self.assertIn("PARSE", output)
+                self.assertIn("TRANSFORM", output)
+
+    def test_cmd_convert_verbose_shows_frontmatter_details(self):
+        """cmd_convert with --verbose shows frontmatter transformation details."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test.md"
+            note_path.write_text("""---
+title: Detailed Test
+date: 2024-07-15
+tags:
+  - python
+  - testing
+publish: true
+---
+
+Content here.
+""")
+            output_dir = Path(tmpdir) / "output"
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.output = str(output_dir)
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.environment = None
+            mock_args.verbose = True
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_convert(mock_args)
+                output = mock_stdout.getvalue()
+                # Should show title in verbose output
+                self.assertIn("Detailed Test", output)
+                # Should show date
+                self.assertIn("2024-07-15", output)
+
+    def test_cmd_convert_no_verbose_without_flag(self):
+        """cmd_convert without --verbose does not show verbose output."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test.md"
+            note_path.write_text("""---
+title: Non-Verbose Test
+date: 2024-06-01
+publish: true
+---
+
+Test content.
+""")
+            output_dir = Path(tmpdir) / "output"
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.output = str(output_dir)
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.environment = None
+            mock_args.verbose = False  # Verbose disabled
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_convert(mock_args)
+                output = mock_stdout.getvalue()
+                # Should NOT contain verbose step indicators
+                self.assertNotIn("[PARSE", output)
+                self.assertNotIn("[TRANSFORM", output)
+
+    def test_cmd_publish_sets_verbose_mode(self):
+        """cmd_publish enables verbose mode when --verbose flag is set."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test.md"
+            note_path.write_text("""---
+title: Publish Verbose Test
+date: 2024-06-01
+publish: true
+tags:
+  - test
+---
+
+Test content.
+""")
+            hugo_root = Path(tmpdir) / "hugo"
+            hugo_root.mkdir()
+            (hugo_root / "content" / "english" / "post").mkdir(parents=True)
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.environment = None
+            mock_args.yes = True
+            mock_args.strict = False
+            mock_args.hugo_root = str(hugo_root)
+            mock_args.vault = None
+            mock_args.verbose = True
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_publish(mock_args)
+                output = mock_stdout.getvalue()
+                # Verbose output should show conversion steps
+                self.assertIn("PARSE", output)
+                self.assertIn("TRANSFORM", output)
 
 
 if __name__ == '__main__':

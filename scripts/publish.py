@@ -115,6 +115,12 @@ from console import (
     format_highlight,
     format_dim,
     format_count,
+    set_verbose,
+    is_verbose,
+    print_verbose,
+    print_verbose_step,
+    print_verbose_detail,
+    print_verbose_list,
 )
 
 # Default Hugo content output directory (relative to blog root)
@@ -487,12 +493,21 @@ def convert_note(
         FileNotFoundError: If the note doesn't exist
     """
     # Step 1: Parse the Obsidian note
+    print_verbose_step("PARSE", f"Reading note: {note_path.name}")
     frontmatter, body = parse_obsidian_note(note_path)
+    print_verbose_detail("Frontmatter keys", ", ".join(frontmatter.keys()) if frontmatter else "none")
+    print_verbose_detail("Body length", f"{len(body)} chars")
 
     # Step 2: Transform frontmatter to Hugo format
+    print_verbose_step("TRANSFORM", "Converting frontmatter to Hugo format")
     hugo_frontmatter = transform_to_hugo(frontmatter, body)
+    print_verbose_detail("Title", hugo_frontmatter.get('title', 'N/A'))
+    print_verbose_detail("Date", str(hugo_frontmatter.get('date', 'N/A')))
+    if hugo_frontmatter.get('tags'):
+        print_verbose_detail("Tags", ", ".join(hugo_frontmatter.get('tags', [])))
 
     # Step 3: Detect Pictures section and prepare gallery generation
+    print_verbose_step("GALLERY", "Checking for Pictures section")
     gallery_html = None
     if generate_gallery and has_pictures_section(body):
         # Generate a project slug from the title for the CDN path
@@ -501,6 +516,9 @@ def convert_note(
 
         # Determine content type to decide appropriate CDN path
         content_type = determine_content_type(frontmatter)
+
+        print_verbose_detail("Gallery", "Found Pictures section, generating gallery")
+        print_verbose_detail("Project slug", project_slug)
 
         # Generate the gallery HTML using the original body (before syntax conversion)
         gallery_html = generate_gallery_from_obsidian(
@@ -511,47 +529,67 @@ def convert_note(
 
         # Remove the Pictures section from the body before further processing
         body = remove_pictures_section(body)
+        print_verbose_detail("Gallery HTML", f"{len(gallery_html)} chars generated")
+    else:
+        print_verbose_detail("Gallery", "No Pictures section or gallery disabled")
 
     # Step 4: Handle Associations section
+    print_verbose_step("ASSOCIATIONS", "Checking for Associations section")
     if has_associations_section(body):
         if keep_associations:
             # Convert wikilinks to Hugo links and rename header to "## Related"
+            print_verbose_detail("Associations", "Converting to Hugo links (Related section)")
             body = convert_associations_to_hugo_links(body)
         else:
             # Remove the entire Associations section
+            print_verbose_detail("Associations", "Removing section")
             body = remove_associations_section(body)
+    else:
+        print_verbose_detail("Associations", "No Associations section found")
 
     # Step 5: Convert Obsidian syntax to Hugo format
     # Order matters: wikilinks first, then images, then media
     # If environment is specified, get the S3CDN base URL for direct URL output
+    print_verbose_step("SYNTAX", "Converting Obsidian syntax to Hugo format")
     s3cdn_base_url = None
     if environment:
         try:
             s3cdn_base_url = get_s3cdn_base_url(environment)
+            print_verbose_detail("S3CDN URL", s3cdn_base_url)
         except HugoConfigError:
             # Fall back to shortcode if config is not available
+            print_verbose_detail("S3CDN URL", "Config not found, using shortcode")
             pass
 
+    print_verbose("Converting wikilinks...")
     converted_body = convert_wikilinks(body)
+    print_verbose("Converting embedded images...")
     converted_body = convert_embedded_images(
         converted_body,
         media_url_map=media_url_map,
         s3cdn_base_url=s3cdn_base_url
     )
+    print_verbose("Converting embedded media (video/audio)...")
     converted_body = convert_embedded_media(
         converted_body,
         media_url_map=media_url_map,
         s3cdn_base_url=s3cdn_base_url
     )
+    if media_url_map:
+        print_verbose_detail("Media URLs mapped", str(len(media_url_map)))
 
     # Step 6: Append gallery HTML if generated
     if gallery_html:
+        print_verbose_step("FINALIZE", "Appending gallery HTML to content")
         # Add gallery at the end of the content with some spacing
         converted_body = converted_body.rstrip() + '\n\n' + gallery_html + '\n'
 
     # Step 7: Generate the target output path
+    print_verbose_step("OUTPUT", "Generating target path")
     slug = generate_slug(hugo_frontmatter.get('title', ''), hugo_frontmatter.get('date'))
     target_path = Path(output_dir) / f"{slug}.md"
+    print_verbose_detail("Slug", slug)
+    print_verbose_detail("Target path", str(target_path))
 
     return hugo_frontmatter, converted_body, target_path
 
@@ -569,9 +607,11 @@ def extract_and_resolve_media(note_path: Path) -> tuple:
           for files that exist
         - missing_count: Number of referenced files that couldn't be found
     """
+    print_verbose_step("MEDIA", f"Extracting media from: {note_path.name}")
     # Read the note content to extract media references
     content = note_path.read_text()
     media_refs = find_media_references(content)
+    print_verbose_detail("References found", str(len(media_refs)))
 
     media_items = []
     missing_count = 0
@@ -580,8 +620,13 @@ def extract_and_resolve_media(note_path: Path) -> tuple:
         resolved_path = resolve_media_path(ref)
         if resolved_path:
             media_items.append((ref, resolved_path))
+            print_verbose(f"Resolved: {ref}")
         else:
             missing_count += 1
+            print_verbose(f"Missing: {ref}")
+
+    print_verbose_detail("Resolved", str(len(media_items)))
+    print_verbose_detail("Missing", str(missing_count))
 
     return media_items, missing_count
 
@@ -629,8 +674,10 @@ def upload_media_to_minio(media_items: list, show_progress: bool = True) -> dict
             pass  # Fall back to simple output
 
     # Initialize MinIO client
+    print_verbose_step("UPLOAD", "Initializing MinIO client")
     client = get_minio_client()
     bucket_name = get_bucket_name()
+    print_verbose_detail("Bucket", bucket_name)
 
     # Ensure bucket exists
     if not ensure_bucket_exists(client, bucket_name):
@@ -641,6 +688,8 @@ def upload_media_to_minio(media_items: list, show_progress: bool = True) -> dict
     endpoint = os.environ.get(MINIO_ENDPOINT_VAR)
     secure_str = os.environ.get(MINIO_SECURE_VAR, "true").lower()
     secure = secure_str in ("true", "1", "yes")
+    print_verbose_detail("Endpoint", endpoint or "not set")
+    print_verbose_detail("Secure", str(secure))
 
     # Check which files already exist and skip them
     items_to_upload = []
@@ -881,6 +930,10 @@ def cmd_convert(args):
     # Get output directory from args or use default
     output_dir = args.output if hasattr(args, 'output') and args.output else DEFAULT_OUTPUT_DIR
 
+    # Get verbose flag and enable verbose logging if set
+    verbose = getattr(args, 'verbose', False)
+    set_verbose(verbose)
+
     # Get skip_upload flag
     skip_upload = getattr(args, 'skip_upload', False)
 
@@ -1044,6 +1097,9 @@ def cmd_publish(args):
     yes_flag = getattr(args, 'yes', False)
     strict_mode = getattr(args, 'strict', False)
     hugo_root = Path(args.hugo_root) if hasattr(args, 'hugo_root') and args.hugo_root else DEFAULT_HUGO_ROOT
+    # Get verbose flag and enable verbose logging if set
+    verbose = getattr(args, 'verbose', False)
+    set_verbose(verbose)
     # Get environment flag (ensure we get None if not set, not a MagicMock)
     environment = getattr(args, 'environment', None)
     if environment is not None and not isinstance(environment, str):
@@ -1345,6 +1401,9 @@ def cmd_publish_all(args):
     yes_flag = getattr(args, 'yes', False)
     hugo_root = Path(args.hugo_root) if hasattr(args, 'hugo_root') and args.hugo_root else DEFAULT_HUGO_ROOT
     vault_path = Path(args.vault) if hasattr(args, 'vault') and args.vault else None
+    # Get verbose flag and enable verbose logging if set
+    verbose = getattr(args, 'verbose', False)
+    set_verbose(verbose)
     # Get environment flag (ensure we get None if not set, not a MagicMock)
     environment = getattr(args, 'environment', None)
     if environment is not None and not isinstance(environment, str):
@@ -1541,6 +1600,9 @@ def cmd_preview(args):
     hugo_root = Path(args.hugo_root) if hasattr(args, 'hugo_root') and args.hugo_root else DEFAULT_HUGO_ROOT
     port = getattr(args, 'port', 1313)
     no_browser = getattr(args, 'no_browser', False)
+    # Get verbose flag and enable verbose logging if set
+    verbose = getattr(args, 'verbose', False)
+    set_verbose(verbose)
     # Get environment flag
     environment = getattr(args, 'environment', None)
     if environment is not None and not isinstance(environment, str):
@@ -1826,6 +1888,11 @@ Examples:
         action="store_true",
         help="Fail if any validation warnings are present (default: only fail on errors)"
     )
+    publish_parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Show detailed logging of each step in the conversion and upload process"
+    )
     publish_parser.set_defaults(func=cmd_publish_dispatch)
 
     # scan subcommand
@@ -1921,6 +1988,11 @@ Examples:
         "-e", "--environment",
         help="Hugo environment (development/production). Uses environment-specific S3CDN URLs from Hugo config"
     )
+    convert_parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Show detailed logging of each step in the conversion and upload process"
+    )
     convert_parser.set_defaults(func=cmd_convert)
 
     # preview subcommand
@@ -1973,6 +2045,11 @@ Examples:
         "-e", "--environment",
         default="development",
         help="Hugo environment for S3CDN URLs (default: development)"
+    )
+    preview_parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Show detailed logging of each step in the conversion and upload process"
     )
     preview_parser.set_defaults(func=cmd_preview)
 
