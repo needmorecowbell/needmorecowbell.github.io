@@ -49,8 +49,9 @@ _dotenv_loaded = load_dotenv()
 
 from obsidian_parser import find_publishable_notes, parse_obsidian_note
 from frontmatter_transformer import generate_slug, transform_to_hugo
-from syntax_converter import convert_wikilinks, convert_embedded_images, convert_embedded_media
+from syntax_converter import convert_wikilinks, convert_embedded_images, convert_embedded_media, get_s3cdn_base_url
 from hugo_writer import write_hugo_post, preview_hugo_post
+from config_manager import get_hugo_config, list_environments, HugoConfigError
 from media_extractor import find_media_references, resolve_media_path
 from gallery_generator import (
     has_pictures_section,
@@ -267,7 +268,8 @@ def convert_note(
     output_dir: str = DEFAULT_OUTPUT_DIR,
     media_url_map: dict = None,
     generate_gallery: bool = True,
-    keep_associations: bool = False
+    keep_associations: bool = False,
+    environment: str = None
 ) -> tuple:
     """
     Run the full conversion pipeline on an Obsidian note.
@@ -295,6 +297,10 @@ def convert_note(
                           wikilinks in the section are converted to Hugo links
                           and the section header is renamed to "## Related".
                           If False (default), the entire section is removed.
+        environment: Hugo environment to use for S3CDN URL resolution
+                    (e.g., 'development', 'production'). If None, uses the
+                    s3cdn shortcode; if specified, embeds the actual URL
+                    from Hugo config.
 
     Returns:
         Tuple of (hugo_frontmatter, converted_body, target_path)
@@ -339,9 +345,26 @@ def convert_note(
 
     # Step 5: Convert Obsidian syntax to Hugo format
     # Order matters: wikilinks first, then images, then media
+    # If environment is specified, get the S3CDN base URL for direct URL output
+    s3cdn_base_url = None
+    if environment:
+        try:
+            s3cdn_base_url = get_s3cdn_base_url(environment)
+        except HugoConfigError:
+            # Fall back to shortcode if config is not available
+            pass
+
     converted_body = convert_wikilinks(body)
-    converted_body = convert_embedded_images(converted_body, media_url_map=media_url_map)
-    converted_body = convert_embedded_media(converted_body, media_url_map=media_url_map)
+    converted_body = convert_embedded_images(
+        converted_body,
+        media_url_map=media_url_map,
+        s3cdn_base_url=s3cdn_base_url
+    )
+    converted_body = convert_embedded_media(
+        converted_body,
+        media_url_map=media_url_map,
+        s3cdn_base_url=s3cdn_base_url
+    )
 
     # Step 6: Append gallery HTML if generated
     if gallery_html:
@@ -589,6 +612,11 @@ def cmd_convert(args):
     # Get keep_associations flag
     keep_associations = getattr(args, 'keep_associations', False)
 
+    # Get environment flag (ensure we get None if not set, not a MagicMock)
+    environment = getattr(args, 'environment', None)
+    if environment is not None and not isinstance(environment, str):
+        environment = None
+
     # Step 1: Extract and resolve media references
     media_items, missing_count = extract_and_resolve_media(note_path)
 
@@ -614,7 +642,8 @@ def cmd_convert(args):
         hugo_frontmatter, converted_body, target_path = convert_note(
             note_path, output_dir, media_url_map=media_url_map,
             generate_gallery=generate_gallery,
-            keep_associations=keep_associations
+            keep_associations=keep_associations,
+            environment=environment
         )
     except Exception as e:
         print(f"Error converting note: {e}", file=sys.stderr)
@@ -630,6 +659,8 @@ def cmd_convert(args):
     if args.dry_run:
         print(f"[DRY RUN] Would convert: {note_path}")
         print(f"[DRY RUN] Target path: {target_path}")
+        if environment:
+            print(f"[DRY RUN] Environment: {environment}")
         if media_items:
             print(f"[DRY RUN] Media files found: {len(media_items)}")
             if missing_count > 0:
@@ -721,6 +752,10 @@ def cmd_publish(args):
     keep_associations = getattr(args, 'keep_associations', False)
     yes_flag = getattr(args, 'yes', False)
     hugo_root = Path(args.hugo_root) if hasattr(args, 'hugo_root') and args.hugo_root else DEFAULT_HUGO_ROOT
+    # Get environment flag (ensure we get None if not set, not a MagicMock)
+    environment = getattr(args, 'environment', None)
+    if environment is not None and not isinstance(environment, str):
+        environment = None
 
     # Step 1: Parse the note and validate it's publishable
     try:
@@ -770,6 +805,8 @@ def cmd_publish(args):
     print(f"Date:         {hugo_frontmatter.get('date', 'N/A')}")
     print(f"Content Type: {content_type}")
     print(f"Target:       {target_path}")
+    if environment:
+        print(f"Environment:  {environment}")
     print()
 
     if media_items:
@@ -809,7 +846,8 @@ def cmd_publish(args):
                 DEFAULT_OUTPUT_DIR,  # Use default for preview
                 media_url_map=None,  # No URLs in dry-run
                 generate_gallery=generate_gallery,
-                keep_associations=keep_associations
+                keep_associations=keep_associations,
+                environment=environment
             )
         except Exception as e:
             print(f"Error during conversion preview: {e}", file=sys.stderr)
@@ -865,7 +903,8 @@ def cmd_publish(args):
             str(hugo_root / section_path),  # Full path for routing
             media_url_map=media_url_map,
             generate_gallery=generate_gallery,
-            keep_associations=keep_associations
+            keep_associations=keep_associations,
+            environment=environment
         )
     except Exception as e:
         print(f"Error converting note: {e}", file=sys.stderr)
@@ -956,6 +995,10 @@ def cmd_publish_all(args):
     yes_flag = getattr(args, 'yes', False)
     hugo_root = Path(args.hugo_root) if hasattr(args, 'hugo_root') and args.hugo_root else DEFAULT_HUGO_ROOT
     vault_path = Path(args.vault) if hasattr(args, 'vault') and args.vault else None
+    # Get environment flag (ensure we get None if not set, not a MagicMock)
+    environment = getattr(args, 'environment', None)
+    if environment is not None and not isinstance(environment, str):
+        environment = None
 
     # Step 1: Find all publishable notes
     try:
@@ -986,6 +1029,8 @@ def cmd_publish_all(args):
     print("=" * 60)
     print(f"Vault:        {vault_path or Path.home() / 'Notes'}")
     print(f"Hugo root:    {hugo_root}")
+    if environment:
+        print(f"Environment:  {environment}")
     print()
     print(f"Total publishable notes:  {len(all_notes)}")
     print(f"Already published:        {len(all_notes) - len(unpublished_notes)}")
@@ -1073,7 +1118,8 @@ def cmd_publish_all(args):
                 str(hugo_root / section_path),
                 media_url_map=media_url_map,
                 generate_gallery=generate_gallery,
-                keep_associations=keep_associations
+                keep_associations=keep_associations,
+                environment=environment
             )
 
             # Write the Hugo post
@@ -1133,6 +1179,9 @@ Examples:
     python publish.py publish ~/Notes/Blog/my-post.md -y
         Publish without confirmation prompts
 
+    python publish.py publish ~/Notes/Blog/my-post.md -e development
+        Publish using development environment S3CDN URLs
+
     python publish.py publish --all
         Publish all unpublished notes with publish: true
 
@@ -1142,6 +1191,9 @@ Examples:
     python publish.py publish --all --vault ~/MyVault
         Publish all from a specific vault
 
+    python publish.py publish --all -e production
+        Publish all notes using production environment config
+
     python publish.py scan
         Scan the Obsidian vault for notes with publish: true
 
@@ -1150,6 +1202,9 @@ Examples:
 
     python publish.py convert ~/Notes/Blog/my-post.md
         Convert a specific note to Hugo format (low-level)
+
+    python publish.py convert ~/Notes/Blog/my-post.md -e development
+        Convert using development environment S3CDN URLs
         """
     )
 
@@ -1208,6 +1263,10 @@ Examples:
         "--keep-associations",
         action="store_true",
         help="Convert Associations section to Hugo links (default: remove)"
+    )
+    publish_parser.add_argument(
+        "-e", "--environment",
+        help="Hugo environment (development/production). Uses environment-specific S3CDN URLs from Hugo config"
     )
     publish_parser.set_defaults(func=cmd_publish_dispatch)
 
@@ -1280,6 +1339,10 @@ Examples:
         "--keep-associations",
         action="store_true",
         help="Convert Associations section to Hugo links (default: remove the section)"
+    )
+    convert_parser.add_argument(
+        "-e", "--environment",
+        help="Hugo environment (development/production). Uses environment-specific S3CDN URLs from Hugo config"
     )
     convert_parser.set_defaults(func=cmd_convert)
 

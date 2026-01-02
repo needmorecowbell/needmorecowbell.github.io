@@ -3456,5 +3456,184 @@ Content.
             self.assertIn('Vault not found', mock_stderr.getvalue())
 
 
+class TestEnvironmentFlag(unittest.TestCase):
+    """Tests for --environment flag functionality."""
+
+    def test_convert_note_with_environment_uses_s3cdn_url(self):
+        """convert_note with environment uses S3CDN URL from config."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test-note.md"
+            note_path.write_text("""---
+title: Environment Test
+date: 2024-12-01
+---
+
+Here's an image: ![[2024/photo.jpg]]
+""")
+
+            # Mock the get_s3cdn_base_url function
+            with patch('publish.get_s3cdn_base_url') as mock_s3cdn:
+                mock_s3cdn.return_value = 'https://s3cdn.example.com/assets'
+
+                hugo_fm, converted_body, _ = convert_note(
+                    note_path,
+                    DEFAULT_OUTPUT_DIR,
+                    environment='production'
+                )
+
+                # Verify the S3CDN function was called with the environment
+                mock_s3cdn.assert_called_once_with('production')
+
+                # Verify the URL was embedded in the output
+                self.assertIn('https://s3cdn.example.com/assets', converted_body)
+
+    def test_convert_note_without_environment_uses_shortcode(self):
+        """convert_note without environment uses s3cdn shortcode."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test-note.md"
+            note_path.write_text("""---
+title: No Environment Test
+date: 2024-12-01
+---
+
+Here's an image: ![[2024/photo.jpg]]
+""")
+
+            hugo_fm, converted_body, _ = convert_note(
+                note_path,
+                DEFAULT_OUTPUT_DIR,
+                environment=None
+            )
+
+            # Without environment, should use the shortcode
+            self.assertIn('{{<s3cdn>}}', converted_body)
+
+    def test_cmd_convert_with_environment_flag(self):
+        """convert command with --environment flag passes to convert_note."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "env-test.md"
+            note_path.write_text("""---
+title: CLI Environment Test
+date: 2024-12-01
+---
+
+Content here.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.output = None
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.environment = 'development'
+
+            with patch('publish.get_s3cdn_base_url') as mock_s3cdn:
+                mock_s3cdn.return_value = 'http://localhost:9000/blog-assets'
+
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    cmd_convert(mock_args)
+                    output = mock_stdout.getvalue()
+
+                    # Verify environment is shown in dry-run output
+                    self.assertIn('[DRY RUN] Environment: development', output)
+
+    def test_cmd_publish_dry_run_shows_environment(self):
+        """publish --dry-run shows environment in summary."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "publish-env-test.md"
+            note_path.write_text("""---
+title: Publish Environment Test
+date: 2024-12-01
+publish: true
+---
+
+Content here.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.yes = False
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.environment = 'production'
+
+            with patch('publish.get_s3cdn_base_url') as mock_s3cdn:
+                mock_s3cdn.return_value = 'https://s3cdn.example.com/assets'
+
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    cmd_publish(mock_args)
+                    output = mock_stdout.getvalue()
+
+                    # Verify environment is shown in summary
+                    self.assertIn('Environment:  production', output)
+
+    def test_convert_note_environment_graceful_fallback(self):
+        """convert_note with environment gracefully falls back on config error."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test-note.md"
+            note_path.write_text("""---
+title: Fallback Test
+date: 2024-12-01
+---
+
+Here's an image: ![[2024/photo.jpg]]
+""")
+
+            # Mock config error
+            from config_manager import HugoConfigError
+            with patch('publish.get_s3cdn_base_url') as mock_s3cdn:
+                mock_s3cdn.side_effect = HugoConfigError("S3CDN not configured")
+
+                hugo_fm, converted_body, _ = convert_note(
+                    note_path,
+                    DEFAULT_OUTPUT_DIR,
+                    environment='nonexistent'
+                )
+
+                # Should fall back to shortcode when config fails
+                self.assertIn('{{<s3cdn>}}', converted_body)
+
+    def test_cmd_publish_all_with_environment(self):
+        """publish --all with --environment passes to convert_note."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a publishable note
+            note_path = Path(tmpdir) / "batch-env-test.md"
+            note_path.write_text("""---
+title: Batch Environment Test
+date: 2024-12-01
+publish: true
+---
+
+Content here.
+""")
+
+            mock_args = MagicMock()
+            mock_args.publish_all = True
+            mock_args.vault = tmpdir
+            mock_args.dry_run = True
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.environment = 'development'
+
+            with patch('publish.get_s3cdn_base_url') as mock_s3cdn:
+                mock_s3cdn.return_value = 'http://localhost:9000/blog-assets'
+
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    from publish import cmd_publish_all
+                    cmd_publish_all(mock_args)
+                    output = mock_stdout.getvalue()
+
+                    # Verify environment is shown in batch summary
+                    self.assertIn('Environment:  development', output)
+
+
 if __name__ == '__main__':
     unittest.main()
