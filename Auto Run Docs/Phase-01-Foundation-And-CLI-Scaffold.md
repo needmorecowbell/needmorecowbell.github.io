@@ -65,7 +65,13 @@ This phase establishes the development environment and builds a working CLI tool
   - Added 18 new unit tests (12 for extract_title_from_body, 6 for integration with transform_to_hugo)
   - Total tests in scripts/ now 179 (previously 161)
 
-- [ ] Add logic to generate a URL-friendly slug from the title for use as the output filename
+- [x] Add logic to generate a URL-friendly slug from the title for use as the output filename
+  - Added `generate_slug(title, date_str)` function to `frontmatter_transformer.py` on 2026-01-02
+  - Generates URL-friendly slugs matching existing blog post naming convention (e.g., `2024-01-15-my-blog-post`)
+  - Handles unicode normalization (accented characters like é → e), special character removal, and proper hyphenation
+  - Optional date parameter prepends `YYYY-MM-DD-` prefix when provided
+  - Returns 'untitled' for empty/invalid titles
+  - Added 23 comprehensive unit tests (total tests in scripts/ now 202, previously 179)
 
 - [ ] Create `scripts/hugo_writer.py` module with a `write_hugo_post()` function that takes transformed frontmatter and converted body content, then writes a properly formatted Hugo markdown file to a specified output path
 

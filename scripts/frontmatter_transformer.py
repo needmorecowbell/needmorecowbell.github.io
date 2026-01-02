@@ -7,8 +7,57 @@ ensuring all required fields are present and properly formatted.
 """
 
 import re
+import unicodedata
 from datetime import datetime, date
 from typing import Dict, Any, Optional
+
+
+def generate_slug(title: str, date_str: Optional[str] = None) -> str:
+    """
+    Generate a URL-friendly slug from a title for use as an output filename.
+
+    The slug is formatted as 'YYYY-MM-DD-title-slug' when a date is provided,
+    or just 'title-slug' when no date is given.
+
+    Args:
+        title: The title to convert to a slug
+        date_str: Optional date string in YYYY-MM-DD format to prepend
+
+    Returns:
+        A URL-friendly slug suitable for use as a filename (without extension)
+    """
+    if not title:
+        slug = 'untitled'
+    else:
+        # Normalize unicode characters (convert accented chars to ASCII equivalents)
+        slug = unicodedata.normalize('NFKD', title)
+        slug = slug.encode('ascii', 'ignore').decode('ascii')
+
+        # Convert to lowercase
+        slug = slug.lower()
+
+        # Replace common separators with hyphens
+        slug = slug.replace(' ', '-')
+        slug = slug.replace('_', '-')
+
+        # Remove any characters that aren't alphanumeric or hyphens
+        slug = re.sub(r'[^a-z0-9\-]', '', slug)
+
+        # Replace multiple consecutive hyphens with a single hyphen
+        slug = re.sub(r'-+', '-', slug)
+
+        # Strip leading/trailing hyphens
+        slug = slug.strip('-')
+
+        # Handle edge case of empty slug after processing
+        if not slug:
+            slug = 'untitled'
+
+    # Prepend date if provided
+    if date_str:
+        return f"{date_str}-{slug}"
+
+    return slug
 
 
 def extract_title_from_body(body: str) -> Optional[str]:

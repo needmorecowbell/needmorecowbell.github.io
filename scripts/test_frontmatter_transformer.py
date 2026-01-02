@@ -10,10 +10,132 @@ from datetime import datetime, date
 from frontmatter_transformer import (
     transform_to_hugo,
     extract_title_from_body,
+    generate_slug,
     _normalize_date,
     _normalize_draft,
     _normalize_tags
 )
+
+
+class TestGenerateSlug(unittest.TestCase):
+    """Tests for the generate_slug function."""
+
+    def test_simple_title(self):
+        """Test generating a slug from a simple title."""
+        result = generate_slug('My Blog Post')
+        self.assertEqual(result, 'my-blog-post')
+
+    def test_title_with_date(self):
+        """Test generating a slug with date prepended."""
+        result = generate_slug('My Blog Post', '2024-01-15')
+        self.assertEqual(result, '2024-01-15-my-blog-post')
+
+    def test_title_with_special_characters(self):
+        """Test that special characters are removed."""
+        result = generate_slug("My Post: A Journey (2024) - Part 1!")
+        self.assertEqual(result, 'my-post-a-journey-2024-part-1')
+
+    def test_title_with_underscores(self):
+        """Test that underscores are converted to hyphens."""
+        result = generate_slug('my_post_title')
+        self.assertEqual(result, 'my-post-title')
+
+    def test_title_with_multiple_spaces(self):
+        """Test that multiple spaces become single hyphens."""
+        result = generate_slug('My    Big     Title')
+        self.assertEqual(result, 'my-big-title')
+
+    def test_title_with_unicode(self):
+        """Test that unicode characters are normalized to ASCII."""
+        result = generate_slug('Café Résumé Naïve')
+        self.assertEqual(result, 'cafe-resume-naive')
+
+    def test_title_with_accents(self):
+        """Test various accented characters."""
+        result = generate_slug('über élève señor')
+        self.assertEqual(result, 'uber-eleve-senor')
+
+    def test_title_with_numbers(self):
+        """Test that numbers are preserved."""
+        result = generate_slug('Top 10 Tips for 2024')
+        self.assertEqual(result, 'top-10-tips-for-2024')
+
+    def test_empty_title(self):
+        """Test that empty title returns 'untitled'."""
+        result = generate_slug('')
+        self.assertEqual(result, 'untitled')
+
+    def test_none_title(self):
+        """Test that None title returns 'untitled'."""
+        result = generate_slug(None)
+        self.assertEqual(result, 'untitled')
+
+    def test_whitespace_only_title(self):
+        """Test that whitespace-only title returns 'untitled'."""
+        result = generate_slug('   ')
+        self.assertEqual(result, 'untitled')
+
+    def test_special_chars_only(self):
+        """Test title with only special characters returns 'untitled'."""
+        result = generate_slug('!@#$%^&*()')
+        self.assertEqual(result, 'untitled')
+
+    def test_leading_trailing_special_chars(self):
+        """Test that leading/trailing special chars are stripped."""
+        result = generate_slug('---My Title---')
+        self.assertEqual(result, 'my-title')
+
+    def test_apostrophes_removed(self):
+        """Test that apostrophes are removed cleanly."""
+        result = generate_slug("Let's Learn About YARA")
+        self.assertEqual(result, 'lets-learn-about-yara')
+
+    def test_colons_and_commas(self):
+        """Test colons and commas are handled."""
+        result = generate_slug('Part 1: Getting Started, An Introduction')
+        self.assertEqual(result, 'part-1-getting-started-an-introduction')
+
+    def test_question_marks(self):
+        """Test question marks are removed."""
+        result = generate_slug('What Is Python?')
+        self.assertEqual(result, 'what-is-python')
+
+    def test_mixed_case(self):
+        """Test that mixed case is converted to lowercase."""
+        result = generate_slug('UPPERCASE and MixedCase')
+        self.assertEqual(result, 'uppercase-and-mixedcase')
+
+    def test_date_with_empty_title(self):
+        """Test date with empty title."""
+        result = generate_slug('', '2024-01-15')
+        self.assertEqual(result, '2024-01-15-untitled')
+
+    def test_no_date(self):
+        """Test slug without date (date_str is None)."""
+        result = generate_slug('Simple Title', None)
+        self.assertEqual(result, 'simple-title')
+
+    def test_existing_post_style(self):
+        """Test replicating the style of existing posts in the blog."""
+        # Based on: 2018-11-13-coding-livestream-1-find-every-arby-s-in-america.md
+        result = generate_slug("Coding Livestream 1: Find Every Arby's in America", '2018-11-13')
+        self.assertEqual(result, '2018-11-13-coding-livestream-1-find-every-arbys-in-america')
+
+    def test_linux_tips_style(self):
+        """Test another existing post style."""
+        # Based on: 2017-08-01-linux-tips-easy-aliases.md
+        result = generate_slug('Linux Tips: Easy Aliases', '2017-08-01')
+        self.assertEqual(result, '2017-08-01-linux-tips-easy-aliases')
+
+    def test_ampersand_handling(self):
+        """Test that ampersands are removed."""
+        result = generate_slug('Tips & Tricks')
+        self.assertEqual(result, 'tips-tricks')
+
+    def test_parentheses_handling(self):
+        """Test that parentheses are removed."""
+        result = generate_slug('My Guide (Updated)')
+        self.assertEqual(result, 'my-guide-updated')
 
 
 class TestTransformToHugo(unittest.TestCase):
