@@ -14,6 +14,44 @@ from typing import Dict, Any, Optional, Literal
 # Valid content types for routing to Hugo sections
 VALID_CONTENT_TYPES = ('post', 'project', 'photography')
 
+# Optional fields that are specific to each content type
+# These are fields that are commonly used in each section but may not apply to others
+CONTENT_TYPE_FIELDS = {
+    'post': [
+        'author', 'description', 'categories', 'series',
+        'layout', 'subtitle', 'headerimg', 'aliases',
+        'weight', 'featured', 'toc'
+    ],
+    'project': [
+        'author', 'description', 'aliases', 'weight', 'featured'
+    ],
+    'photography': [
+        'author', 'description', 'aliases', 'weight', 'location'
+    ],
+}
+
+# Common fields that apply to all content types
+COMMON_OPTIONAL_FIELDS = [
+    'author', 'description', 'categories', 'series',
+    'layout', 'subtitle', 'headerimg', 'aliases',
+    'weight', 'featured', 'toc', 'location'
+]
+
+
+def get_optional_fields_for_content_type(content_type: Optional[str] = None) -> list:
+    """
+    Get the list of optional frontmatter fields for a given content type.
+
+    Args:
+        content_type: The content type ('post', 'project', or 'photography')
+
+    Returns:
+        List of optional field names appropriate for the content type
+    """
+    if content_type and content_type in CONTENT_TYPE_FIELDS:
+        return CONTENT_TYPE_FIELDS[content_type].copy()
+    return COMMON_OPTIONAL_FIELDS.copy()
+
 
 def validate_content_type(content_type: Any) -> Optional[str]:
     """
@@ -117,13 +155,17 @@ def extract_title_from_body(body: str) -> Optional[str]:
     return None
 
 
-def transform_to_hugo(frontmatter: Dict[str, Any], body: Optional[str] = None) -> Dict[str, Any]:
+def transform_to_hugo(
+    frontmatter: Dict[str, Any],
+    body: Optional[str] = None,
+    content_type: Optional[str] = None
+) -> Dict[str, Any]:
     """
     Convert Obsidian frontmatter to Hugo-compatible format.
 
     Ensures required Hugo fields are present:
     - title: extracted from frontmatter, or from first H1 heading in body if not present
-    - date: normalized to ISO format string (YYYY-MM-DD)
+    - date: normalized to ISO format string (YYYY-MM-DD), or with timezone for posts
     - draft: boolean, defaults to False
     - tags: list of strings, defaults to empty list
 
@@ -136,11 +178,17 @@ def transform_to_hugo(frontmatter: Dict[str, Any], body: Optional[str] = None) -
     Args:
         frontmatter: Dict of parsed Obsidian frontmatter
         body: Optional markdown body content for extracting title from H1 heading
+        content_type: Optional content type to use for formatting (overrides frontmatter)
 
     Returns:
         Dict with Hugo-compatible frontmatter fields
     """
     hugo_frontmatter = {}
+
+    # Determine content type - parameter overrides frontmatter
+    effective_content_type = content_type
+    if not effective_content_type:
+        effective_content_type = validate_content_type(frontmatter.get('content_type'))
 
     # Title: required field - try frontmatter first, then body H1 heading
     title = frontmatter.get('title', '')
@@ -150,8 +198,11 @@ def transform_to_hugo(frontmatter: Dict[str, Any], body: Optional[str] = None) -
             title = extracted_title
     hugo_frontmatter['title'] = title
 
-    # Date: required field, normalize to string
-    hugo_frontmatter['date'] = _normalize_date(frontmatter.get('date'))
+    # Date: required field, normalize based on content type
+    hugo_frontmatter['date'] = _normalize_date(
+        frontmatter.get('date'),
+        content_type=effective_content_type
+    )
 
     # Draft: required field, defaults to False
     hugo_frontmatter['draft'] = _normalize_draft(frontmatter.get('draft'))
@@ -161,16 +212,15 @@ def transform_to_hugo(frontmatter: Dict[str, Any], body: Optional[str] = None) -
 
     # Content type: optional field for routing to Hugo sections
     # Only include if explicitly set and valid
-    content_type = validate_content_type(frontmatter.get('content_type'))
-    if content_type:
-        hugo_frontmatter['content_type'] = content_type
+    if effective_content_type:
+        hugo_frontmatter['content_type'] = effective_content_type
 
-    # Copy over other common Hugo fields if present
-    optional_fields = [
-        'author', 'description', 'categories', 'series',
-        'layout', 'subtitle', 'headerimg', 'aliases',
-        'weight', 'featured', 'toc'
-    ]
+    # Copy over optional Hugo fields based on content type
+    # Use content-type-specific fields if available, otherwise use common fields
+    if effective_content_type and effective_content_type in CONTENT_TYPE_FIELDS:
+        optional_fields = CONTENT_TYPE_FIELDS[effective_content_type]
+    else:
+        optional_fields = COMMON_OPTIONAL_FIELDS
 
     for field in optional_fields:
         if field in frontmatter:
@@ -182,9 +232,9 @@ def transform_to_hugo(frontmatter: Dict[str, Any], body: Optional[str] = None) -
     return hugo_frontmatter
 
 
-def _normalize_date(date_value: Any) -> str:
+def _normalize_date(date_value: Any, content_type: Optional[str] = None) -> str:
     """
-    Normalize a date value to ISO format string (YYYY-MM-DD).
+    Normalize a date value to ISO format string.
 
     Handles:
     - datetime objects
@@ -192,16 +242,24 @@ def _normalize_date(date_value: Any) -> str:
     - String dates in various formats
     - None/missing dates (defaults to today)
 
+    Date formatting varies by content type:
+    - 'post': Preserves timezone info if present (e.g., 2024-01-15T10:30:00-05:00)
+    - 'project' and 'photography': Uses simple YYYY-MM-DD format
+
     Args:
         date_value: The date value to normalize
+        content_type: Optional content type for content-specific formatting
 
     Returns:
-        Date string in YYYY-MM-DD format
+        Date string in appropriate format for the content type
     """
     if date_value is None:
         return datetime.now().strftime('%Y-%m-%d')
 
     if isinstance(date_value, datetime):
+        # For posts, preserve timezone info if present
+        if content_type == 'post' and date_value.tzinfo is not None:
+            return date_value.isoformat()
         return date_value.strftime('%Y-%m-%d')
 
     if isinstance(date_value, date):
@@ -211,6 +269,17 @@ def _normalize_date(date_value: Any) -> str:
         date_str = date_value.strip().strip('"').strip("'")
         if not date_str:
             return datetime.now().strftime('%Y-%m-%d')
+
+        # For posts, preserve ISO 8601 strings with timezone info
+        if content_type == 'post':
+            # Check if it's already a valid ISO 8601 string with timezone
+            iso_tz_patterns = [
+                r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$',  # 2024-01-15T10:30:00-05:00
+                r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$',                # 2024-01-15T10:30:00Z
+            ]
+            for pattern in iso_tz_patterns:
+                if re.match(pattern, date_str):
+                    return date_str
 
         # Try parsing various date formats
         date_formats = [

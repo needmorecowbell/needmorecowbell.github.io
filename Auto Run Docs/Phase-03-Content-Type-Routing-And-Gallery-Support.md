@@ -51,7 +51,15 @@ This phase adds intelligent content routing so notes are published to the approp
   - Added 5 new tests in `TestCmdConvertNoGalleryFlag` covering flag behavior, dry-run mode, actual conversion, preservation of Pictures section, and no-effect scenarios
   - Fixed 3 existing tests that needed explicit `no_gallery=False` to work with MagicMock objects
 
-- [ ] Update `frontmatter_transformer.py` to handle project-specific frontmatter fields like `description` and ensure proper date formatting for each content type
+- [x] Update `frontmatter_transformer.py` to handle project-specific frontmatter fields like `description` and ensure proper date formatting for each content type
+  - Added `CONTENT_TYPE_FIELDS` constant defining optional fields for each content type (post, project, photography)
+  - Added `COMMON_OPTIONAL_FIELDS` for fields that apply to all content types
+  - Added `get_optional_fields_for_content_type()` helper function to retrieve appropriate fields
+  - Updated `transform_to_hugo()` to accept optional `content_type` parameter that overrides frontmatter value
+  - Updated `_normalize_date()` to accept optional `content_type` parameter for content-specific date formatting
+  - Post content type preserves ISO 8601 dates with timezone info (e.g., `2024-01-15T10:30:00-05:00`)
+  - Project and photography content types normalize to simple `YYYY-MM-DD` format
+  - Added 27 new tests covering content-type-specific fields, date formatting, and integration scenarios
 
 - [ ] Add support for the `## Associations` section in Obsidian notes by converting the wikilinks to internal Hugo links or removing them based on a `--keep-associations` flag
 

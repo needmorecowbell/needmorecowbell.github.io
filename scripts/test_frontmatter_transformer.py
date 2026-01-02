@@ -12,7 +12,10 @@ from frontmatter_transformer import (
     extract_title_from_body,
     generate_slug,
     validate_content_type,
+    get_optional_fields_for_content_type,
     VALID_CONTENT_TYPES,
+    CONTENT_TYPE_FIELDS,
+    COMMON_OPTIONAL_FIELDS,
     _normalize_date,
     _normalize_draft,
     _normalize_tags
@@ -741,6 +744,229 @@ class TestValidContentTypesConstant(unittest.TestCase):
     def test_valid_content_types_has_three_items(self):
         """Test that VALID_CONTENT_TYPES has exactly three items."""
         self.assertEqual(len(VALID_CONTENT_TYPES), 3)
+
+
+class TestContentTypeFieldsConstant(unittest.TestCase):
+    """Tests for the CONTENT_TYPE_FIELDS constant."""
+
+    def test_has_post_fields(self):
+        """Test that CONTENT_TYPE_FIELDS has post fields."""
+        self.assertIn('post', CONTENT_TYPE_FIELDS)
+        self.assertIn('author', CONTENT_TYPE_FIELDS['post'])
+        self.assertIn('subtitle', CONTENT_TYPE_FIELDS['post'])
+        self.assertIn('headerimg', CONTENT_TYPE_FIELDS['post'])
+
+    def test_has_project_fields(self):
+        """Test that CONTENT_TYPE_FIELDS has project fields."""
+        self.assertIn('project', CONTENT_TYPE_FIELDS)
+        self.assertIn('description', CONTENT_TYPE_FIELDS['project'])
+
+    def test_has_photography_fields(self):
+        """Test that CONTENT_TYPE_FIELDS has photography fields."""
+        self.assertIn('photography', CONTENT_TYPE_FIELDS)
+        self.assertIn('location', CONTENT_TYPE_FIELDS['photography'])
+
+    def test_post_has_layout_field(self):
+        """Test that post content type has layout field."""
+        self.assertIn('layout', CONTENT_TYPE_FIELDS['post'])
+
+    def test_post_has_series_field(self):
+        """Test that post content type has series field."""
+        self.assertIn('series', CONTENT_TYPE_FIELDS['post'])
+
+    def test_post_has_categories_field(self):
+        """Test that post content type has categories field."""
+        self.assertIn('categories', CONTENT_TYPE_FIELDS['post'])
+
+
+class TestGetOptionalFieldsForContentType(unittest.TestCase):
+    """Tests for the get_optional_fields_for_content_type function."""
+
+    def test_post_returns_post_fields(self):
+        """Test that 'post' returns post-specific fields."""
+        fields = get_optional_fields_for_content_type('post')
+        self.assertIn('subtitle', fields)
+        self.assertIn('headerimg', fields)
+        self.assertIn('layout', fields)
+
+    def test_project_returns_project_fields(self):
+        """Test that 'project' returns project-specific fields."""
+        fields = get_optional_fields_for_content_type('project')
+        self.assertIn('description', fields)
+        # Projects don't have subtitle
+        self.assertNotIn('subtitle', fields)
+
+    def test_photography_returns_photography_fields(self):
+        """Test that 'photography' returns photography-specific fields."""
+        fields = get_optional_fields_for_content_type('photography')
+        self.assertIn('location', fields)
+
+    def test_none_returns_common_fields(self):
+        """Test that None returns common fields."""
+        fields = get_optional_fields_for_content_type(None)
+        self.assertEqual(fields, COMMON_OPTIONAL_FIELDS)
+
+    def test_invalid_type_returns_common_fields(self):
+        """Test that invalid type returns common fields."""
+        fields = get_optional_fields_for_content_type('invalid')
+        self.assertEqual(fields, COMMON_OPTIONAL_FIELDS)
+
+    def test_returns_copy_not_reference(self):
+        """Test that the function returns a copy, not the original list."""
+        fields = get_optional_fields_for_content_type('post')
+        original = CONTENT_TYPE_FIELDS['post'].copy()
+        fields.append('new_field')
+        # Original should be unchanged
+        self.assertEqual(CONTENT_TYPE_FIELDS['post'], original)
+
+
+class TestNormalizeDateWithContentType(unittest.TestCase):
+    """Tests for content-type-specific date normalization."""
+
+    def test_post_preserves_iso_with_timezone(self):
+        """Test that post content type preserves ISO date with timezone."""
+        result = _normalize_date('2024-01-15T10:30:00-05:00', content_type='post')
+        self.assertEqual(result, '2024-01-15T10:30:00-05:00')
+
+    def test_post_preserves_iso_with_utc(self):
+        """Test that post content type preserves ISO date with Z timezone."""
+        result = _normalize_date('2024-01-15T10:30:00Z', content_type='post')
+        self.assertEqual(result, '2024-01-15T10:30:00Z')
+
+    def test_project_normalizes_iso_to_date_only(self):
+        """Test that project content type normalizes ISO to date only."""
+        result = _normalize_date('2024-01-15T10:30:00', content_type='project')
+        self.assertEqual(result, '2024-01-15')
+
+    def test_photography_normalizes_iso_to_date_only(self):
+        """Test that photography content type normalizes ISO to date only."""
+        result = _normalize_date('2024-01-15T10:30:00', content_type='photography')
+        self.assertEqual(result, '2024-01-15')
+
+    def test_no_content_type_normalizes_to_date(self):
+        """Test that no content type normalizes ISO to date only."""
+        result = _normalize_date('2024-01-15T10:30:00')
+        self.assertEqual(result, '2024-01-15')
+
+    def test_simple_date_preserved_for_all_types(self):
+        """Test that simple YYYY-MM-DD date is preserved for all types."""
+        for ct in ['post', 'project', 'photography', None]:
+            result = _normalize_date('2024-01-15', content_type=ct)
+            self.assertEqual(result, '2024-01-15')
+
+
+class TestTransformToHugoWithContentTypeParam(unittest.TestCase):
+    """Tests for transform_to_hugo with content_type parameter."""
+
+    def test_content_type_param_overrides_frontmatter(self):
+        """Test that content_type parameter overrides frontmatter value."""
+        frontmatter = {
+            'title': 'Test',
+            'content_type': 'post'
+        }
+        result = transform_to_hugo(frontmatter, content_type='project')
+        self.assertEqual(result['content_type'], 'project')
+
+    def test_content_type_param_sets_type_when_no_frontmatter(self):
+        """Test that content_type parameter sets type when not in frontmatter."""
+        frontmatter = {'title': 'Test'}
+        result = transform_to_hugo(frontmatter, content_type='photography')
+        self.assertEqual(result['content_type'], 'photography')
+
+    def test_post_content_type_copies_post_fields(self):
+        """Test that post content type copies post-specific fields."""
+        frontmatter = {
+            'title': 'Test',
+            'subtitle': 'A subtitle',
+            'headerimg': '/img/test.jpg',
+            'layout': 'post'
+        }
+        result = transform_to_hugo(frontmatter, content_type='post')
+        self.assertEqual(result['subtitle'], 'A subtitle')
+        self.assertEqual(result['headerimg'], '/img/test.jpg')
+        self.assertEqual(result['layout'], 'post')
+
+    def test_project_content_type_skips_post_specific_fields(self):
+        """Test that project content type skips post-specific fields."""
+        frontmatter = {
+            'title': 'Test',
+            'subtitle': 'A subtitle',  # This is post-specific
+            'description': 'A project'  # This should be kept
+        }
+        result = transform_to_hugo(frontmatter, content_type='project')
+        self.assertNotIn('subtitle', result)
+        self.assertEqual(result['description'], 'A project')
+
+    def test_photography_content_type_includes_location(self):
+        """Test that photography content type includes location field."""
+        frontmatter = {
+            'title': 'Test',
+            'location': 'Nova Scotia, Canada'
+        }
+        result = transform_to_hugo(frontmatter, content_type='photography')
+        self.assertEqual(result['location'], 'Nova Scotia, Canada')
+
+
+class TestTransformToHugoProjectSpecific(unittest.TestCase):
+    """Tests for project-specific frontmatter handling."""
+
+    def test_project_description_preserved(self):
+        """Test that description field is preserved for projects."""
+        frontmatter = {
+            'title': 'My Project',
+            'content_type': 'project',
+            'description': 'A cool woodworking project'
+        }
+        result = transform_to_hugo(frontmatter)
+        self.assertEqual(result['description'], 'A cool woodworking project')
+
+    def test_project_with_all_fields(self):
+        """Test project with typical frontmatter fields."""
+        frontmatter = {
+            'title': 'Slab Computer Desk',
+            'date': '2020-06-15',
+            'draft': False,
+            'tags': ['DIY', 'furniture', 'woodwork'],
+            'content_type': 'project',
+            'description': 'Black walnut desk with hairpin legs'
+        }
+        result = transform_to_hugo(frontmatter)
+        self.assertEqual(result['title'], 'Slab Computer Desk')
+        self.assertEqual(result['date'], '2020-06-15')
+        self.assertFalse(result['draft'])
+        self.assertEqual(result['tags'], ['DIY', 'furniture', 'woodwork'])
+        self.assertEqual(result['content_type'], 'project')
+        self.assertEqual(result['description'], 'Black walnut desk with hairpin legs')
+
+
+class TestTransformToHugoPhotographySpecific(unittest.TestCase):
+    """Tests for photography-specific frontmatter handling."""
+
+    def test_photography_location_preserved(self):
+        """Test that location field is preserved for photography."""
+        frontmatter = {
+            'title': 'Nova Scotia Trip',
+            'content_type': 'photography',
+            'location': 'Nova Scotia, Canada'
+        }
+        result = transform_to_hugo(frontmatter)
+        self.assertEqual(result['location'], 'Nova Scotia, Canada')
+
+    def test_photography_with_typical_fields(self):
+        """Test photography with typical frontmatter fields."""
+        frontmatter = {
+            'title': 'Cross Country Road Trip',
+            'date': '2021-05-01',
+            'tags': ['travel'],
+            'content_type': 'photography',
+            'description': 'Photos from a cross-country trip'
+        }
+        result = transform_to_hugo(frontmatter)
+        self.assertEqual(result['title'], 'Cross Country Road Trip')
+        self.assertEqual(result['date'], '2021-05-01')
+        self.assertEqual(result['tags'], ['travel'])
+        self.assertEqual(result['content_type'], 'photography')
+        self.assertEqual(result['description'], 'Photos from a cross-country trip')
 
 
 if __name__ == '__main__':
