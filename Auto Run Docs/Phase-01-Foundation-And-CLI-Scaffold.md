@@ -110,9 +110,19 @@ This phase establishes the development environment and builds a working CLI tool
   - `--output` allows specifying custom output directory (default: content/english/post)
   - Added 26 comprehensive unit and integration tests (total tests in scripts/ now 299, previously 288)
 
-- [ ] Create `scripts/requirements.txt` with dependencies: `pyyaml` for frontmatter parsing and `rich` for beautiful CLI output formatting
+- [x] Create `scripts/requirements.txt` with dependencies: `pyyaml` for frontmatter parsing and `rich` for beautiful CLI output formatting
+  - Created `scripts/requirements.txt` on 2026-01-02
+  - Includes `pyyaml>=6.0` for YAML frontmatter parsing (used by obsidian_parser.py)
+  - Includes `rich>=13.0` for enhanced CLI output formatting (available for future CLI enhancements)
+  - All 299 existing tests continue to pass
 
-- [ ] Add a `scripts/README.md` documenting how to use the publish CLI tool with example commands
+- [x] Add a `scripts/README.md` documenting how to use the publish CLI tool with example commands
+  - Created comprehensive documentation on 2026-01-02
+  - Covers installation, quick start, and all CLI commands (scan, list, convert)
+  - Includes example output for each command showing expected formats
+  - Documents frontmatter requirements (`publish: true`) and syntax conversion rules
+  - Provides module overview table and test running instructions
+  - Lists default configuration values (vault path, output directory, skipped dirs)
 
 - [ ] Test the CLI by running `python scripts/publish.py scan` to verify it finds notes in the vault (create a test note in `~/Notes/Blog/` with `publish: true` if none exist with that frontmatter)
 
