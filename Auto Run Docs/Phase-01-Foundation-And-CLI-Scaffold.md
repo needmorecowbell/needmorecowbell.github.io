@@ -130,4 +130,9 @@ This phase establishes the development environment and builds a working CLI tool
   - Verified `list` command: Correctly displays target paths (e.g., `content/english/post/2026-01-02-test-note-for-publishing.md`)
   - Verified `convert --dry-run`: Full pipeline working - wikilinks, images, and frontmatter all transformed correctly
 
-- [ ] Run `hugo server -D` to verify the blog still builds and serves correctly on the develop branch
+- [x] Run `hugo server -D` to verify the blog still builds and serves correctly on the develop branch
+  - Verified on 2026-01-02 - Hugo builds successfully (114 pages) and serves correctly (HTTP 200)
+  - Fixed two Hugo compatibility issues with newer Hugo v0.152.2:
+    1. Created `layouts/partials/footer.html` override to remove deprecated `_internal/google_analytics_async.html` template reference (removed in Hugo 0.120.0)
+    2. Updated `layouts/_default/single.html` to use `site.Config.Services.Disqus.Shortname` instead of deprecated `.Site.DisqusShortname`
+  - All 299 tests in scripts/ continue to pass
