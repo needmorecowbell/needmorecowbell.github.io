@@ -14,7 +14,9 @@ This phase establishes the development environment and builds a working CLI tool
   - Created CLI scaffold with `scan`, `list`, and `convert` subcommands on 2026-01-02
   - Includes `--dry-run` flag for convert, proper error handling, and helpful usage examples
 
-- [ ] Create `scripts/obsidian_parser.py` module that reads an Obsidian markdown file and extracts its YAML frontmatter into a Python dict, returning both the frontmatter and the body content separately
+- [x] Create `scripts/obsidian_parser.py` module that reads an Obsidian markdown file and extracts its YAML frontmatter into a Python dict, returning both the frontmatter and the body content separately
+  - Created `obsidian_parser.py` with `parse_obsidian_note()`, `parse_frontmatter()`, and `has_publish_flag()` functions on 2026-01-02
+  - Added comprehensive test suite in `test_obsidian_parser.py` (13 tests passing)
 
 - [ ] Add a `find_publishable_notes()` function in `scripts/obsidian_parser.py` that recursively scans `~/Notes` for markdown files containing `publish: true` in their frontmatter (skip the People directory for performance)
 
