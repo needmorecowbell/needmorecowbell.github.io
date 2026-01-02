@@ -56,7 +56,14 @@ This phase adds validation, error handling, and quality-of-life improvements to 
   - Headers and banners use bold blue, success messages use green, warnings use yellow, errors use bold red
   - 152 of 164 tests passing (10 failures are pre-existing test issues unrelated to colored output)
 
-- [ ] Create `scripts/exceptions.py` with custom exception classes: `PublishError`, `ValidationError`, `MediaNotFoundError`, `UploadError` for better error handling
+- [x] Create `scripts/exceptions.py` with custom exception classes: `PublishError`, `ValidationError`, `MediaNotFoundError`, `UploadError` for better error handling
+  - Created `exceptions.py` module with a hierarchy of custom exceptions
+  - `PublishError`: Base exception class with `message` and `context` attributes
+  - `ValidationError`: For frontmatter/content validation failures, includes optional `field` and `issues` list
+  - `MediaNotFoundError`: For missing media files, includes `media_reference`, `expected_path`, and `note_path`
+  - `UploadError`: For MinIO/S3 upload failures, includes `file_path`, `bucket`, `object_name`, and `original_error` for exception chaining
+  - All exceptions include formatted `__str__` methods with contextual details
+  - Added comprehensive test suite in `test_exceptions.py` (34 tests, all passing)
 
 - [ ] Add try/catch blocks throughout the pipeline with user-friendly error messages that explain what went wrong and how to fix it
 
