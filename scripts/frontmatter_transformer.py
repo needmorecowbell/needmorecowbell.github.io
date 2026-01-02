@@ -9,7 +9,36 @@ ensuring all required fields are present and properly formatted.
 import re
 import unicodedata
 from datetime import datetime, date
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Literal
+
+# Valid content types for routing to Hugo sections
+VALID_CONTENT_TYPES = ('post', 'project', 'photography')
+
+
+def validate_content_type(content_type: Any) -> Optional[str]:
+    """
+    Validate and normalize a content_type value.
+
+    The content_type field controls which Hugo section the content is published to:
+    - 'post': Published to content/english/post/
+    - 'project': Published to content/english/projects/
+    - 'photography': Published to content/english/photography/
+
+    Args:
+        content_type: The content_type value to validate (can be string or None)
+
+    Returns:
+        The validated content type string if valid, None if not provided or invalid
+    """
+    if content_type is None:
+        return None
+
+    if isinstance(content_type, str):
+        normalized = content_type.strip().lower()
+        if normalized in VALID_CONTENT_TYPES:
+            return normalized
+
+    return None
 
 
 def generate_slug(title: str, date_str: Optional[str] = None) -> str:
@@ -98,6 +127,10 @@ def transform_to_hugo(frontmatter: Dict[str, Any], body: Optional[str] = None) -
     - draft: boolean, defaults to False
     - tags: list of strings, defaults to empty list
 
+    Optionally includes:
+    - content_type: if valid ('post', 'project', or 'photography'), controls which
+      Hugo section the content is published to
+
     The 'publish' field from Obsidian is removed as it's not needed in Hugo.
 
     Args:
@@ -125,6 +158,12 @@ def transform_to_hugo(frontmatter: Dict[str, Any], body: Optional[str] = None) -
 
     # Tags: required field, normalize to list
     hugo_frontmatter['tags'] = _normalize_tags(frontmatter.get('tags'))
+
+    # Content type: optional field for routing to Hugo sections
+    # Only include if explicitly set and valid
+    content_type = validate_content_type(frontmatter.get('content_type'))
+    if content_type:
+        hugo_frontmatter['content_type'] = content_type
 
     # Copy over other common Hugo fields if present
     optional_fields = [

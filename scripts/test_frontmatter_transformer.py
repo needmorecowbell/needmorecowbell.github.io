@@ -11,6 +11,8 @@ from frontmatter_transformer import (
     transform_to_hugo,
     extract_title_from_body,
     generate_slug,
+    validate_content_type,
+    VALID_CONTENT_TYPES,
     _normalize_date,
     _normalize_draft,
     _normalize_tags
@@ -570,6 +572,175 @@ class TestTransformToHugoIntegration(unittest.TestCase):
         }
         result = transform_to_hugo(frontmatter)
         self.assertEqual(result['series'], ['my-tutorial-series'])
+
+
+class TestValidateContentType(unittest.TestCase):
+    """Tests for the validate_content_type function."""
+
+    def test_valid_post_type(self):
+        """Test that 'post' is a valid content type."""
+        result = validate_content_type('post')
+        self.assertEqual(result, 'post')
+
+    def test_valid_project_type(self):
+        """Test that 'project' is a valid content type."""
+        result = validate_content_type('project')
+        self.assertEqual(result, 'project')
+
+    def test_valid_photography_type(self):
+        """Test that 'photography' is a valid content type."""
+        result = validate_content_type('photography')
+        self.assertEqual(result, 'photography')
+
+    def test_case_insensitive(self):
+        """Test that content type is case-insensitive."""
+        self.assertEqual(validate_content_type('POST'), 'post')
+        self.assertEqual(validate_content_type('Project'), 'project')
+        self.assertEqual(validate_content_type('PHOTOGRAPHY'), 'photography')
+
+    def test_with_whitespace(self):
+        """Test that whitespace is stripped from content type."""
+        self.assertEqual(validate_content_type('  post  '), 'post')
+        self.assertEqual(validate_content_type('\tproject\n'), 'project')
+
+    def test_none_returns_none(self):
+        """Test that None returns None."""
+        result = validate_content_type(None)
+        self.assertIsNone(result)
+
+    def test_invalid_type_returns_none(self):
+        """Test that invalid content types return None."""
+        self.assertIsNone(validate_content_type('blog'))
+        self.assertIsNone(validate_content_type('article'))
+        self.assertIsNone(validate_content_type('photo'))
+        self.assertIsNone(validate_content_type('invalid'))
+
+    def test_empty_string_returns_none(self):
+        """Test that empty string returns None."""
+        result = validate_content_type('')
+        self.assertIsNone(result)
+
+    def test_whitespace_only_returns_none(self):
+        """Test that whitespace-only string returns None."""
+        result = validate_content_type('   ')
+        self.assertIsNone(result)
+
+    def test_non_string_returns_none(self):
+        """Test that non-string types return None."""
+        self.assertIsNone(validate_content_type(123))
+        self.assertIsNone(validate_content_type(['post']))
+        self.assertIsNone(validate_content_type({'type': 'post'}))
+
+
+class TestTransformToHugoContentType(unittest.TestCase):
+    """Tests for content_type handling in transform_to_hugo."""
+
+    def test_valid_content_type_preserved(self):
+        """Test that valid content_type is preserved in output."""
+        frontmatter = {
+            'title': 'My Project',
+            'content_type': 'project'
+        }
+        result = transform_to_hugo(frontmatter)
+        self.assertEqual(result['content_type'], 'project')
+
+    def test_post_content_type(self):
+        """Test content_type='post' is preserved."""
+        frontmatter = {
+            'title': 'My Blog Post',
+            'content_type': 'post'
+        }
+        result = transform_to_hugo(frontmatter)
+        self.assertEqual(result['content_type'], 'post')
+
+    def test_photography_content_type(self):
+        """Test content_type='photography' is preserved."""
+        frontmatter = {
+            'title': 'My Photos',
+            'content_type': 'photography'
+        }
+        result = transform_to_hugo(frontmatter)
+        self.assertEqual(result['content_type'], 'photography')
+
+    def test_content_type_normalized_to_lowercase(self):
+        """Test that content_type is normalized to lowercase."""
+        frontmatter = {
+            'title': 'Test',
+            'content_type': 'PROJECT'
+        }
+        result = transform_to_hugo(frontmatter)
+        self.assertEqual(result['content_type'], 'project')
+
+    def test_invalid_content_type_not_included(self):
+        """Test that invalid content_type is not included in output."""
+        frontmatter = {
+            'title': 'Test',
+            'content_type': 'invalid_type'
+        }
+        result = transform_to_hugo(frontmatter)
+        self.assertNotIn('content_type', result)
+
+    def test_empty_content_type_not_included(self):
+        """Test that empty content_type is not included in output."""
+        frontmatter = {
+            'title': 'Test',
+            'content_type': ''
+        }
+        result = transform_to_hugo(frontmatter)
+        self.assertNotIn('content_type', result)
+
+    def test_none_content_type_not_included(self):
+        """Test that None content_type is not included in output."""
+        frontmatter = {
+            'title': 'Test',
+            'content_type': None
+        }
+        result = transform_to_hugo(frontmatter)
+        self.assertNotIn('content_type', result)
+
+    def test_missing_content_type_not_included(self):
+        """Test that missing content_type is not included in output."""
+        frontmatter = {
+            'title': 'Test'
+        }
+        result = transform_to_hugo(frontmatter)
+        self.assertNotIn('content_type', result)
+
+    def test_content_type_with_other_fields(self):
+        """Test content_type works alongside other fields."""
+        frontmatter = {
+            'title': 'My Project',
+            'date': '2024-01-15',
+            'content_type': 'project',
+            'tags': ['woodworking', 'diy'],
+            'description': 'A cool project'
+        }
+        result = transform_to_hugo(frontmatter)
+        self.assertEqual(result['title'], 'My Project')
+        self.assertEqual(result['date'], '2024-01-15')
+        self.assertEqual(result['content_type'], 'project')
+        self.assertEqual(result['tags'], ['woodworking', 'diy'])
+        self.assertEqual(result['description'], 'A cool project')
+
+
+class TestValidContentTypesConstant(unittest.TestCase):
+    """Tests for the VALID_CONTENT_TYPES constant."""
+
+    def test_valid_content_types_contains_post(self):
+        """Test that VALID_CONTENT_TYPES contains 'post'."""
+        self.assertIn('post', VALID_CONTENT_TYPES)
+
+    def test_valid_content_types_contains_project(self):
+        """Test that VALID_CONTENT_TYPES contains 'project'."""
+        self.assertIn('project', VALID_CONTENT_TYPES)
+
+    def test_valid_content_types_contains_photography(self):
+        """Test that VALID_CONTENT_TYPES contains 'photography'."""
+        self.assertIn('photography', VALID_CONTENT_TYPES)
+
+    def test_valid_content_types_has_three_items(self):
+        """Test that VALID_CONTENT_TYPES has exactly three items."""
+        self.assertEqual(len(VALID_CONTENT_TYPES), 3)
 
 
 if __name__ == '__main__':
