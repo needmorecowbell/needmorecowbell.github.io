@@ -18,7 +18,12 @@ This phase establishes the development environment and builds a working CLI tool
   - Created `obsidian_parser.py` with `parse_obsidian_note()`, `parse_frontmatter()`, and `has_publish_flag()` functions on 2026-01-02
   - Added comprehensive test suite in `test_obsidian_parser.py` (13 tests passing)
 
-- [ ] Add a `find_publishable_notes()` function in `scripts/obsidian_parser.py` that recursively scans `~/Notes` for markdown files containing `publish: true` in their frontmatter (skip the People directory for performance)
+- [x] Add a `find_publishable_notes()` function in `scripts/obsidian_parser.py` that recursively scans `~/Notes` for markdown files containing `publish: true` in their frontmatter (skip the People directory for performance)
+  - Added `find_publishable_notes(vault_path, skip_dirs)` function on 2026-01-02
+  - Defaults to scanning `~/Notes` and skipping `People` directory
+  - Returns list of dicts with `path`, `frontmatter`, and `body` for each publishable note
+  - Gracefully handles invalid YAML and unreadable files
+  - Added 10 new unit tests (total now 23 tests passing)
 
 - [ ] Create `scripts/syntax_converter.py` module with a `convert_wikilinks()` function that transforms `[[Page Name]]` syntax to standard markdown `[Page Name](/post/page-name/)` links
 

@@ -9,7 +9,7 @@ import unittest
 import tempfile
 from datetime import date
 from pathlib import Path
-from obsidian_parser import parse_obsidian_note, parse_frontmatter, has_publish_flag
+from obsidian_parser import parse_obsidian_note, parse_frontmatter, has_publish_flag, find_publishable_notes
 
 
 class TestParseFrontmatter(unittest.TestCase):
@@ -178,6 +178,180 @@ Content with emojis 🎉 and symbols © ®
             self.assertIn('©', body)
         finally:
             temp_path.unlink()
+
+
+class TestFindPublishableNotes(unittest.TestCase):
+    """Tests for find_publishable_notes function."""
+
+    def setUp(self):
+        """Create a temporary directory structure for testing."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.vault_path = Path(self.temp_dir)
+
+    def tearDown(self):
+        """Clean up the temporary directory."""
+        import shutil
+        shutil.rmtree(self.temp_dir)
+
+    def _create_note(self, relative_path: str, content: str):
+        """Helper to create a note file in the temp vault."""
+        file_path = self.vault_path / relative_path
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_text(content, encoding='utf-8')
+        return file_path
+
+    def test_finds_publishable_note(self):
+        """Test finding a single publishable note."""
+        self._create_note('Blog/test-post.md', """---
+title: Test Post
+publish: true
+---
+
+Content here.
+""")
+        results = find_publishable_notes(self.vault_path)
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['frontmatter']['title'], 'Test Post')
+        self.assertIn('Content here.', results[0]['body'])
+
+    def test_ignores_non_publishable_notes(self):
+        """Test that notes without publish: true are skipped."""
+        self._create_note('Blog/published.md', """---
+title: Published
+publish: true
+---
+Content.
+""")
+        self._create_note('Blog/draft.md', """---
+title: Draft
+publish: false
+---
+Draft content.
+""")
+        self._create_note('Blog/no-flag.md', """---
+title: No Flag
+---
+No flag content.
+""")
+        results = find_publishable_notes(self.vault_path)
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['frontmatter']['title'], 'Published')
+
+    def test_skips_people_directory_by_default(self):
+        """Test that People directory is skipped by default."""
+        self._create_note('Blog/post.md', """---
+title: Blog Post
+publish: true
+---
+Blog content.
+""")
+        self._create_note('People/john.md', """---
+title: John Doe
+publish: true
+---
+Person note.
+""")
+        results = find_publishable_notes(self.vault_path)
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['frontmatter']['title'], 'Blog Post')
+
+    def test_custom_skip_dirs(self):
+        """Test with custom directories to skip."""
+        self._create_note('Blog/post.md', """---
+title: Blog Post
+publish: true
+---
+Content.
+""")
+        self._create_note('Private/secret.md', """---
+title: Secret Note
+publish: true
+---
+Secret content.
+""")
+        self._create_note('Archive/old.md', """---
+title: Old Note
+publish: true
+---
+Old content.
+""")
+        results = find_publishable_notes(self.vault_path, skip_dirs=['Private', 'Archive'])
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['frontmatter']['title'], 'Blog Post')
+
+    def test_recursive_scanning(self):
+        """Test that nested directories are scanned recursively."""
+        self._create_note('Blog/2024/January/post1.md', """---
+title: January Post
+publish: true
+---
+Content.
+""")
+        self._create_note('Blog/2024/February/post2.md', """---
+title: February Post
+publish: true
+---
+Content.
+""")
+        results = find_publishable_notes(self.vault_path)
+
+        self.assertEqual(len(results), 2)
+        titles = [r['frontmatter']['title'] for r in results]
+        self.assertIn('January Post', titles)
+        self.assertIn('February Post', titles)
+
+    def test_vault_not_found(self):
+        """Test FileNotFoundError for non-existent vault."""
+        with self.assertRaises(FileNotFoundError):
+            find_publishable_notes(Path('/nonexistent/vault'))
+
+    def test_vault_not_directory(self):
+        """Test NotADirectoryError when vault path is a file."""
+        file_path = self._create_note('file.md', 'content')
+        with self.assertRaises(NotADirectoryError):
+            find_publishable_notes(file_path)
+
+    def test_skips_invalid_yaml(self):
+        """Test that files with invalid YAML are skipped gracefully."""
+        self._create_note('Blog/valid.md', """---
+title: Valid Post
+publish: true
+---
+Content.
+""")
+        self._create_note('Blog/invalid.md', """---
+title: [Invalid YAML
+  broken: {syntax
+---
+Content.
+""")
+        results = find_publishable_notes(self.vault_path)
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['frontmatter']['title'], 'Valid Post')
+
+    def test_empty_vault(self):
+        """Test empty vault returns empty list."""
+        results = find_publishable_notes(self.vault_path)
+        self.assertEqual(results, [])
+
+    def test_returns_path_in_results(self):
+        """Test that results include the file path."""
+        self._create_note('Blog/my-post.md', """---
+title: My Post
+publish: true
+---
+Content.
+""")
+        results = find_publishable_notes(self.vault_path)
+
+        self.assertEqual(len(results), 1)
+        self.assertIn('path', results[0])
+        self.assertEqual(results[0]['path'].name, 'my-post.md')
 
 
 if __name__ == '__main__':
