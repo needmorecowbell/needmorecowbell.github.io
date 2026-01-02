@@ -1004,6 +1004,313 @@ Content with ![[media.mp4]].
             self.assertTrue(expected_path.exists())
 
 
+class TestConvertNoteGalleryGeneration(unittest.TestCase):
+    """Tests for convert_note with Pictures section gallery generation."""
+
+    def test_generates_gallery_from_pictures_section(self):
+        """convert_note generates nanogallery2 HTML from Pictures section."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "project-with-gallery.md"
+            note_path.write_text("""---
+title: Wood Zippo Project
+date: 2024-01-15
+tags:
+  - woodworking
+  - project
+publish: true
+---
+
+This is my wood zippo lighter project.
+
+## Pictures
+
+![[zippo_01.jpg]]
+![[zippo_02.jpg]]
+![[zippo_03.mp4]]
+""")
+
+            hugo_fm, body, target = convert_note(note_path)
+
+            # Should contain nanogallery2 div
+            self.assertIn('data-nanogallery2', body)
+            self.assertIn('<div ID="gallery"', body)
+
+            # Should contain the media files as anchor tags
+            self.assertIn('href="zippo_01.jpg"', body)
+            self.assertIn('href="zippo_02.jpg"', body)
+            self.assertIn('href="zippo_03.mp4"', body)
+
+            # Should use the s3cdn shortcode for base URL
+            self.assertIn('{{<s3cdn>}}', body)
+            self.assertIn('/projects/wood-zippo-project/', body)
+
+            # Pictures section should be removed from body
+            self.assertNotIn('## Pictures', body)
+            self.assertNotIn('![[zippo_01.jpg]]', body)
+
+    def test_no_gallery_without_pictures_section(self):
+        """convert_note doesn't generate gallery when no Pictures section."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "post-no-gallery.md"
+            note_path.write_text("""---
+title: Regular Blog Post
+date: 2024-02-20
+tags:
+  - blogging
+publish: true
+---
+
+Just a regular blog post without a pictures section.
+
+Some embedded image: ![[inline_image.png]]
+""")
+
+            hugo_fm, body, target = convert_note(note_path)
+
+            # Should NOT contain nanogallery2 HTML
+            self.assertNotIn('data-nanogallery2', body)
+            self.assertNotIn('<div ID="gallery"', body)
+
+            # Inline image should be converted normally
+            self.assertIn('![inline image]({{<s3cdn>}}/inline_image.png)', body)
+
+    def test_generate_gallery_false_skips_gallery(self):
+        """convert_note with generate_gallery=False skips gallery generation."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "project-skip-gallery.md"
+            note_path.write_text("""---
+title: Project Skip Gallery
+date: 2024-03-10
+tags:
+  - project
+publish: true
+---
+
+A project that should skip gallery.
+
+## Pictures
+
+![[image1.jpg]]
+![[image2.jpg]]
+""")
+
+            hugo_fm, body, target = convert_note(note_path, generate_gallery=False)
+
+            # Should NOT contain nanogallery2 HTML
+            self.assertNotIn('data-nanogallery2', body)
+            self.assertNotIn('<div ID="gallery"', body)
+
+            # Pictures section should still be in the body (not removed)
+            self.assertIn('## Pictures', body)
+
+    def test_gallery_uses_title_slug_for_path(self):
+        """Gallery base URL uses slugified title for CDN path."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "special-title.md"
+            note_path.write_text("""---
+title: My Special Project's Gallery!
+date: 2024-04-05
+tags:
+  - project
+publish: true
+---
+
+Special project.
+
+## Pictures
+
+![[photo.jpg]]
+""")
+
+            hugo_fm, body, target = convert_note(note_path)
+
+            # Should use slugified title in CDN path (no date prefix for gallery slug)
+            self.assertIn('/projects/my-special-projects-gallery/', body)
+
+    def test_gallery_preserves_text_content(self):
+        """Gallery generation preserves text content before Pictures section."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "content-test.md"
+            note_path.write_text("""---
+title: Content Preservation Test
+date: 2024-05-15
+publish: true
+---
+
+# Introduction
+
+This is the intro paragraph.
+
+## Details
+
+Some **detailed** information here.
+
+## Pictures
+
+![[img.jpg]]
+
+## Footer
+
+This footer should be preserved too.
+""")
+
+            hugo_fm, body, target = convert_note(note_path)
+
+            # Main content should be preserved
+            self.assertIn('# Introduction', body)
+            self.assertIn('This is the intro paragraph.', body)
+            self.assertIn('## Details', body)
+            self.assertIn('Some **detailed** information here.', body)
+
+            # Footer after Pictures section should be preserved
+            self.assertIn('## Footer', body)
+            self.assertIn('This footer should be preserved too.', body)
+
+            # Gallery should be added at the end
+            self.assertIn('data-nanogallery2', body)
+
+    def test_gallery_at_end_of_content(self):
+        """Gallery HTML is appended at the end of the converted content."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "gallery-position.md"
+            note_path.write_text("""---
+title: Gallery Position Test
+date: 2024-06-01
+publish: true
+---
+
+First paragraph.
+
+## Pictures
+
+![[photo.jpg]]
+""")
+
+            hugo_fm, body, target = convert_note(note_path)
+
+            # Find positions
+            first_para_pos = body.find('First paragraph.')
+            gallery_pos = body.find('<div ID="gallery"')
+
+            # Gallery should come after the first paragraph
+            self.assertLess(first_para_pos, gallery_pos)
+            self.assertGreater(gallery_pos, 0)
+
+
+class TestCmdConvertGalleryIntegration(unittest.TestCase):
+    """Integration tests for cmd_convert with gallery generation."""
+
+    def test_dry_run_shows_gallery_info(self):
+        """convert --dry-run shows gallery generation info."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "gallery-dry-run.md"
+            note_path.write_text("""---
+title: Gallery Dry Run Test
+date: 2024-06-01
+publish: true
+---
+
+Content here.
+
+## Pictures
+
+![[img1.jpg]]
+![[img2.png]]
+![[vid.mp4]]
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.output = None
+            mock_args.skip_upload = True
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_convert(mock_args)
+                output = mock_stdout.getvalue()
+
+                # Should show gallery info
+                self.assertIn('[DRY RUN] Gallery: YES (3 images)', output)
+
+    def test_convert_writes_file_with_gallery(self):
+        """convert command writes file with gallery HTML."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "gallery-write.md"
+            note_path.write_text("""---
+title: Gallery Write Test
+date: 2024-07-15
+tags:
+  - project
+publish: true
+---
+
+My project description.
+
+## Pictures
+
+![[project_photo_01.jpg]]
+![[project_photo_02.jpg]]
+""")
+
+            output_dir = Path(tmpdir) / "output"
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.output = str(output_dir)
+            mock_args.skip_upload = True
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_convert(mock_args)
+                output = mock_stdout.getvalue()
+
+                # Should report gallery generation
+                self.assertIn('Gallery generated: 2 images', output)
+
+            # Check file was written with gallery
+            expected_path = output_dir / "2024-07-15-gallery-write-test.md"
+            self.assertTrue(expected_path.exists())
+
+            content = expected_path.read_text()
+
+            # Should contain gallery HTML
+            self.assertIn('data-nanogallery2', content)
+            self.assertIn('href="project_photo_01.jpg"', content)
+            self.assertIn('href="project_photo_02.jpg"', content)
+
+            # Should not contain Pictures section markdown
+            self.assertNotIn('## Pictures', content)
+            self.assertNotIn('![[project_photo_01.jpg]]', content)
+
+    def test_convert_no_gallery_message_without_pictures(self):
+        """convert command doesn't show gallery message when no Pictures section."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "no-gallery.md"
+            note_path.write_text("""---
+title: No Gallery Test
+date: 2024-08-01
+publish: true
+---
+
+Just regular content.
+""")
+
+            output_dir = Path(tmpdir) / "output"
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.output = str(output_dir)
+            mock_args.skip_upload = True
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_convert(mock_args)
+                output = mock_stdout.getvalue()
+
+                # Should NOT show gallery info
+                self.assertNotIn('Gallery:', output)
+
+
 class TestCmdConvertIntegration(unittest.TestCase):
     """Integration tests for cmd_convert with full pipeline."""
 

@@ -52,6 +52,13 @@ from frontmatter_transformer import generate_slug, transform_to_hugo
 from syntax_converter import convert_wikilinks, convert_embedded_images, convert_embedded_media
 from hugo_writer import write_hugo_post, preview_hugo_post
 from media_extractor import find_media_references, resolve_media_path
+from gallery_generator import (
+    has_pictures_section,
+    remove_pictures_section,
+    generate_gallery_from_obsidian,
+    extract_media_from_pictures_section,
+)
+from content_router import determine_content_type
 
 # Default Hugo content output directory (relative to blog root)
 DEFAULT_OUTPUT_DIR = "content/english/post"
@@ -244,7 +251,8 @@ def cmd_list(args):
 def convert_note(
     note_path: Path,
     output_dir: str = DEFAULT_OUTPUT_DIR,
-    media_url_map: dict = None
+    media_url_map: dict = None,
+    generate_gallery: bool = True
 ) -> tuple:
     """
     Run the full conversion pipeline on an Obsidian note.
@@ -252,8 +260,10 @@ def convert_note(
     Pipeline steps:
     1. Parse the Obsidian note (extract frontmatter and body)
     2. Transform frontmatter to Hugo format
-    3. Convert Obsidian syntax (wikilinks, images, media) to Hugo format
-    4. Generate the target output path
+    3. Detect Pictures section and generate gallery (if applicable)
+    4. Convert Obsidian syntax (wikilinks, images, media) to Hugo format
+    5. Append gallery HTML if generated
+    6. Generate the target output path
 
     Args:
         note_path: Path to the Obsidian note file
@@ -262,6 +272,9 @@ def convert_note(
                       MinIO URLs (e.g., {'2021/06/photo.jpg': 'https://...'}).
                       If provided, embedded images/media will use these URLs
                       instead of the s3cdn shortcode.
+        generate_gallery: Whether to generate a gallery from the Pictures section.
+                         Set to False to skip gallery generation even if a Pictures
+                         section exists. Defaults to True.
 
     Returns:
         Tuple of (hugo_frontmatter, converted_body, target_path)
@@ -275,13 +288,38 @@ def convert_note(
     # Step 2: Transform frontmatter to Hugo format
     hugo_frontmatter = transform_to_hugo(frontmatter, body)
 
-    # Step 3: Convert Obsidian syntax to Hugo format
+    # Step 3: Detect Pictures section and prepare gallery generation
+    gallery_html = None
+    if generate_gallery and has_pictures_section(body):
+        # Generate a project slug from the title for the CDN path
+        title = hugo_frontmatter.get('title', '')
+        project_slug = generate_slug(title, None)  # No date prefix for project slug
+
+        # Determine content type to decide appropriate CDN path
+        content_type = determine_content_type(frontmatter)
+
+        # Generate the gallery HTML using the original body (before syntax conversion)
+        gallery_html = generate_gallery_from_obsidian(
+            body,
+            project_slug,
+            cdn_shortcode="{{<s3cdn>}}"
+        )
+
+        # Remove the Pictures section from the body before further processing
+        body = remove_pictures_section(body)
+
+    # Step 4: Convert Obsidian syntax to Hugo format
     # Order matters: wikilinks first, then images, then media
     converted_body = convert_wikilinks(body)
     converted_body = convert_embedded_images(converted_body, media_url_map=media_url_map)
     converted_body = convert_embedded_media(converted_body, media_url_map=media_url_map)
 
-    # Step 4: Generate the target output path
+    # Step 5: Append gallery HTML if generated
+    if gallery_html:
+        # Add gallery at the end of the content with some spacing
+        converted_body = converted_body.rstrip() + '\n\n' + gallery_html + '\n'
+
+    # Step 6: Generate the target output path
     slug = generate_slug(hugo_frontmatter.get('title', ''), hugo_frontmatter.get('date'))
     target_path = Path(output_dir) / f"{slug}.md"
 
@@ -545,6 +583,11 @@ def cmd_convert(args):
         print(f"Error converting note: {e}", file=sys.stderr)
         sys.exit(1)
 
+    # Check if note has a Pictures section for display purposes
+    note_content = note_path.read_text()
+    has_gallery = has_pictures_section(note_content)
+    gallery_media_count = len(extract_media_from_pictures_section(note_content)) if has_gallery else 0
+
     if args.dry_run:
         print(f"[DRY RUN] Would convert: {note_path}")
         print(f"[DRY RUN] Target path: {target_path}")
@@ -554,6 +597,8 @@ def cmd_convert(args):
                 print(f"[DRY RUN] Media files missing: {missing_count}")
         if skip_upload:
             print(f"[DRY RUN] Media upload: SKIPPED")
+        if has_gallery:
+            print(f"[DRY RUN] Gallery: YES ({gallery_media_count} images)")
         print()
         print("--- Preview of converted content ---")
         print()
@@ -564,6 +609,8 @@ def cmd_convert(args):
         written_path = write_hugo_post(hugo_frontmatter, converted_body, target_path)
         print(f"Converted: {note_path}")
         print(f"Written to: {written_path}")
+        if has_gallery:
+            print(f"Gallery generated: {gallery_media_count} images")
 
 
 def main():

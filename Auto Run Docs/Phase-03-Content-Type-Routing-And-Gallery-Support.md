@@ -28,9 +28,21 @@ This phase adds intelligent content routing so notes are published to the approp
   - Added `has_pictures_section()`, `get_pictures_section_location()`, and `remove_pictures_section()` utility functions
   - Created 57 comprehensive tests in `test_gallery_generator.py` covering edge cases and integration scenarios
 
-- [ ] Add `generate_nanogallery_html()` function to `scripts/gallery_generator.py` that creates the nanogallery2 HTML structure matching the format used in existing project pages (with thumbnails and full-size images)
+- [x] Add `generate_nanogallery_html()` function to `scripts/gallery_generator.py` that creates the nanogallery2 HTML structure matching the format used in existing project pages (with thumbnails and full-size images)
+  - Implemented `generate_nanogallery_html()` that creates nanogallery2 div with anchor tags, matching existing project page format
+  - Added `DEFAULT_NANOGALLERY_CONFIG` constant with settings matching existing projects (250px thumbnails, pagination, center alignment)
+  - Added `generate_gallery_from_obsidian()` convenience function for Obsidian notes that extracts media and builds gallery
+  - Supports thumbnail suffixes, descriptions per media file, and custom config overrides with deep merging
+  - Created 29 new tests covering basic generation, config overrides, edge cases, and integration scenarios
 
-- [ ] Update the conversion pipeline to detect notes with a Pictures section and automatically generate a gallery at the end of the converted content
+- [x] Update the conversion pipeline to detect notes with a Pictures section and automatically generate a gallery at the end of the converted content
+  - Updated `convert_note()` in `publish.py` to detect Pictures sections using `has_pictures_section()`
+  - Automatically generates nanogallery2 HTML using `generate_gallery_from_obsidian()` when Pictures section is found
+  - Removes the Pictures section from body content before syntax conversion (avoiding duplicate media embeds)
+  - Appends gallery HTML at the end of the converted content
+  - Added `generate_gallery=True` parameter to allow skipping gallery generation
+  - Updated `cmd_convert()` to display gallery info in both dry-run and actual conversion modes
+  - Added 9 new tests in `test_publish_cli.py` covering gallery generation scenarios
 
 - [ ] Add `--no-gallery` flag to the `convert` subcommand to skip gallery generation even if a Pictures section exists
 
