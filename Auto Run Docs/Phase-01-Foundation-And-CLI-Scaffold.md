@@ -10,7 +10,9 @@ This phase establishes the development environment and builds a working CLI tool
 - [x] Create a `scripts/` directory in the blog root for the publishing tools
   - Created `/home/adam/Dev/blog/needmorecowbell.github.io/scripts/` on 2026-01-02
 
-- [ ] Create `scripts/publish.py` as the main CLI entry point with argparse supporting these subcommands: `scan` (find publishable notes), `convert` (process a single note), and `list` (show what would be published)
+- [x] Create `scripts/publish.py` as the main CLI entry point with argparse supporting these subcommands: `scan` (find publishable notes), `convert` (process a single note), and `list` (show what would be published)
+  - Created CLI scaffold with `scan`, `list`, and `convert` subcommands on 2026-01-02
+  - Includes `--dry-run` flag for convert, proper error handling, and helpful usage examples
 
 - [ ] Create `scripts/obsidian_parser.py` module that reads an Obsidian markdown file and extracts its YAML frontmatter into a Python dict, returning both the frontmatter and the body content separately
 
