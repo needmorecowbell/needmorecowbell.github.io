@@ -15,7 +15,11 @@ This phase adds intelligent content routing so notes are published to the approp
   - Added `get_hugo_section_path()` helper to map content types to Hugo directory paths
   - Created 63 comprehensive tests in `test_content_router.py`
 
-- [ ] Update `hugo_writer.py` to accept the content type and write to the appropriate directory: `content/english/post/`, `content/english/projects/`, or `content/english/photography/`
+- [x] Update `hugo_writer.py` to accept the content type and write to the appropriate directory: `content/english/post/`, `content/english/projects/`, or `content/english/photography/`
+  - Added `get_output_path()` function that determines the full output path based on content type and hugo root
+  - Added `write_hugo_post_routed()` function that combines content type determination with writing
+  - Integrates with `content_router.py` to use `determine_content_type()` and `get_hugo_section_path()`
+  - Added 25 new tests covering path generation, routing by tags, explicit content types, and integration scenarios
 
 - [ ] Create `scripts/gallery_generator.py` module with a `extract_pictures_section()` function that parses the `## Pictures` section from Obsidian notes and extracts all media references listed there
 

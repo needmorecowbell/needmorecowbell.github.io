@@ -10,6 +10,8 @@ import os
 from pathlib import Path
 from typing import Dict, Any, Optional
 
+from content_router import get_hugo_section_path, determine_content_type
+
 
 def format_frontmatter(frontmatter: Dict[str, Any]) -> str:
     """
@@ -132,6 +134,43 @@ def _quote_if_needed(value: str) -> str:
     return value
 
 
+def get_output_path(
+    filename: str,
+    content_type: str,
+    hugo_root: Optional[Path] = None
+) -> Path:
+    """
+    Determine the full output path for a Hugo post based on content type.
+
+    Uses content_router to determine the appropriate Hugo section directory,
+    then constructs the full path including the hugo root and filename.
+
+    Args:
+        filename: The filename for the post (with or without .md extension)
+        content_type: The content type ('post', 'project', or 'photography')
+        hugo_root: The root directory of the Hugo site. Defaults to current directory.
+
+    Returns:
+        The full Path where the Hugo post should be written
+
+    Raises:
+        ValueError: If content_type is not valid
+    """
+    if hugo_root is None:
+        hugo_root = Path.cwd()
+    else:
+        hugo_root = Path(hugo_root)
+
+    # Get the section path from content_router
+    section_path = get_hugo_section_path(content_type)
+
+    # Ensure filename has .md extension
+    if not filename.endswith('.md'):
+        filename = f"{filename}.md"
+
+    return hugo_root / section_path / filename
+
+
 def write_hugo_post(
     frontmatter: Dict[str, Any],
     body: str,
@@ -184,6 +223,47 @@ def write_hugo_post(
     output_path.write_text(content, encoding='utf-8')
 
     return output_path
+
+
+def write_hugo_post_routed(
+    frontmatter: Dict[str, Any],
+    body: str,
+    filename: str,
+    hugo_root: Optional[Path] = None,
+    content_type: Optional[str] = None,
+    create_dirs: bool = True
+) -> Path:
+    """
+    Write a Hugo post to the appropriate section based on content type.
+
+    Combines content type determination with writing. If content_type is not
+    explicitly provided, it is determined from the frontmatter (explicit
+    content_type field or inferred from tags).
+
+    Args:
+        frontmatter: Dictionary containing Hugo-compatible frontmatter fields
+        body: The markdown body content (already converted from Obsidian syntax)
+        filename: The filename for the post (with or without .md extension)
+        hugo_root: The root directory of the Hugo site. Defaults to current directory.
+        content_type: Explicit content type. If None, determined from frontmatter.
+        create_dirs: If True, create parent directories if they don't exist
+
+    Returns:
+        The Path where the file was written
+
+    Raises:
+        ValueError: If an explicit content_type is provided but is invalid
+        OSError: If the file cannot be written
+    """
+    # Determine content type if not explicitly provided
+    if content_type is None:
+        content_type = determine_content_type(frontmatter)
+
+    # Get the output path for the determined content type
+    output_path = get_output_path(filename, content_type, hugo_root)
+
+    # Write the post
+    return write_hugo_post(frontmatter, body, output_path, create_dirs)
 
 
 def preview_hugo_post(frontmatter: Dict[str, Any], body: str) -> str:

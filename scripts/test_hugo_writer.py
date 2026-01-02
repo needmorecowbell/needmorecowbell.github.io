@@ -12,6 +12,8 @@ from pathlib import Path
 
 from hugo_writer import (
     write_hugo_post,
+    write_hugo_post_routed,
+    get_output_path,
     preview_hugo_post,
     format_frontmatter,
     _format_field,
@@ -508,6 +510,281 @@ class TestEdgeCases(unittest.TestCase):
         # The ones in body should be preserved as-is
         lines = content.split('\n')
         self.assertEqual(lines[0], '---')
+
+
+class TestGetOutputPath(unittest.TestCase):
+    """Tests for the get_output_path function."""
+
+    def test_post_content_type(self):
+        """Test that post content type routes to post directory."""
+        path = get_output_path('my-post.md', 'post', Path('/hugo'))
+        self.assertEqual(path, Path('/hugo/content/english/post/my-post.md'))
+
+    def test_project_content_type(self):
+        """Test that project content type routes to projects directory."""
+        path = get_output_path('my-project.md', 'project', Path('/hugo'))
+        self.assertEqual(path, Path('/hugo/content/english/projects/my-project.md'))
+
+    def test_photography_content_type(self):
+        """Test that photography content type routes to photography directory."""
+        path = get_output_path('my-photos.md', 'photography', Path('/hugo'))
+        self.assertEqual(path, Path('/hugo/content/english/photography/my-photos.md'))
+
+    def test_adds_md_extension(self):
+        """Test that .md extension is added if missing."""
+        path = get_output_path('my-post', 'post', Path('/hugo'))
+        self.assertEqual(path.suffix, '.md')
+        self.assertEqual(path.name, 'my-post.md')
+
+    def test_preserves_md_extension(self):
+        """Test that existing .md extension is preserved."""
+        path = get_output_path('my-post.md', 'post', Path('/hugo'))
+        self.assertEqual(path.name, 'my-post.md')
+
+    def test_invalid_content_type_raises(self):
+        """Test that invalid content type raises ValueError."""
+        with self.assertRaises(ValueError):
+            get_output_path('my-post.md', 'invalid', Path('/hugo'))
+
+    def test_default_hugo_root(self):
+        """Test that hugo_root defaults to current directory."""
+        path = get_output_path('test.md', 'post')
+        self.assertIn('content/english/post/test.md', str(path))
+
+    def test_relative_hugo_root(self):
+        """Test with relative hugo root path."""
+        path = get_output_path('test.md', 'post', Path('.'))
+        self.assertEqual(str(path), 'content/english/post/test.md')
+
+
+class TestWriteHugoPostRouted(unittest.TestCase):
+    """Tests for the write_hugo_post_routed function."""
+
+    def setUp(self):
+        """Create a temporary directory for test outputs."""
+        self.temp_dir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        """Clean up temporary directory."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_routes_to_post_by_default(self):
+        """Test that content routes to post by default when no tags."""
+        frontmatter = {'title': 'My Post', 'date': '2024-01-15'}
+        body = 'Content here.'
+
+        result = write_hugo_post_routed(
+            frontmatter, body, 'test-post.md',
+            hugo_root=Path(self.temp_dir)
+        )
+
+        expected = Path(self.temp_dir) / 'content/english/post/test-post.md'
+        self.assertEqual(result, expected)
+        self.assertTrue(result.exists())
+
+    def test_routes_to_project_from_tags(self):
+        """Test that content with project tag routes to projects."""
+        frontmatter = {'title': 'My Project', 'tags': ['woodworking', 'diy']}
+        body = 'Project content.'
+
+        result = write_hugo_post_routed(
+            frontmatter, body, 'test-project.md',
+            hugo_root=Path(self.temp_dir)
+        )
+
+        expected = Path(self.temp_dir) / 'content/english/projects/test-project.md'
+        self.assertEqual(result, expected)
+        self.assertTrue(result.exists())
+
+    def test_routes_to_photography_from_tags(self):
+        """Test that content with photography tag routes to photography."""
+        frontmatter = {'title': 'My Photos', 'tags': ['travel', 'photography']}
+        body = 'Photo gallery content.'
+
+        result = write_hugo_post_routed(
+            frontmatter, body, 'test-photos.md',
+            hugo_root=Path(self.temp_dir)
+        )
+
+        expected = Path(self.temp_dir) / 'content/english/photography/test-photos.md'
+        self.assertEqual(result, expected)
+        self.assertTrue(result.exists())
+
+    def test_explicit_content_type_overrides_tags(self):
+        """Test that explicit content_type parameter overrides tag inference."""
+        frontmatter = {'title': 'Mixed Content', 'tags': ['photography']}
+        body = 'Content.'
+
+        result = write_hugo_post_routed(
+            frontmatter, body, 'test-override.md',
+            hugo_root=Path(self.temp_dir),
+            content_type='post'
+        )
+
+        expected = Path(self.temp_dir) / 'content/english/post/test-override.md'
+        self.assertEqual(result, expected)
+
+    def test_explicit_content_type_in_frontmatter(self):
+        """Test that explicit content_type in frontmatter is respected."""
+        frontmatter = {
+            'title': 'Project Post',
+            'content_type': 'project',
+            'tags': ['random']
+        }
+        body = 'Content.'
+
+        result = write_hugo_post_routed(
+            frontmatter, body, 'test-explicit.md',
+            hugo_root=Path(self.temp_dir)
+        )
+
+        expected = Path(self.temp_dir) / 'content/english/projects/test-explicit.md'
+        self.assertEqual(result, expected)
+
+    def test_creates_directories(self):
+        """Test that write_hugo_post_routed creates necessary directories."""
+        frontmatter = {'title': 'Test'}
+        body = 'Content.'
+
+        result = write_hugo_post_routed(
+            frontmatter, body, 'deep-test.md',
+            hugo_root=Path(self.temp_dir)
+        )
+
+        self.assertTrue(result.exists())
+        self.assertTrue(result.parent.exists())
+
+    def test_file_content_is_valid(self):
+        """Test that the written file has valid Hugo format."""
+        frontmatter = {'title': 'Valid Post', 'draft': False}
+        body = 'This is the body.'
+
+        result = write_hugo_post_routed(
+            frontmatter, body, 'valid-test.md',
+            hugo_root=Path(self.temp_dir)
+        )
+
+        content = result.read_text()
+        self.assertTrue(content.startswith('---\n'))
+        self.assertIn('title: Valid Post', content)
+        self.assertIn('This is the body.', content)
+
+    def test_adds_md_extension(self):
+        """Test that .md extension is added if missing."""
+        frontmatter = {'title': 'Test'}
+        body = 'Content.'
+
+        result = write_hugo_post_routed(
+            frontmatter, body, 'no-extension',
+            hugo_root=Path(self.temp_dir)
+        )
+
+        self.assertEqual(result.suffix, '.md')
+
+    def test_invalid_explicit_content_type(self):
+        """Test that invalid explicit content_type raises ValueError."""
+        frontmatter = {'title': 'Test'}
+        body = 'Content.'
+
+        with self.assertRaises(ValueError):
+            write_hugo_post_routed(
+                frontmatter, body, 'test.md',
+                hugo_root=Path(self.temp_dir),
+                content_type='invalid'
+            )
+
+
+class TestContentTypeRoutingIntegration(unittest.TestCase):
+    """Integration tests for content-type-based routing."""
+
+    def setUp(self):
+        """Create a temporary directory mimicking Hugo structure."""
+        self.temp_dir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        """Clean up temporary directory."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_full_project_workflow(self):
+        """Test complete workflow for a project post."""
+        frontmatter = {
+            'title': 'Building a Wooden Table',
+            'date': '2024-01-15',
+            'draft': False,
+            'tags': ['woodworking', 'diy', 'furniture'],
+            'description': 'A guide to building a wooden table'
+        }
+        body = """## Introduction
+
+This project covers building a wooden table from scratch.
+
+## Materials
+
+- Wood planks
+- Screws
+- Wood glue
+"""
+
+        result = write_hugo_post_routed(
+            frontmatter, body, '2024-01-15-wooden-table.md',
+            hugo_root=Path(self.temp_dir)
+        )
+
+        # Verify correct routing
+        self.assertIn('content/english/projects', str(result))
+
+        # Verify file exists and content is correct
+        content = result.read_text()
+        self.assertIn('title: Building a Wooden Table', content)
+        self.assertIn('## Introduction', content)
+
+    def test_full_photography_workflow(self):
+        """Test complete workflow for a photography post."""
+        frontmatter = {
+            'title': 'Trip to Puerto Morelos',
+            'date': '2017-05-20',
+            'draft': False,
+            'tags': ['travel', 'mexico', 'photography']
+        }
+        body = """A collection of photos from my trip to Puerto Morelos.
+
+## The Beach
+
+Beautiful turquoise waters.
+"""
+
+        result = write_hugo_post_routed(
+            frontmatter, body, '2017-05-20-puerto-morelos.md',
+            hugo_root=Path(self.temp_dir)
+        )
+
+        # Verify correct routing
+        self.assertIn('content/english/photography', str(result))
+
+    def test_full_blog_post_workflow(self):
+        """Test complete workflow for a regular blog post."""
+        frontmatter = {
+            'title': 'Tips for Linux Terminal',
+            'date': '2024-01-20',
+            'draft': False,
+            'tags': ['linux', 'terminal', 'tips']
+        }
+        body = """Here are some tips for using the Linux terminal effectively.
+
+## Tip 1: Aliases
+
+Use aliases to shorten common commands.
+"""
+
+        result = write_hugo_post_routed(
+            frontmatter, body, '2024-01-20-linux-tips.md',
+            hugo_root=Path(self.temp_dir)
+        )
+
+        # Verify correct routing (should be post since no project/photo tags)
+        self.assertIn('content/english/post', str(result))
 
 
 if __name__ == '__main__':
