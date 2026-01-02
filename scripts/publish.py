@@ -318,12 +318,13 @@ def extract_and_resolve_media(note_path: Path) -> tuple:
     return media_items, missing_count
 
 
-def upload_media_to_minio(media_items: list) -> dict:
+def upload_media_to_minio(media_items: list, show_progress: bool = True) -> dict:
     """
     Upload media files to MinIO and return URL mappings.
 
     Args:
         media_items: List of (obsidian_reference, resolved_local_path) tuples
+        show_progress: Whether to show a progress bar (default: True)
 
     Returns:
         Dict mapping Obsidian references to their MinIO URLs
@@ -349,6 +350,16 @@ def upload_media_to_minio(media_items: list) -> dict:
     )
     import os
 
+    # Try to import rich for progress bars
+    rich_available = False
+    if show_progress:
+        try:
+            from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+            from rich.console import Console
+            rich_available = True
+        except ImportError:
+            pass  # Fall back to simple output
+
     # Initialize MinIO client
     client = get_minio_client()
     bucket_name = get_bucket_name()
@@ -367,29 +378,83 @@ def upload_media_to_minio(media_items: list) -> dict:
     items_to_upload = []
     url_mapping = {}
 
-    for ref, local_path in media_items:
-        # Build the expected object name
-        normalized_ref = ref.lstrip('/')
-        object_name = f"{DEFAULT_ASSET_PREFIX}/{normalized_ref}"
+    if rich_available and show_progress:
+        console = Console()
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+            transient=True
+        ) as progress:
+            task = progress.add_task("Checking existing files...", total=len(media_items))
+            for ref, local_path in media_items:
+                # Build the expected object name
+                normalized_ref = ref.lstrip('/')
+                object_name = f"{DEFAULT_ASSET_PREFIX}/{normalized_ref}"
 
-        if check_existing(client, bucket_name, object_name):
-            # File already exists, build URL without uploading
-            url = build_minio_url(endpoint, bucket_name, object_name, secure)
-            url_mapping[ref] = url
-            print(f"  [SKIP] {ref} (already exists)")
-        else:
-            items_to_upload.append((ref, local_path))
+                if check_existing(client, bucket_name, object_name):
+                    # File already exists, build URL without uploading
+                    url = build_minio_url(endpoint, bucket_name, object_name, secure)
+                    url_mapping[ref] = url
+                    console.print(f"  [dim][SKIP][/dim] {ref} [dim](already exists)[/dim]")
+                else:
+                    items_to_upload.append((ref, local_path))
+                progress.advance(task)
+    else:
+        for ref, local_path in media_items:
+            # Build the expected object name
+            normalized_ref = ref.lstrip('/')
+            object_name = f"{DEFAULT_ASSET_PREFIX}/{normalized_ref}"
+
+            if check_existing(client, bucket_name, object_name):
+                # File already exists, build URL without uploading
+                url = build_minio_url(endpoint, bucket_name, object_name, secure)
+                url_mapping[ref] = url
+                print(f"  [SKIP] {ref} (already exists)")
+            else:
+                items_to_upload.append((ref, local_path))
 
     # Upload files that don't exist yet
     if items_to_upload:
-        batch_results = upload_media_batch(
-            client,
-            bucket_name,
-            items_to_upload,
-            endpoint=endpoint,
-            secure=secure
-        )
-        url_mapping.update(batch_results)
+        if rich_available and show_progress:
+            console = Console()
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TaskProgressColumn(),
+                TextColumn("{task.fields[current_file]}"),
+                console=console
+            ) as progress:
+                task = progress.add_task(
+                    "Uploading media...",
+                    total=len(items_to_upload),
+                    current_file=""
+                )
+
+                def update_progress(filename: str, current: int, total: int):
+                    # Truncate long filenames for display
+                    display_name = filename if len(filename) <= 30 else f"...{filename[-27:]}"
+                    progress.update(task, completed=current, current_file=f"[cyan]{display_name}[/cyan]")
+
+                batch_results = upload_media_batch(
+                    client,
+                    bucket_name,
+                    items_to_upload,
+                    endpoint=endpoint,
+                    secure=secure,
+                    progress_callback=update_progress
+                )
+                url_mapping.update(batch_results)
+        else:
+            batch_results = upload_media_batch(
+                client,
+                bucket_name,
+                items_to_upload,
+                endpoint=endpoint,
+                secure=secure
+            )
+            url_mapping.update(batch_results)
 
     return url_mapping
 

@@ -996,6 +996,114 @@ class TestUploadMediaBatch(unittest.TestCase):
         finally:
             os.unlink(temp_path)
 
+    def test_progress_callback_is_called_for_each_file(self):
+        """Calls progress callback after each file upload."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        temp_files = []
+        try:
+            for ext in ['.jpg', '.png', '.gif']:
+                with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as f:
+                    f.write(b'fake data')
+                    temp_files.append(f.name)
+
+            media_items = [
+                ('photo1.jpg', temp_files[0]),
+                ('photo2.png', temp_files[1]),
+                ('photo3.gif', temp_files[2]),
+            ]
+
+            callback_calls = []
+            def mock_callback(filename, current, total):
+                callback_calls.append((filename, current, total))
+
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                upload_media_batch(
+                    mock_client,
+                    "my-bucket",
+                    media_items,
+                    endpoint="minio.example.com",
+                    progress_callback=mock_callback
+                )
+
+            # Should be called once per file
+            self.assertEqual(len(callback_calls), 3)
+            self.assertEqual(callback_calls[0], ('photo1.jpg', 1, 3))
+            self.assertEqual(callback_calls[1], ('photo2.png', 2, 3))
+            self.assertEqual(callback_calls[2], ('photo3.gif', 3, 3))
+        finally:
+            for path in temp_files:
+                os.unlink(path)
+
+    def test_progress_callback_none_is_ignored(self):
+        """Works correctly when progress_callback is None."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+            f.write(b'fake data')
+            temp_path = f.name
+
+        try:
+            media_items = [('photo.jpg', temp_path)]
+
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                # Should not raise any error when callback is None
+                url_mapping = upload_media_batch(
+                    mock_client,
+                    "my-bucket",
+                    media_items,
+                    endpoint="minio.example.com",
+                    progress_callback=None
+                )
+
+            self.assertIn('photo.jpg', url_mapping)
+        finally:
+            os.unlink(temp_path)
+
+    def test_progress_callback_called_even_on_failure(self):
+        """Calls progress callback even when upload fails."""
+        mock_client = MagicMock()
+        mock_s3_error = Exception("Access Denied")
+        mock_minio = MagicMock()
+        mock_minio.error.S3Error = type(mock_s3_error)
+        mock_client.fput_object.side_effect = mock_s3_error
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+            f.write(b'fake data')
+            temp_path = f.name
+
+        try:
+            media_items = [('failed_photo.jpg', temp_path)]
+
+            callback_calls = []
+            def mock_callback(filename, current, total):
+                callback_calls.append((filename, current, total))
+
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                url_mapping = upload_media_batch(
+                    mock_client,
+                    "my-bucket",
+                    media_items,
+                    endpoint="minio.example.com",
+                    progress_callback=mock_callback
+                )
+
+            # Callback should still be called
+            self.assertEqual(len(callback_calls), 1)
+            self.assertEqual(callback_calls[0], ('failed_photo.jpg', 1, 1))
+            # And result should indicate failure
+            self.assertIsNone(url_mapping['failed_photo.jpg'])
+        finally:
+            os.unlink(temp_path)
+
 
 if __name__ == "__main__":
     unittest.main()

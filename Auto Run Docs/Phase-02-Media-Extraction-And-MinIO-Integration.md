@@ -97,7 +97,16 @@ This phase adds media handling to the publish pipeline. The CLI will extract all
   - Displays summary with counts: total references, resolved, missing
   - 6 unit tests added to `test_publish_cli.py` (total project tests: 423)
 
-- [ ] Add progress bars using `rich` for media upload operations showing current file and overall progress
+- [x] Add progress bars using `rich` for media upload operations showing current file and overall progress
+  - Added `progress_callback` parameter to `upload_media_batch()` in `minio_uploader.py`
+  - Callback receives `(filename, current_index, total_count)` for progress tracking
+  - Updated `upload_media_to_minio()` in `publish.py` to use `rich.progress` with:
+    - Spinner + text column for checking existing files phase
+    - Spinner + text + bar + percentage + current file display for upload phase
+  - Long filenames are truncated to 30 chars for clean display
+  - Falls back to simple text output if `rich` is not installed
+  - Added `show_progress` parameter to `upload_media_to_minio()` to disable progress bars when needed
+  - 4 new unit tests added to `test_minio_uploader.py` (total project tests: 426)
 
 - [ ] Handle common image formats (jpg, jpeg, png, gif, webp) and video formats (mp4, mov, webm) in the media extractor
 

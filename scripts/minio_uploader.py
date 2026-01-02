@@ -14,7 +14,7 @@ import logging
 import mimetypes
 import os
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Callable, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 # Configure module logger
 logger = logging.getLogger(__name__)
@@ -293,7 +293,8 @@ def upload_media_batch(
     media_items: List[Tuple[str, str]],
     endpoint: Optional[str] = None,
     secure: Optional[bool] = None,
-    asset_prefix: str = DEFAULT_ASSET_PREFIX
+    asset_prefix: str = DEFAULT_ASSET_PREFIX,
+    progress_callback: Optional[Callable[[str, int, int], None]] = None
 ) -> Dict[str, Optional[str]]:
     """
     Upload a batch of media files to MinIO and return URL mappings.
@@ -313,6 +314,9 @@ def upload_media_batch(
         endpoint: MinIO endpoint for URL construction (reads from MINIO_ENDPOINT if not provided)
         secure: Whether HTTPS is used for URLs (reads from MINIO_SECURE if not provided)
         asset_prefix: Prefix for the object path in MinIO (default: 'assets')
+        progress_callback: Optional callback function called after each file upload.
+                          Receives (filename, current_index, total_count) arguments.
+                          Useful for progress bar updates.
 
     Returns:
         Dictionary mapping Obsidian references to their final MinIO URLs.
@@ -344,8 +348,9 @@ def upload_media_batch(
         secure = secure_str in ("true", "1", "yes")
 
     url_mapping: Dict[str, Optional[str]] = {}
+    total_items = len(media_items)
 
-    for obsidian_ref, local_path in media_items:
+    for index, (obsidian_ref, local_path) in enumerate(media_items):
         # Use the obsidian reference as the relative path (it already contains the path structure)
         object_name = upload_file(
             client,
@@ -363,6 +368,10 @@ def upload_media_batch(
         else:
             url_mapping[obsidian_ref] = None
             logger.warning(f"Failed to upload {obsidian_ref}")
+
+        # Call progress callback if provided
+        if progress_callback:
+            progress_callback(obsidian_ref, index + 1, total_items)
 
     # Log summary
     successful = sum(1 for v in url_mapping.values() if v is not None)
