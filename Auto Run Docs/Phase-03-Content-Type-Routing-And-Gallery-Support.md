@@ -87,7 +87,18 @@ This phase adds intelligent content routing so notes are published to the approp
 - [x] Add `Pillow` to `scripts/requirements.txt` for image processing
   - Added `Pillow>=10.0.0` with descriptive comment
 
-- [ ] Update MinIO uploader to upload both full-size images and thumbnails for gallery content, organizing them in `assets/` and `assets/thumbnails/` paths
+- [x] Update MinIO uploader to upload both full-size images and thumbnails for gallery content, organizing them in `assets/` and `assets/thumbnails/` paths
+  - Added `DEFAULT_THUMBNAIL_PREFIX` constant (`assets/thumbnails`) for thumbnail path organization
+  - Added `THUMBNAIL_EXTENSIONS` constant with thumbnailable image formats
+  - Added `GalleryUploadResult` NamedTuple to return both image and thumbnail URLs
+  - Implemented `upload_gallery_media_batch()` function that:
+    - Uploads full-size images to `assets/` path
+    - Generates thumbnails using `generate_thumbnail()` from `media_extractor.py`
+    - Uploads thumbnails to `assets/thumbnails/` path
+    - Supports configurable thumbnail width (default 400px) and quality (default 85)
+    - Handles mixed media types (images with thumbnails, videos/audio without)
+    - Provides progress callback with `has_thumbnail` flag
+  - Added 24 new tests in `TestUploadGalleryMediaBatch` class covering all scenarios
 
 - [ ] Add a `publish` subcommand (the main command users will run) that combines scan + convert + upload for a single note, with confirmation prompts for non-dry-run mode
 

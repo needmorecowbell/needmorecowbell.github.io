@@ -5,6 +5,7 @@ MinIO Uploader for Blog Media Files
 This module handles uploading media files to MinIO object storage.
 It provides functions for initializing the MinIO client, uploading
 individual files, and batch uploading media referenced in blog posts.
+Also supports gallery content with automatic thumbnail generation and upload.
 
 Note: The minio package must be installed to use this module.
 Install with: pip install minio
@@ -13,8 +14,9 @@ Install with: pip install minio
 import logging
 import mimetypes
 import os
+import tempfile
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, NamedTuple
 
 # Configure module logger
 logger = logging.getLogger(__name__)
@@ -152,6 +154,9 @@ def ensure_bucket_exists(client, bucket_name: str) -> bool:
 
 # Default prefix for uploaded assets in MinIO bucket
 DEFAULT_ASSET_PREFIX = "assets"
+
+# Default prefix for thumbnail assets in MinIO bucket
+DEFAULT_THUMBNAIL_PREFIX = "assets/thumbnails"
 
 
 def upload_file(
@@ -379,3 +384,185 @@ def upload_media_batch(
     logger.info(f"Batch upload complete: {successful} successful, {failed} failed")
 
     return url_mapping
+
+
+class GalleryUploadResult(NamedTuple):
+    """Result of uploading a gallery media item with optional thumbnail.
+
+    Attributes:
+        image_url: URL of the full-size image in MinIO, or None if upload failed
+        thumbnail_url: URL of the thumbnail in MinIO, or None if thumbnail was not generated
+                       (e.g., unsupported format, image too small, or upload failed)
+    """
+    image_url: Optional[str]
+    thumbnail_url: Optional[str]
+
+
+# Thumbnail-capable image extensions (subset of all image extensions)
+THUMBNAIL_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif'}
+
+
+def upload_gallery_media_batch(
+    client,
+    bucket_name: str,
+    media_items: List[Tuple[str, str]],
+    endpoint: Optional[str] = None,
+    secure: Optional[bool] = None,
+    asset_prefix: str = DEFAULT_ASSET_PREFIX,
+    thumbnail_prefix: str = DEFAULT_THUMBNAIL_PREFIX,
+    thumbnail_width: int = 400,
+    thumbnail_quality: int = 85,
+    progress_callback: Optional[Callable[[str, int, int, bool], None]] = None
+) -> Dict[str, GalleryUploadResult]:
+    """
+    Upload a batch of gallery media files to MinIO with automatic thumbnail generation.
+
+    For each image in the batch, this function:
+    1. Uploads the full-size image to the assets/ path
+    2. Generates a thumbnail (if the image supports thumbnailing)
+    3. Uploads the thumbnail to the assets/thumbnails/ path
+
+    Non-image media (videos, audio) are uploaded without thumbnails.
+
+    Args:
+        client: Initialized Minio client
+        bucket_name: Name of the target bucket
+        media_items: List of tuples where each tuple contains:
+                    - obsidian_reference: The original media reference from ![[...]] syntax
+                      (e.g., '2021/06/image.jpg')
+                    - resolved_local_path: The full local path to the file
+                      (e.g., '/home/adam/Media/2021/06/image.jpg')
+        endpoint: MinIO endpoint for URL construction (reads from MINIO_ENDPOINT if not provided)
+        secure: Whether HTTPS is used for URLs (reads from MINIO_SECURE if not provided)
+        asset_prefix: Prefix for full-size images in MinIO (default: 'assets')
+        thumbnail_prefix: Prefix for thumbnails in MinIO (default: 'assets/thumbnails')
+        thumbnail_width: Target width for thumbnails in pixels (default: 400)
+        thumbnail_quality: JPEG/WebP quality for thumbnails 1-100 (default: 85)
+        progress_callback: Optional callback function called after each file upload.
+                          Receives (filename, current_index, total_count, has_thumbnail) arguments.
+                          Useful for progress bar updates.
+
+    Returns:
+        Dictionary mapping Obsidian references to GalleryUploadResult objects.
+        Each result contains:
+        - image_url: URL of the full-size image (None if upload failed)
+        - thumbnail_url: URL of the thumbnail (None if not applicable or failed)
+
+    Example:
+        >>> media_items = [
+        ...     ('2021/06/photo.jpg', '/home/adam/Media/2021/06/photo.jpg'),
+        ...     ('videos/demo.mp4', '/home/adam/Media/videos/demo.mp4'),
+        ... ]
+        >>> results = upload_gallery_media_batch(client, 'my-bucket', media_items)
+        >>> results['2021/06/photo.jpg']
+        GalleryUploadResult(
+            image_url='https://minio.example.com/my-bucket/assets/2021/06/photo.jpg',
+            thumbnail_url='https://minio.example.com/my-bucket/assets/thumbnails/2021/06/photo.jpg'
+        )
+        >>> results['videos/demo.mp4']
+        GalleryUploadResult(
+            image_url='https://minio.example.com/my-bucket/assets/videos/demo.mp4',
+            thumbnail_url=None  # Videos don't get thumbnails
+        )
+    """
+    # Import thumbnail generation from media_extractor
+    from media_extractor import generate_thumbnail, THUMBNAIL_SUPPORTED_EXTENSIONS
+
+    # Get endpoint from environment if not provided
+    if endpoint is None:
+        endpoint = os.environ.get(MINIO_ENDPOINT_VAR)
+        if not endpoint:
+            raise MinioConfigError(
+                f"Missing MinIO endpoint: provide 'endpoint' parameter or set {MINIO_ENDPOINT_VAR}"
+            )
+
+    # Get secure setting from environment if not provided
+    if secure is None:
+        secure_str = os.environ.get(MINIO_SECURE_VAR, "true").lower()
+        secure = secure_str in ("true", "1", "yes")
+
+    results: Dict[str, GalleryUploadResult] = {}
+    total_items = len(media_items)
+
+    successful_images = 0
+    successful_thumbnails = 0
+    failed_images = 0
+
+    for index, (obsidian_ref, local_path) in enumerate(media_items):
+        image_url: Optional[str] = None
+        thumbnail_url: Optional[str] = None
+        has_thumbnail = False
+
+        # Upload the full-size image
+        object_name = upload_file(
+            client,
+            bucket_name,
+            local_path,
+            obsidian_ref,
+            asset_prefix=asset_prefix
+        )
+
+        if object_name:
+            image_url = build_minio_url(endpoint, bucket_name, object_name, secure)
+            logger.info(f"Uploaded full-size: {obsidian_ref} -> {image_url}")
+            successful_images += 1
+
+            # Check if this is a thumbnailable image
+            file_ext = Path(local_path).suffix.lower().lstrip('.')
+            if file_ext in THUMBNAIL_SUPPORTED_EXTENSIONS:
+                # Generate thumbnail to a temporary file
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    thumb_filename = Path(local_path).name
+                    temp_thumb_path = str(Path(temp_dir) / thumb_filename)
+
+                    thumb_result = generate_thumbnail(
+                        local_path,
+                        output_path=temp_thumb_path,
+                        width=thumbnail_width,
+                        quality=thumbnail_quality
+                    )
+
+                    if thumb_result:
+                        # Upload thumbnail with same relative path but different prefix
+                        thumb_object_name = upload_file(
+                            client,
+                            bucket_name,
+                            thumb_result,
+                            obsidian_ref,
+                            asset_prefix=thumbnail_prefix
+                        )
+
+                        if thumb_object_name:
+                            thumbnail_url = build_minio_url(
+                                endpoint, bucket_name, thumb_object_name, secure
+                            )
+                            logger.info(f"Uploaded thumbnail: {obsidian_ref} -> {thumbnail_url}")
+                            successful_thumbnails += 1
+                            has_thumbnail = True
+                        else:
+                            logger.warning(f"Failed to upload thumbnail for {obsidian_ref}")
+                    else:
+                        logger.debug(
+                            f"No thumbnail generated for {obsidian_ref} "
+                            "(image may be smaller than target width)"
+                        )
+        else:
+            logger.warning(f"Failed to upload full-size image: {obsidian_ref}")
+            failed_images += 1
+
+        results[obsidian_ref] = GalleryUploadResult(
+            image_url=image_url,
+            thumbnail_url=thumbnail_url
+        )
+
+        # Call progress callback if provided
+        if progress_callback:
+            progress_callback(obsidian_ref, index + 1, total_items, has_thumbnail)
+
+    # Log summary
+    logger.info(
+        f"Gallery batch upload complete: "
+        f"{successful_images} images, {successful_thumbnails} thumbnails, {failed_images} failed"
+    )
+
+    return results

@@ -20,6 +20,8 @@ from minio_uploader import (
     check_existing,
     build_minio_url,
     upload_media_batch,
+    upload_gallery_media_batch,
+    GalleryUploadResult,
     MinioConfigError,
     MINIO_ENDPOINT_VAR,
     MINIO_ACCESS_KEY_VAR,
@@ -27,6 +29,8 @@ from minio_uploader import (
     MINIO_BUCKET_VAR,
     MINIO_SECURE_VAR,
     DEFAULT_ASSET_PREFIX,
+    DEFAULT_THUMBNAIL_PREFIX,
+    THUMBNAIL_EXTENSIONS,
     _get_minio_module,
 )
 
@@ -1101,6 +1105,564 @@ class TestUploadMediaBatch(unittest.TestCase):
             self.assertEqual(callback_calls[0], ('failed_photo.jpg', 1, 1))
             # And result should indicate failure
             self.assertIsNone(url_mapping['failed_photo.jpg'])
+        finally:
+            os.unlink(temp_path)
+
+
+class TestGalleryUploadResult(unittest.TestCase):
+    """Tests for GalleryUploadResult NamedTuple."""
+
+    def test_creates_result_with_both_urls(self):
+        """Creates result with both image and thumbnail URLs."""
+        result = GalleryUploadResult(
+            image_url="https://example.com/image.jpg",
+            thumbnail_url="https://example.com/thumb.jpg"
+        )
+        self.assertEqual(result.image_url, "https://example.com/image.jpg")
+        self.assertEqual(result.thumbnail_url, "https://example.com/thumb.jpg")
+
+    def test_creates_result_with_image_only(self):
+        """Creates result with image URL but no thumbnail."""
+        result = GalleryUploadResult(
+            image_url="https://example.com/video.mp4",
+            thumbnail_url=None
+        )
+        self.assertEqual(result.image_url, "https://example.com/video.mp4")
+        self.assertIsNone(result.thumbnail_url)
+
+    def test_creates_result_for_failed_upload(self):
+        """Creates result with None values for failed upload."""
+        result = GalleryUploadResult(image_url=None, thumbnail_url=None)
+        self.assertIsNone(result.image_url)
+        self.assertIsNone(result.thumbnail_url)
+
+
+class TestDefaultThumbnailPrefix(unittest.TestCase):
+    """Tests for thumbnail-related constants."""
+
+    def test_default_thumbnail_prefix(self):
+        """Default thumbnail prefix is assets/thumbnails."""
+        self.assertEqual(DEFAULT_THUMBNAIL_PREFIX, "assets/thumbnails")
+
+    def test_thumbnail_extensions_defined(self):
+        """Thumbnail extensions constant is defined."""
+        self.assertIsInstance(THUMBNAIL_EXTENSIONS, set)
+        self.assertIn('jpg', THUMBNAIL_EXTENSIONS)
+        self.assertIn('png', THUMBNAIL_EXTENSIONS)
+
+
+class TestUploadGalleryMediaBatch(unittest.TestCase):
+    """Tests for upload_gallery_media_batch() function."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        # Import PIL for creating test images
+        from PIL import Image
+        self.Image = Image
+
+    def _create_test_image(self, path: str, width: int = 800, height: int = 600):
+        """Helper to create a test image file."""
+        img = self.Image.new('RGB', (width, height), color='blue')
+        img.save(path)
+
+    def test_uploads_image_with_thumbnail(self):
+        """Uploads both full-size image and thumbnail."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+            temp_path = f.name
+            self._create_test_image(temp_path, 800, 600)
+
+        try:
+            media_items = [('2021/06/photo.jpg', temp_path)]
+
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                results = upload_gallery_media_batch(
+                    mock_client,
+                    "my-bucket",
+                    media_items,
+                    endpoint="minio.example.com:9000",
+                    secure=True
+                )
+
+            self.assertEqual(len(results), 1)
+            result = results['2021/06/photo.jpg']
+            self.assertIsNotNone(result.image_url)
+            self.assertIsNotNone(result.thumbnail_url)
+
+            # Full-size should be in assets/
+            self.assertIn("assets/2021/06/photo.jpg", result.image_url)
+            # Thumbnail should be in assets/thumbnails/
+            self.assertIn("assets/thumbnails/2021/06/photo.jpg", result.thumbnail_url)
+
+            # Should have called fput_object twice (full + thumbnail)
+            self.assertEqual(mock_client.fput_object.call_count, 2)
+        finally:
+            os.unlink(temp_path)
+
+    def test_uploads_video_without_thumbnail(self):
+        """Uploads video without generating thumbnail."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        with tempfile.NamedTemporaryFile(suffix='.mp4', delete=False) as f:
+            f.write(b'fake video data')
+            temp_path = f.name
+
+        try:
+            media_items = [('videos/demo.mp4', temp_path)]
+
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                results = upload_gallery_media_batch(
+                    mock_client,
+                    "my-bucket",
+                    media_items,
+                    endpoint="minio.example.com:9000"
+                )
+
+            result = results['videos/demo.mp4']
+            self.assertIsNotNone(result.image_url)
+            self.assertIsNone(result.thumbnail_url)
+
+            # Should have called fput_object only once (no thumbnail for video)
+            self.assertEqual(mock_client.fput_object.call_count, 1)
+        finally:
+            os.unlink(temp_path)
+
+    def test_skips_thumbnail_for_small_image(self):
+        """Skips thumbnail generation for images smaller than target width."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+            temp_path = f.name
+            # Create image smaller than default 400px width
+            self._create_test_image(temp_path, 300, 200)
+
+        try:
+            media_items = [('small/photo.jpg', temp_path)]
+
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                results = upload_gallery_media_batch(
+                    mock_client,
+                    "my-bucket",
+                    media_items,
+                    endpoint="minio.example.com:9000"
+                )
+
+            result = results['small/photo.jpg']
+            self.assertIsNotNone(result.image_url)
+            # No thumbnail for small images
+            self.assertIsNone(result.thumbnail_url)
+
+            # Only one upload (full-size image)
+            self.assertEqual(mock_client.fput_object.call_count, 1)
+        finally:
+            os.unlink(temp_path)
+
+    def test_uses_custom_thumbnail_prefix(self):
+        """Uses custom thumbnail prefix when specified."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+            temp_path = f.name
+            self._create_test_image(temp_path, 800, 600)
+
+        try:
+            media_items = [('photo.jpg', temp_path)]
+
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                results = upload_gallery_media_batch(
+                    mock_client,
+                    "my-bucket",
+                    media_items,
+                    endpoint="minio.example.com",
+                    thumbnail_prefix="media/thumbs"
+                )
+
+            result = results['photo.jpg']
+            self.assertIn("media/thumbs/photo.jpg", result.thumbnail_url)
+        finally:
+            os.unlink(temp_path)
+
+    def test_uses_custom_thumbnail_width(self):
+        """Uses custom thumbnail width when specified."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+            temp_path = f.name
+            # Image needs to be larger than custom width
+            self._create_test_image(temp_path, 1000, 800)
+
+        try:
+            media_items = [('photo.jpg', temp_path)]
+
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                results = upload_gallery_media_batch(
+                    mock_client,
+                    "my-bucket",
+                    media_items,
+                    endpoint="minio.example.com",
+                    thumbnail_width=500
+                )
+
+            result = results['photo.jpg']
+            self.assertIsNotNone(result.thumbnail_url)
+
+            # Verify thumbnail was generated (by checking two uploads)
+            self.assertEqual(mock_client.fput_object.call_count, 2)
+        finally:
+            os.unlink(temp_path)
+
+    def test_handles_mixed_media_types(self):
+        """Handles batch with images and non-thumbnailable media."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        temp_files = []
+        try:
+            # Create an image
+            with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+                self._create_test_image(f.name, 800, 600)
+                temp_files.append(f.name)
+
+            # Create a video file
+            with tempfile.NamedTemporaryFile(suffix='.mp4', delete=False) as f:
+                f.write(b'fake video')
+                temp_files.append(f.name)
+
+            # Create an audio file
+            with tempfile.NamedTemporaryFile(suffix='.mp3', delete=False) as f:
+                f.write(b'fake audio')
+                temp_files.append(f.name)
+
+            media_items = [
+                ('photo.jpg', temp_files[0]),
+                ('video.mp4', temp_files[1]),
+                ('audio.mp3', temp_files[2]),
+            ]
+
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                results = upload_gallery_media_batch(
+                    mock_client,
+                    "my-bucket",
+                    media_items,
+                    endpoint="minio.example.com"
+                )
+
+            # Image should have thumbnail
+            self.assertIsNotNone(results['photo.jpg'].thumbnail_url)
+            # Video and audio should not
+            self.assertIsNone(results['video.mp4'].thumbnail_url)
+            self.assertIsNone(results['audio.mp3'].thumbnail_url)
+
+            # All three full-size files should be uploaded, plus one thumbnail
+            self.assertEqual(mock_client.fput_object.call_count, 4)
+        finally:
+            for path in temp_files:
+                os.unlink(path)
+
+    def test_returns_none_for_failed_upload(self):
+        """Returns None URLs for failed uploads."""
+        mock_client = MagicMock()
+        mock_s3_error = Exception("Access Denied")
+        mock_minio = MagicMock()
+        mock_minio.error.S3Error = type(mock_s3_error)
+        mock_client.fput_object.side_effect = mock_s3_error
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+            self._create_test_image(f.name, 800, 600)
+            temp_path = f.name
+
+        try:
+            media_items = [('photo.jpg', temp_path)]
+
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                results = upload_gallery_media_batch(
+                    mock_client,
+                    "my-bucket",
+                    media_items,
+                    endpoint="minio.example.com"
+                )
+
+            result = results['photo.jpg']
+            self.assertIsNone(result.image_url)
+            self.assertIsNone(result.thumbnail_url)
+        finally:
+            os.unlink(temp_path)
+
+    def test_reads_endpoint_from_environment(self):
+        """Reads endpoint from MINIO_ENDPOINT when not provided."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+            self._create_test_image(f.name, 800, 600)
+            temp_path = f.name
+
+        try:
+            media_items = [('photo.jpg', temp_path)]
+            env_vars = {MINIO_ENDPOINT_VAR: "env-minio.example.com:9000"}
+
+            with patch.dict(os.environ, env_vars, clear=False):
+                with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                    results = upload_gallery_media_batch(
+                        mock_client,
+                        "my-bucket",
+                        media_items
+                    )
+
+            self.assertIn("env-minio.example.com:9000", results['photo.jpg'].image_url)
+        finally:
+            os.unlink(temp_path)
+
+    def test_raises_error_when_endpoint_missing(self):
+        """Raises MinioConfigError when endpoint not provided and not in env."""
+        mock_client = MagicMock()
+        media_items = [('photo.jpg', '/some/path.jpg')]
+
+        clean_env = {k: v for k, v in os.environ.items() if k != MINIO_ENDPOINT_VAR}
+        with patch.dict(os.environ, clean_env, clear=True):
+            with self.assertRaises(MinioConfigError) as ctx:
+                upload_gallery_media_batch(mock_client, "bucket", media_items)
+            self.assertIn(MINIO_ENDPOINT_VAR, str(ctx.exception))
+
+    def test_handles_empty_batch(self):
+        """Handles empty media_items list gracefully."""
+        mock_client = MagicMock()
+
+        results = upload_gallery_media_batch(
+            mock_client,
+            "my-bucket",
+            [],
+            endpoint="minio.example.com"
+        )
+
+        self.assertEqual(results, {})
+
+    def test_progress_callback_includes_thumbnail_flag(self):
+        """Progress callback receives has_thumbnail flag."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        temp_files = []
+        try:
+            # Large image (will have thumbnail)
+            with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+                self._create_test_image(f.name, 800, 600)
+                temp_files.append(f.name)
+
+            # Video (no thumbnail)
+            with tempfile.NamedTemporaryFile(suffix='.mp4', delete=False) as f:
+                f.write(b'fake video')
+                temp_files.append(f.name)
+
+            media_items = [
+                ('photo.jpg', temp_files[0]),
+                ('video.mp4', temp_files[1]),
+            ]
+
+            callback_calls = []
+
+            def mock_callback(filename, current, total, has_thumbnail):
+                callback_calls.append((filename, current, total, has_thumbnail))
+
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                upload_gallery_media_batch(
+                    mock_client,
+                    "my-bucket",
+                    media_items,
+                    endpoint="minio.example.com",
+                    progress_callback=mock_callback
+                )
+
+            self.assertEqual(len(callback_calls), 2)
+            # Image should have thumbnail
+            self.assertEqual(callback_calls[0], ('photo.jpg', 1, 2, True))
+            # Video should not have thumbnail
+            self.assertEqual(callback_calls[1], ('video.mp4', 2, 2, False))
+        finally:
+            for path in temp_files:
+                os.unlink(path)
+
+    def test_progress_callback_none_is_ignored(self):
+        """Works correctly when progress_callback is None."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+            self._create_test_image(f.name, 800, 600)
+            temp_path = f.name
+
+        try:
+            media_items = [('photo.jpg', temp_path)]
+
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                # Should not raise any error when callback is None
+                results = upload_gallery_media_batch(
+                    mock_client,
+                    "my-bucket",
+                    media_items,
+                    endpoint="minio.example.com",
+                    progress_callback=None
+                )
+
+            self.assertIn('photo.jpg', results)
+        finally:
+            os.unlink(temp_path)
+
+    def test_all_thumbnailable_extensions(self):
+        """Should support all extensions in THUMBNAIL_EXTENSIONS."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        for ext in THUMBNAIL_EXTENSIONS:
+            with self.subTest(ext=ext):
+                with tempfile.NamedTemporaryFile(suffix=f'.{ext}', delete=False) as f:
+                    temp_path = f.name
+                    self._create_test_image(temp_path, 800, 600)
+
+                try:
+                    mock_client.reset_mock()
+                    media_items = [(f'test.{ext}', temp_path)]
+
+                    with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                        results = upload_gallery_media_batch(
+                            mock_client,
+                            "my-bucket",
+                            media_items,
+                            endpoint="minio.example.com"
+                        )
+
+                    # Should have thumbnail for all thumbnailable extensions
+                    result = results[f'test.{ext}']
+                    self.assertIsNotNone(result.image_url, f"No image URL for .{ext}")
+                    self.assertIsNotNone(result.thumbnail_url, f"No thumbnail for .{ext}")
+                finally:
+                    os.unlink(temp_path)
+
+    def test_secure_defaults_to_https(self):
+        """Uses HTTPS by default when secure is not specified."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+            self._create_test_image(f.name, 800, 600)
+            temp_path = f.name
+
+        try:
+            media_items = [('photo.jpg', temp_path)]
+
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                results = upload_gallery_media_batch(
+                    mock_client,
+                    "my-bucket",
+                    media_items,
+                    endpoint="minio.example.com"
+                )
+
+            self.assertTrue(results['photo.jpg'].image_url.startswith("https://"))
+            self.assertTrue(results['photo.jpg'].thumbnail_url.startswith("https://"))
+        finally:
+            os.unlink(temp_path)
+
+    def test_secure_false_uses_http(self):
+        """Uses HTTP when secure=False."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+            self._create_test_image(f.name, 800, 600)
+            temp_path = f.name
+
+        try:
+            media_items = [('photo.jpg', temp_path)]
+
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                results = upload_gallery_media_batch(
+                    mock_client,
+                    "my-bucket",
+                    media_items,
+                    endpoint="minio.example.com",
+                    secure=False
+                )
+
+            self.assertTrue(results['photo.jpg'].image_url.startswith("http://"))
+            self.assertTrue(results['photo.jpg'].thumbnail_url.startswith("http://"))
+        finally:
+            os.unlink(temp_path)
+
+    def test_thumbnail_upload_failure_still_returns_image(self):
+        """Returns image URL even when thumbnail upload fails."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_s3_error = Exception("Access Denied")
+        mock_minio = MagicMock()
+        mock_minio.error.S3Error = type(mock_s3_error)
+
+        # First call (image) succeeds, second call (thumbnail) fails
+        mock_client.fput_object.side_effect = [mock_result, mock_s3_error]
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+            self._create_test_image(f.name, 800, 600)
+            temp_path = f.name
+
+        try:
+            media_items = [('photo.jpg', temp_path)]
+
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                results = upload_gallery_media_batch(
+                    mock_client,
+                    "my-bucket",
+                    media_items,
+                    endpoint="minio.example.com"
+                )
+
+            result = results['photo.jpg']
+            # Image should still be available
+            self.assertIsNotNone(result.image_url)
+            # Thumbnail failed
+            self.assertIsNone(result.thumbnail_url)
         finally:
             os.unlink(temp_path)
 
