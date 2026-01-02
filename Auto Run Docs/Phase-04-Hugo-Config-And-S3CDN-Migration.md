@@ -41,7 +41,11 @@ This phase updates the Hugo configuration and s3cdn shortcode to work with your 
   - Usage: `{{</* gallery id="my-gallery" path="projects/my_project" maxRows="3" */>}}<a href="...">{{</* /gallery */>}}`
   - Verified with Hugo build - shortcode renders correctly with all parameter combinations
 
-- [ ] Add a config option `params.mediaBasePath` that the publish script can use to determine where to upload media (separate from the public-facing S3CDN URL)
+- [x] Add a config option `params.mediaBasePath` that the publish script can use to determine where to upload media (separate from the public-facing S3CDN URL)
+  - Already implemented in tasks 1 and 2 above:
+    - Production: `mediaBasePath = "amblog/assets"` in `config/_default/params.toml`
+    - Development: `mediaBasePath = "blog-assets"` in `config/development/params.toml`
+  - Verified both config files contain the parameter with appropriate values for each environment
 
 - [ ] Create `scripts/config_manager.py` module that reads Hugo config files and provides the current S3CDN base URL and media upload path to the publish scripts
 
