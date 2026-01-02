@@ -1,0 +1,8 @@
+# Obsidian to Hugo Publishing Tool Dependencies
+# Install with: pip install -r requirements.txt
+
+# YAML parsing for frontmatter extraction
+pyyaml>=6.0
+
+# Beautiful CLI output formatting
+rich>=13.0
