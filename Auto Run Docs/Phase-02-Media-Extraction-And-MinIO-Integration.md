@@ -41,7 +41,13 @@ This phase adds media handling to the publish pipeline. The CLI will extract all
   - Returns the object name on success (e.g., `assets/2021/06/image.jpg`), None on S3Error
   - 12 unit tests added to `test_minio_uploader.py` (total project tests: 362)
 
-- [ ] Add `upload_media_batch()` function that takes a list of resolved media paths and uploads them all, returning a mapping of original Obsidian references to their final MinIO URLs
+- [x] Add `upload_media_batch()` function that takes a list of resolved media paths and uploads them all, returning a mapping of original Obsidian references to their final MinIO URLs
+  - Takes list of (obsidian_reference, resolved_local_path) tuples
+  - Uploads each file to MinIO using `upload_file()` and builds full URLs
+  - Returns Dict[str, Optional[str]] mapping references to MinIO URLs (None for failed uploads)
+  - Reads endpoint/secure settings from environment if not provided as parameters
+  - Added `build_minio_url()` helper function for URL construction
+  - 14 unit tests added: 4 for `build_minio_url()` + 10 for `upload_media_batch()` (total project tests: 375)
 
 - [ ] Add `--skip-upload` flag to the `convert` subcommand for testing the media extraction without requiring MinIO access
 

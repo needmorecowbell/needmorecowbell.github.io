@@ -17,6 +17,8 @@ from minio_uploader import (
     get_bucket_name,
     ensure_bucket_exists,
     upload_file,
+    build_minio_url,
+    upload_media_batch,
     MinioConfigError,
     MINIO_ENDPOINT_VAR,
     MINIO_ACCESS_KEY_VAR,
@@ -568,6 +570,322 @@ class TestUploadFile(unittest.TestCase):
                 )
 
             self.assertEqual(result, "custom/prefix/2021/image.jpg")
+        finally:
+            os.unlink(temp_path)
+
+
+class TestBuildMinioUrl(unittest.TestCase):
+    """Tests for build_minio_url() function."""
+
+    def test_builds_https_url_by_default(self):
+        """Builds HTTPS URL when secure=True (default)."""
+        url = build_minio_url(
+            "minio.example.com:9000",
+            "my-bucket",
+            "assets/2021/06/image.jpg"
+        )
+        self.assertEqual(
+            url,
+            "https://minio.example.com:9000/my-bucket/assets/2021/06/image.jpg"
+        )
+
+    def test_builds_http_url_when_not_secure(self):
+        """Builds HTTP URL when secure=False."""
+        url = build_minio_url(
+            "localhost:9000",
+            "my-bucket",
+            "assets/photo.png",
+            secure=False
+        )
+        self.assertEqual(
+            url,
+            "http://localhost:9000/my-bucket/assets/photo.png"
+        )
+
+    def test_handles_endpoint_without_port(self):
+        """Handles endpoint without port number."""
+        url = build_minio_url(
+            "minio.example.com",
+            "bucket",
+            "file.jpg"
+        )
+        self.assertEqual(url, "https://minio.example.com/bucket/file.jpg")
+
+    def test_handles_nested_object_path(self):
+        """Correctly handles deeply nested object paths."""
+        url = build_minio_url(
+            "s3.example.com",
+            "media",
+            "assets/2021/06/subfolder/image.jpg"
+        )
+        self.assertEqual(
+            url,
+            "https://s3.example.com/media/assets/2021/06/subfolder/image.jpg"
+        )
+
+
+class TestUploadMediaBatch(unittest.TestCase):
+    """Tests for upload_media_batch() function."""
+
+    def test_uploads_multiple_files_successfully(self):
+        """Uploads multiple files and returns URL mapping."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        # Create temporary test files
+        temp_files = []
+        try:
+            for i, ext in enumerate(['.jpg', '.png']):
+                with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as f:
+                    f.write(b'fake data')
+                    temp_files.append(f.name)
+
+            media_items = [
+                ('2021/06/photo.jpg', temp_files[0]),
+                ('2021/07/image.png', temp_files[1]),
+            ]
+
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                url_mapping = upload_media_batch(
+                    mock_client,
+                    "my-bucket",
+                    media_items,
+                    endpoint="minio.example.com:9000",
+                    secure=True
+                )
+
+            self.assertEqual(len(url_mapping), 2)
+            self.assertEqual(
+                url_mapping['2021/06/photo.jpg'],
+                "https://minio.example.com:9000/my-bucket/assets/2021/06/photo.jpg"
+            )
+            self.assertEqual(
+                url_mapping['2021/07/image.png'],
+                "https://minio.example.com:9000/my-bucket/assets/2021/07/image.png"
+            )
+        finally:
+            for path in temp_files:
+                os.unlink(path)
+
+    def test_returns_none_for_failed_uploads(self):
+        """Returns None in mapping for files that fail to upload."""
+        mock_client = MagicMock()
+        mock_s3_error = Exception("Access Denied")
+        mock_minio = MagicMock()
+        mock_minio.error.S3Error = type(mock_s3_error)
+        mock_client.fput_object.side_effect = mock_s3_error
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+            f.write(b'fake data')
+            temp_path = f.name
+
+        try:
+            media_items = [('2021/06/photo.jpg', temp_path)]
+
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                url_mapping = upload_media_batch(
+                    mock_client,
+                    "my-bucket",
+                    media_items,
+                    endpoint="minio.example.com:9000"
+                )
+
+            self.assertIsNone(url_mapping['2021/06/photo.jpg'])
+        finally:
+            os.unlink(temp_path)
+
+    def test_reads_endpoint_from_environment(self):
+        """Reads endpoint from MINIO_ENDPOINT when not provided."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+            f.write(b'fake data')
+            temp_path = f.name
+
+        try:
+            media_items = [('photo.jpg', temp_path)]
+            env_vars = {MINIO_ENDPOINT_VAR: "env-minio.example.com:9000"}
+
+            with patch.dict(os.environ, env_vars, clear=False):
+                with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                    url_mapping = upload_media_batch(
+                        mock_client,
+                        "my-bucket",
+                        media_items
+                    )
+
+            self.assertEqual(
+                url_mapping['photo.jpg'],
+                "https://env-minio.example.com:9000/my-bucket/assets/photo.jpg"
+            )
+        finally:
+            os.unlink(temp_path)
+
+    def test_raises_error_when_endpoint_missing(self):
+        """Raises MinioConfigError when endpoint not provided and not in env."""
+        mock_client = MagicMock()
+        media_items = [('photo.jpg', '/some/path.jpg')]
+
+        clean_env = {k: v for k, v in os.environ.items() if k != MINIO_ENDPOINT_VAR}
+        with patch.dict(os.environ, clean_env, clear=True):
+            with self.assertRaises(MinioConfigError) as ctx:
+                upload_media_batch(mock_client, "bucket", media_items)
+            self.assertIn(MINIO_ENDPOINT_VAR, str(ctx.exception))
+
+    def test_reads_secure_from_environment(self):
+        """Reads secure setting from MINIO_SECURE when not provided."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+            f.write(b'fake data')
+            temp_path = f.name
+
+        try:
+            media_items = [('photo.jpg', temp_path)]
+            env_vars = {
+                MINIO_ENDPOINT_VAR: "minio.example.com",
+                MINIO_SECURE_VAR: "false"
+            }
+
+            with patch.dict(os.environ, env_vars, clear=False):
+                with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                    url_mapping = upload_media_batch(
+                        mock_client,
+                        "my-bucket",
+                        media_items
+                    )
+
+            # Should use http:// since MINIO_SECURE=false
+            self.assertTrue(url_mapping['photo.jpg'].startswith("http://"))
+        finally:
+            os.unlink(temp_path)
+
+    def test_uses_custom_asset_prefix(self):
+        """Uses custom asset prefix when provided."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+            f.write(b'fake data')
+            temp_path = f.name
+
+        try:
+            media_items = [('photo.jpg', temp_path)]
+
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                url_mapping = upload_media_batch(
+                    mock_client,
+                    "my-bucket",
+                    media_items,
+                    endpoint="minio.example.com",
+                    asset_prefix="media"
+                )
+
+            self.assertEqual(
+                url_mapping['photo.jpg'],
+                "https://minio.example.com/my-bucket/media/photo.jpg"
+            )
+        finally:
+            os.unlink(temp_path)
+
+    def test_handles_empty_batch(self):
+        """Handles empty media_items list gracefully."""
+        mock_client = MagicMock()
+
+        url_mapping = upload_media_batch(
+            mock_client,
+            "my-bucket",
+            [],
+            endpoint="minio.example.com"
+        )
+
+        self.assertEqual(url_mapping, {})
+
+    def test_handles_mixed_success_and_failure(self):
+        """Correctly handles batch with mixed success and failure."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_s3_error = Exception("Access Denied")
+        mock_minio = MagicMock()
+        mock_minio.error.S3Error = type(mock_s3_error)
+
+        # First call succeeds, second fails
+        mock_client.fput_object.side_effect = [mock_result, mock_s3_error]
+
+        temp_files = []
+        try:
+            for ext in ['.jpg', '.png']:
+                with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as f:
+                    f.write(b'fake data')
+                    temp_files.append(f.name)
+
+            media_items = [
+                ('success.jpg', temp_files[0]),
+                ('fail.png', temp_files[1]),
+            ]
+
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                url_mapping = upload_media_batch(
+                    mock_client,
+                    "my-bucket",
+                    media_items,
+                    endpoint="minio.example.com"
+                )
+
+            self.assertEqual(
+                url_mapping['success.jpg'],
+                "https://minio.example.com/my-bucket/assets/success.jpg"
+            )
+            self.assertIsNone(url_mapping['fail.png'])
+        finally:
+            for path in temp_files:
+                os.unlink(path)
+
+    def test_secure_parameter_overrides_environment(self):
+        """secure parameter overrides MINIO_SECURE environment variable."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+            f.write(b'fake data')
+            temp_path = f.name
+
+        try:
+            media_items = [('photo.jpg', temp_path)]
+            env_vars = {
+                MINIO_ENDPOINT_VAR: "minio.example.com",
+                MINIO_SECURE_VAR: "true"  # Environment says HTTPS
+            }
+
+            with patch.dict(os.environ, env_vars, clear=False):
+                with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                    url_mapping = upload_media_batch(
+                        mock_client,
+                        "my-bucket",
+                        media_items,
+                        secure=False  # But we override to HTTP
+                    )
+
+            # Should use http:// despite env saying true
+            self.assertTrue(url_mapping['photo.jpg'].startswith("http://"))
         finally:
             os.unlink(temp_path)
 

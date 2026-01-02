@@ -14,7 +14,7 @@ import logging
 import mimetypes
 import os
 from pathlib import Path
-from typing import Optional, TYPE_CHECKING
+from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 
 # Configure module logger
 logger = logging.getLogger(__name__)
@@ -229,3 +229,110 @@ def upload_file(
     except minio_module.error.S3Error as e:
         logger.error(f"Failed to upload {local_path}: {e}")
         return None
+
+
+def build_minio_url(
+    endpoint: str,
+    bucket_name: str,
+    object_name: str,
+    secure: bool = True
+) -> str:
+    """
+    Build the full URL to access an object in MinIO.
+
+    Args:
+        endpoint: MinIO server endpoint (e.g., 'minio.example.com:9000')
+        bucket_name: Name of the bucket
+        object_name: Object path in the bucket (e.g., 'assets/2021/06/image.jpg')
+        secure: Whether HTTPS is used (default: True)
+
+    Returns:
+        Full URL to access the object (e.g., 'https://minio.example.com:9000/bucket/assets/2021/06/image.jpg')
+    """
+    protocol = "https" if secure else "http"
+    return f"{protocol}://{endpoint}/{bucket_name}/{object_name}"
+
+
+def upload_media_batch(
+    client,
+    bucket_name: str,
+    media_items: List[Tuple[str, str]],
+    endpoint: Optional[str] = None,
+    secure: Optional[bool] = None,
+    asset_prefix: str = DEFAULT_ASSET_PREFIX
+) -> Dict[str, Optional[str]]:
+    """
+    Upload a batch of media files to MinIO and return URL mappings.
+
+    Takes a list of (obsidian_reference, resolved_local_path) tuples, uploads
+    each file to MinIO, and returns a mapping from the original Obsidian
+    references to their final MinIO URLs.
+
+    Args:
+        client: Initialized Minio client
+        bucket_name: Name of the target bucket
+        media_items: List of tuples where each tuple contains:
+                    - obsidian_reference: The original media reference from ![[...]] syntax
+                      (e.g., '2021/06/image.jpg')
+                    - resolved_local_path: The full local path to the file
+                      (e.g., '/home/adam/Media/2021/06/image.jpg')
+        endpoint: MinIO endpoint for URL construction (reads from MINIO_ENDPOINT if not provided)
+        secure: Whether HTTPS is used for URLs (reads from MINIO_SECURE if not provided)
+        asset_prefix: Prefix for the object path in MinIO (default: 'assets')
+
+    Returns:
+        Dictionary mapping Obsidian references to their final MinIO URLs.
+        If a file fails to upload, the value will be None for that reference.
+
+    Example:
+        >>> media_items = [
+        ...     ('2021/06/photo.jpg', '/home/adam/Media/2021/06/photo.jpg'),
+        ...     ('videos/demo.mp4', '/home/adam/Media/videos/demo.mp4'),
+        ... ]
+        >>> url_mapping = upload_media_batch(client, 'my-bucket', media_items)
+        >>> url_mapping
+        {
+            '2021/06/photo.jpg': 'https://minio.example.com/my-bucket/assets/2021/06/photo.jpg',
+            'videos/demo.mp4': 'https://minio.example.com/my-bucket/assets/videos/demo.mp4'
+        }
+    """
+    # Get endpoint from environment if not provided
+    if endpoint is None:
+        endpoint = os.environ.get(MINIO_ENDPOINT_VAR)
+        if not endpoint:
+            raise MinioConfigError(
+                f"Missing MinIO endpoint: provide 'endpoint' parameter or set {MINIO_ENDPOINT_VAR}"
+            )
+
+    # Get secure setting from environment if not provided
+    if secure is None:
+        secure_str = os.environ.get(MINIO_SECURE_VAR, "true").lower()
+        secure = secure_str in ("true", "1", "yes")
+
+    url_mapping: Dict[str, Optional[str]] = {}
+
+    for obsidian_ref, local_path in media_items:
+        # Use the obsidian reference as the relative path (it already contains the path structure)
+        object_name = upload_file(
+            client,
+            bucket_name,
+            local_path,
+            obsidian_ref,
+            asset_prefix=asset_prefix
+        )
+
+        if object_name:
+            # Build the full URL for this object
+            url = build_minio_url(endpoint, bucket_name, object_name, secure)
+            url_mapping[obsidian_ref] = url
+            logger.info(f"Uploaded {obsidian_ref} -> {url}")
+        else:
+            url_mapping[obsidian_ref] = None
+            logger.warning(f"Failed to upload {obsidian_ref}")
+
+    # Log summary
+    successful = sum(1 for v in url_mapping.values() if v is not None)
+    failed = len(url_mapping) - successful
+    logger.info(f"Batch upload complete: {successful} successful, {failed} failed")
+
+    return url_mapping
