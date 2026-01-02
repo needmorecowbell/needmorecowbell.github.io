@@ -81,7 +81,14 @@ This phase adds media handling to the publish pipeline. The CLI will extract all
   - Added 6 unit tests to `test_publish_cli.py` (2 skip if python-dotenv not installed)
   - Total project tests: 406
 
-- [ ] Update the `convert` subcommand to extract media references, resolve paths, upload to MinIO (unless `--skip-upload`), and use the resulting URLs in the converted output
+- [x] Update the `convert` subcommand to extract media references, resolve paths, upload to MinIO (unless `--skip-upload`), and use the resulting URLs in the converted output
+  - Added `extract_and_resolve_media()` function that parses note content for media references and resolves them to local file paths
+  - Added `upload_media_to_minio()` function that uploads files to MinIO, skipping files that already exist
+  - Updated `convert_note()` to accept `media_url_map` parameter for passing MinIO URLs to syntax converters
+  - Updated `cmd_convert()` to: extract media references, resolve paths, upload to MinIO (unless `--skip-upload`), and use resulting URLs in converted output
+  - Graceful error handling: continues with s3cdn shortcode fallback if MinIO upload fails or minio package isn't installed
+  - Dry-run mode shows media files found and missing counts
+  - 13 new unit tests added to `test_publish_cli.py` (total project tests: 417)
 
 - [ ] Add a `media` subcommand to `publish.py` that lists all media files referenced by a given note without uploading them (useful for previewing what would be uploaded)
 

@@ -21,6 +21,8 @@ from publish import (
     print_list_table,
     get_target_path,
     convert_note,
+    extract_and_resolve_media,
+    upload_media_to_minio,
     cmd_scan,
     cmd_list,
     cmd_convert,
@@ -1045,6 +1047,353 @@ MINIO_SECURE=false
         """_dotenv_loaded module variable exists."""
         from publish import _dotenv_loaded
         self.assertIsInstance(_dotenv_loaded, bool)
+
+
+class TestExtractAndResolveMedia(unittest.TestCase):
+    """Tests for extract_and_resolve_media function."""
+
+    def test_no_media_returns_empty_list(self):
+        """Note without media returns empty list."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "no-media.md"
+            note_path.write_text("""---
+title: No Media
+date: 2024-01-01
+publish: true
+---
+
+Just text, no media embeds.
+""")
+            media_items, missing_count = extract_and_resolve_media(note_path)
+            self.assertEqual(media_items, [])
+            self.assertEqual(missing_count, 0)
+
+    def test_extracts_media_references(self):
+        """Extracts media references from note content."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "with-media.md"
+            note_path.write_text("""---
+title: With Media
+date: 2024-01-01
+publish: true
+---
+
+Here's an image: ![[photo.jpg]]
+
+And a video: ![[demo.mp4]]
+""")
+
+            # Mock resolve_media_path to return test paths
+            with patch('publish.resolve_media_path') as mock_resolve:
+                mock_resolve.side_effect = lambda ref: f"/resolved/{ref}" if ref == "photo.jpg" else None
+
+                media_items, missing_count = extract_and_resolve_media(note_path)
+
+                # Should have found 2 references, 1 resolved, 1 missing
+                self.assertEqual(len(media_items), 1)
+                self.assertEqual(media_items[0], ("photo.jpg", "/resolved/photo.jpg"))
+                self.assertEqual(missing_count, 1)
+
+    def test_handles_multiple_media_files(self):
+        """Handles notes with multiple media files."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "multi-media.md"
+            note_path.write_text("""---
+title: Multi Media
+date: 2024-01-01
+publish: true
+---
+
+![[image1.png]]
+![[image2.jpg]]
+![[video.mp4]]
+""")
+
+            with patch('publish.resolve_media_path') as mock_resolve:
+                mock_resolve.side_effect = lambda ref: f"/media/{ref}"
+
+                media_items, missing_count = extract_and_resolve_media(note_path)
+
+                self.assertEqual(len(media_items), 3)
+                self.assertEqual(missing_count, 0)
+
+
+class TestConvertNoteWithMediaMap(unittest.TestCase):
+    """Tests for convert_note with media_url_map parameter."""
+
+    def test_convert_with_media_url_map(self):
+        """convert_note uses media_url_map when provided."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "mapped-media.md"
+            note_path.write_text("""---
+title: Mapped Media Test
+date: 2024-01-01
+publish: true
+---
+
+![[photo.jpg]]
+""")
+
+            media_url_map = {
+                "photo.jpg": "https://minio.example.com/bucket/assets/photo.jpg"
+            }
+
+            hugo_fm, body, target = convert_note(note_path, media_url_map=media_url_map)
+
+            # Should use the MinIO URL instead of s3cdn shortcode
+            self.assertIn("https://minio.example.com/bucket/assets/photo.jpg", body)
+            self.assertNotIn("{{<s3cdn>}}", body)
+
+    def test_convert_without_media_url_map(self):
+        """convert_note uses s3cdn shortcode when no media_url_map."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "no-map.md"
+            note_path.write_text("""---
+title: No Map Test
+date: 2024-01-01
+publish: true
+---
+
+![[photo.jpg]]
+""")
+
+            hugo_fm, body, target = convert_note(note_path, media_url_map=None)
+
+            # Should use s3cdn shortcode
+            self.assertIn("{{<s3cdn>}}", body)
+            self.assertIn("/photo.jpg", body)
+
+    def test_convert_with_partial_media_map(self):
+        """convert_note handles partial media_url_map correctly."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "partial-map.md"
+            note_path.write_text("""---
+title: Partial Map Test
+date: 2024-01-01
+publish: true
+---
+
+![[mapped.jpg]]
+![[unmapped.png]]
+""")
+
+            media_url_map = {
+                "mapped.jpg": "https://minio.example.com/bucket/assets/mapped.jpg"
+            }
+
+            hugo_fm, body, target = convert_note(note_path, media_url_map=media_url_map)
+
+            # Mapped image should use MinIO URL
+            self.assertIn("https://minio.example.com/bucket/assets/mapped.jpg", body)
+            # Unmapped image should use s3cdn shortcode
+            self.assertIn("{{<s3cdn>}}/unmapped.png", body)
+
+
+class TestCmdConvertMediaIntegration(unittest.TestCase):
+    """Tests for cmd_convert with media pipeline integration."""
+
+    def test_convert_with_skip_upload_shows_media_found(self):
+        """convert --dry-run --skip-upload shows media files found."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a test note with media references
+            note_path = Path(tmpdir) / "test.md"
+            note_path.write_text("""---
+title: Media Test
+date: 2024-06-01
+publish: true
+---
+
+![[image.png]]
+![[video.mp4]]
+""")
+
+            # Create fake resolved media files
+            media_dir = Path(tmpdir) / "media"
+            media_dir.mkdir()
+            (media_dir / "image.png").touch()
+            (media_dir / "video.mp4").touch()
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.output = None
+            mock_args.skip_upload = True
+
+            with patch('publish.resolve_media_path') as mock_resolve:
+                mock_resolve.side_effect = lambda ref: str(media_dir / ref)
+
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    cmd_convert(mock_args)
+                    output = mock_stdout.getvalue()
+
+                    # Should show media files found
+                    self.assertIn('[DRY RUN] Media files found: 2', output)
+                    self.assertIn('[DRY RUN] Media upload: SKIPPED', output)
+
+    def test_convert_without_minio_installed_continues(self):
+        """convert continues gracefully when minio package not installed."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test.md"
+            note_path.write_text("""---
+title: No MinIO Test
+date: 2024-06-01
+publish: true
+---
+
+![[image.png]]
+""")
+
+            media_dir = Path(tmpdir) / "media"
+            media_dir.mkdir()
+            (media_dir / "image.png").touch()
+
+            output_dir = Path(tmpdir) / "output"
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.output = str(output_dir)
+            mock_args.skip_upload = False  # Try to upload
+
+            with patch('publish.resolve_media_path') as mock_resolve:
+                mock_resolve.return_value = str(media_dir / "image.png")
+
+                # Simulate minio not being available
+                with patch('publish.upload_media_to_minio', side_effect=ImportError("minio not installed")):
+                    with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                        with patch('sys.stderr', new_callable=StringIO) as mock_stderr:
+                            cmd_convert(mock_args)
+
+                            # Should warn but continue
+                            self.assertIn("Warning: MinIO upload skipped", mock_stderr.getvalue())
+
+                            # File should still be written
+                            self.assertIn("Written to:", mock_stdout.getvalue())
+
+    def test_convert_uploads_media_to_minio(self):
+        """convert uploads media to MinIO when configured."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test.md"
+            note_path.write_text("""---
+title: Upload Test
+date: 2024-06-01
+publish: true
+---
+
+![[image.png]]
+""")
+
+            media_dir = Path(tmpdir) / "media"
+            media_dir.mkdir()
+            (media_dir / "image.png").touch()
+
+            output_dir = Path(tmpdir) / "output"
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.output = str(output_dir)
+            mock_args.skip_upload = False
+
+            with patch('publish.resolve_media_path') as mock_resolve:
+                mock_resolve.return_value = str(media_dir / "image.png")
+
+                mock_url_map = {"image.png": "https://minio.test/bucket/assets/image.png"}
+
+                with patch('publish.upload_media_to_minio', return_value=mock_url_map) as mock_upload:
+                    with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                        cmd_convert(mock_args)
+
+                        # upload_media_to_minio should have been called
+                        mock_upload.assert_called_once()
+                        call_args = mock_upload.call_args[0][0]
+                        self.assertEqual(len(call_args), 1)
+                        self.assertEqual(call_args[0][0], "image.png")
+
+            # Check that the output file uses the MinIO URL
+            expected_path = output_dir / "2024-06-01-upload-test.md"
+            content = expected_path.read_text()
+            self.assertIn("https://minio.test/bucket/assets/image.png", content)
+
+
+class TestUploadMediaToMinio(unittest.TestCase):
+    """Tests for upload_media_to_minio function."""
+
+    def test_uploads_new_files(self):
+        """Uploads files that don't exist in MinIO."""
+        media_items = [
+            ("photo.jpg", "/path/to/photo.jpg"),
+            ("video.mp4", "/path/to/video.mp4"),
+        ]
+
+        mock_client = MagicMock()
+
+        with patch.dict('os.environ', {
+            'MINIO_ENDPOINT': 'minio.test:9000',
+            'MINIO_ACCESS_KEY': 'access',
+            'MINIO_SECRET_KEY': 'secret',
+            'MINIO_BUCKET': 'test-bucket',
+            'MINIO_SECURE': 'true'
+        }):
+            with patch('minio_uploader.get_minio_client', return_value=mock_client):
+                with patch('minio_uploader.get_bucket_name', return_value='test-bucket'):
+                    with patch('minio_uploader.ensure_bucket_exists', return_value=True):
+                        with patch('minio_uploader.check_existing', return_value=False):
+                            with patch('minio_uploader.upload_media_batch') as mock_batch:
+                                mock_batch.return_value = {
+                                    "photo.jpg": "https://minio.test:9000/test-bucket/assets/photo.jpg",
+                                    "video.mp4": "https://minio.test:9000/test-bucket/assets/video.mp4",
+                                }
+
+                                result = upload_media_to_minio(media_items)
+
+                                # Should call upload_media_batch with both files
+                                mock_batch.assert_called_once()
+                                self.assertEqual(len(result), 2)
+                                self.assertIn("photo.jpg", result)
+                                self.assertIn("video.mp4", result)
+
+    def test_skips_existing_files(self):
+        """Skips files that already exist in MinIO."""
+        media_items = [
+            ("existing.jpg", "/path/to/existing.jpg"),
+            ("new.jpg", "/path/to/new.jpg"),
+        ]
+
+        mock_client = MagicMock()
+
+        with patch.dict('os.environ', {
+            'MINIO_ENDPOINT': 'minio.test:9000',
+            'MINIO_ACCESS_KEY': 'access',
+            'MINIO_SECRET_KEY': 'secret',
+            'MINIO_BUCKET': 'test-bucket',
+            'MINIO_SECURE': 'true'
+        }):
+            with patch('minio_uploader.get_minio_client', return_value=mock_client):
+                with patch('minio_uploader.get_bucket_name', return_value='test-bucket'):
+                    with patch('minio_uploader.ensure_bucket_exists', return_value=True):
+                        def check_existing_side_effect(client, bucket, obj_name):
+                            return "existing.jpg" in obj_name
+
+                        with patch('minio_uploader.check_existing', side_effect=check_existing_side_effect):
+                            with patch('minio_uploader.upload_media_batch') as mock_batch:
+                                mock_batch.return_value = {
+                                    "new.jpg": "https://minio.test:9000/test-bucket/assets/new.jpg",
+                                }
+                                with patch('minio_uploader.build_minio_url') as mock_build_url:
+                                    mock_build_url.return_value = "https://minio.test:9000/test-bucket/assets/existing.jpg"
+
+                                    with patch('sys.stdout', new_callable=StringIO):
+                                        result = upload_media_to_minio(media_items)
+
+                                # upload_media_batch should only receive the new file
+                                call_args = mock_batch.call_args
+                                items_to_upload = call_args[0][2]
+                                self.assertEqual(len(items_to_upload), 1)
+                                self.assertEqual(items_to_upload[0][0], "new.jpg")
+
+                                # Result should include both files
+                                self.assertEqual(len(result), 2)
 
 
 if __name__ == '__main__':

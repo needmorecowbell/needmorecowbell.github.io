@@ -50,6 +50,7 @@ from obsidian_parser import find_publishable_notes, parse_obsidian_note
 from frontmatter_transformer import generate_slug, transform_to_hugo
 from syntax_converter import convert_wikilinks, convert_embedded_images, convert_embedded_media
 from hugo_writer import write_hugo_post, preview_hugo_post
+from media_extractor import find_media_references, resolve_media_path
 
 # Default Hugo content output directory (relative to blog root)
 DEFAULT_OUTPUT_DIR = "content/english/post"
@@ -239,7 +240,11 @@ def cmd_list(args):
         sys.exit(1)
 
 
-def convert_note(note_path: Path, output_dir: str = DEFAULT_OUTPUT_DIR) -> tuple:
+def convert_note(
+    note_path: Path,
+    output_dir: str = DEFAULT_OUTPUT_DIR,
+    media_url_map: dict = None
+) -> tuple:
     """
     Run the full conversion pipeline on an Obsidian note.
 
@@ -252,6 +257,10 @@ def convert_note(note_path: Path, output_dir: str = DEFAULT_OUTPUT_DIR) -> tuple
     Args:
         note_path: Path to the Obsidian note file
         output_dir: Base output directory for Hugo posts
+        media_url_map: Optional dict mapping Obsidian media references to their
+                      MinIO URLs (e.g., {'2021/06/photo.jpg': 'https://...'}).
+                      If provided, embedded images/media will use these URLs
+                      instead of the s3cdn shortcode.
 
     Returns:
         Tuple of (hugo_frontmatter, converted_body, target_path)
@@ -268,14 +277,120 @@ def convert_note(note_path: Path, output_dir: str = DEFAULT_OUTPUT_DIR) -> tuple
     # Step 3: Convert Obsidian syntax to Hugo format
     # Order matters: wikilinks first, then images, then media
     converted_body = convert_wikilinks(body)
-    converted_body = convert_embedded_images(converted_body)
-    converted_body = convert_embedded_media(converted_body)
+    converted_body = convert_embedded_images(converted_body, media_url_map=media_url_map)
+    converted_body = convert_embedded_media(converted_body, media_url_map=media_url_map)
 
     # Step 4: Generate the target output path
     slug = generate_slug(hugo_frontmatter.get('title', ''), hugo_frontmatter.get('date'))
     target_path = Path(output_dir) / f"{slug}.md"
 
     return hugo_frontmatter, converted_body, target_path
+
+
+def extract_and_resolve_media(note_path: Path) -> tuple:
+    """
+    Extract media references from a note and resolve them to local file paths.
+
+    Args:
+        note_path: Path to the Obsidian note file
+
+    Returns:
+        Tuple of (media_items, missing_count) where:
+        - media_items: List of (obsidian_reference, resolved_local_path) tuples
+          for files that exist
+        - missing_count: Number of referenced files that couldn't be found
+    """
+    # Read the note content to extract media references
+    content = note_path.read_text()
+    media_refs = find_media_references(content)
+
+    media_items = []
+    missing_count = 0
+
+    for ref in media_refs:
+        resolved_path = resolve_media_path(ref)
+        if resolved_path:
+            media_items.append((ref, resolved_path))
+        else:
+            missing_count += 1
+
+    return media_items, missing_count
+
+
+def upload_media_to_minio(media_items: list) -> dict:
+    """
+    Upload media files to MinIO and return URL mappings.
+
+    Args:
+        media_items: List of (obsidian_reference, resolved_local_path) tuples
+
+    Returns:
+        Dict mapping Obsidian references to their MinIO URLs
+        (None for failed uploads)
+
+    Raises:
+        ImportError: If minio package is not installed
+        MinioConfigError: If MinIO configuration is missing
+    """
+    # Import here to allow the module to work without minio installed
+    # (useful for --skip-upload mode)
+    from minio_uploader import (
+        get_minio_client,
+        get_bucket_name,
+        ensure_bucket_exists,
+        upload_media_batch,
+        check_existing,
+        build_minio_url,
+        DEFAULT_ASSET_PREFIX,
+        MinioConfigError,
+        MINIO_ENDPOINT_VAR,
+        MINIO_SECURE_VAR
+    )
+    import os
+
+    # Initialize MinIO client
+    client = get_minio_client()
+    bucket_name = get_bucket_name()
+
+    # Ensure bucket exists
+    if not ensure_bucket_exists(client, bucket_name):
+        print("Warning: Could not ensure bucket exists, upload may fail",
+              file=sys.stderr)
+
+    # Get endpoint and secure settings for URL building
+    endpoint = os.environ.get(MINIO_ENDPOINT_VAR)
+    secure_str = os.environ.get(MINIO_SECURE_VAR, "true").lower()
+    secure = secure_str in ("true", "1", "yes")
+
+    # Check which files already exist and skip them
+    items_to_upload = []
+    url_mapping = {}
+
+    for ref, local_path in media_items:
+        # Build the expected object name
+        normalized_ref = ref.lstrip('/')
+        object_name = f"{DEFAULT_ASSET_PREFIX}/{normalized_ref}"
+
+        if check_existing(client, bucket_name, object_name):
+            # File already exists, build URL without uploading
+            url = build_minio_url(endpoint, bucket_name, object_name, secure)
+            url_mapping[ref] = url
+            print(f"  [SKIP] {ref} (already exists)")
+        else:
+            items_to_upload.append((ref, local_path))
+
+    # Upload files that don't exist yet
+    if items_to_upload:
+        batch_results = upload_media_batch(
+            client,
+            bucket_name,
+            items_to_upload,
+            endpoint=endpoint,
+            secure=secure
+        )
+        url_mapping.update(batch_results)
+
+    return url_mapping
 
 
 def cmd_convert(args):
@@ -289,11 +404,34 @@ def cmd_convert(args):
     # Get output directory from args or use default
     output_dir = args.output if hasattr(args, 'output') and args.output else DEFAULT_OUTPUT_DIR
 
-    # Get skip_upload flag (will be used for media upload integration)
+    # Get skip_upload flag
     skip_upload = getattr(args, 'skip_upload', False)
 
+    # Step 1: Extract and resolve media references
+    media_items, missing_count = extract_and_resolve_media(note_path)
+
+    # Step 2: Upload media to MinIO (unless --skip-upload)
+    media_url_map = None
+    if media_items and not skip_upload:
+        try:
+            print(f"Uploading {len(media_items)} media file(s) to MinIO...")
+            media_url_map = upload_media_to_minio(media_items)
+
+            # Report upload results
+            successful = sum(1 for v in media_url_map.values() if v is not None)
+            failed = len(media_url_map) - successful
+            if failed > 0:
+                print(f"Warning: {failed} file(s) failed to upload", file=sys.stderr)
+        except ImportError as e:
+            print(f"Warning: MinIO upload skipped - {e}", file=sys.stderr)
+        except Exception as e:
+            print(f"Warning: MinIO upload failed - {e}", file=sys.stderr)
+
+    # Step 3: Convert the note (with media URLs if available)
     try:
-        hugo_frontmatter, converted_body, target_path = convert_note(note_path, output_dir)
+        hugo_frontmatter, converted_body, target_path = convert_note(
+            note_path, output_dir, media_url_map=media_url_map
+        )
     except Exception as e:
         print(f"Error converting note: {e}", file=sys.stderr)
         sys.exit(1)
@@ -301,6 +439,10 @@ def cmd_convert(args):
     if args.dry_run:
         print(f"[DRY RUN] Would convert: {note_path}")
         print(f"[DRY RUN] Target path: {target_path}")
+        if media_items:
+            print(f"[DRY RUN] Media files found: {len(media_items)}")
+            if missing_count > 0:
+                print(f"[DRY RUN] Media files missing: {missing_count}")
         if skip_upload:
             print(f"[DRY RUN] Media upload: SKIPPED")
         print()
