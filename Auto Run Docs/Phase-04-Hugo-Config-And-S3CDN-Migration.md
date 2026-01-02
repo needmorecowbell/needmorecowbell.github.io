@@ -33,7 +33,13 @@ This phase updates the Hugo configuration and s3cdn shortcode to work with your 
   - Usage examples: `{{</* video "path/to/video.mp4" */>}}` or `{{</* video path="video.mp4" poster="thumb.jpg" autoplay="true" */>}}`
   - Verified with Hugo build - all test cases render correctly
 
-- [ ] Create `layouts/shortcodes/gallery.html` shortcode that wraps nanogallery2 initialization, accepting a gallery ID and thumbnail path prefix as parameters
+- [x] Create `layouts/shortcodes/gallery.html` shortcode that wraps nanogallery2 initialization, accepting a gallery ID and thumbnail path prefix as parameters
+  - Created shortcode with named parameters: `id` (default: "gallery"), `path` (thumbnail path prefix), `maxRows` (default: 2), `thumbnailWidth`/`thumbnailHeight` (default: "250")
+  - Uses `{{.Inner}}` to support inline `<a>` tags for gallery items
+  - Automatically constructs `itemsBaseURL` from S3CDN param + path with trailing slash
+  - Matches existing nanogallery2 configuration from project pages exactly
+  - Usage: `{{</* gallery id="my-gallery" path="projects/my_project" maxRows="3" */>}}<a href="...">{{</* /gallery */>}}`
+  - Verified with Hugo build - shortcode renders correctly with all parameter combinations
 
 - [ ] Add a config option `params.mediaBasePath` that the publish script can use to determine where to upload media (separate from the public-facing S3CDN URL)
 

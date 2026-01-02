@@ -1,0 +1,37 @@
+{{- $baseURL := .Page.Site.Params.S3CDN -}}
+{{- $id := .Get "id" | default "gallery" -}}
+{{- $path := .Get "path" | default "" -}}
+{{- $maxRows := .Get "maxRows" | default 2 -}}
+{{- $thumbnailWidth := .Get "thumbnailWidth" | default "250" -}}
+{{- $thumbnailHeight := .Get "thumbnailHeight" | default "250" -}}
+
+{{- /* Build the itemsBaseURL from S3CDN and path */ -}}
+{{- $itemsBaseURL := $baseURL -}}
+{{- if $path -}}
+  {{- $itemsBaseURL = printf "%s/%s" $baseURL (strings.TrimSuffix "/" $path) -}}
+{{- end -}}
+{{- /* Ensure trailing slash for nanogallery2 */ -}}
+{{- $itemsBaseURL = printf "%s/" (strings.TrimSuffix "/" $itemsBaseURL) -}}
+
+<div id="{{ $id }}" data-nanogallery2='{
+    "itemsBaseURL": "{{ $itemsBaseURL }}",
+    "thumbnailWidth": "{{ $thumbnailWidth }}",
+    "thumbnailHeight": "{{ $thumbnailHeight }}",
+    "thumbnailBorderVertical": 1,
+    "thumbnailBorderHorizontal": 1,
+    "thumbnailLabel": {
+        "position": "overImageOnBottom",
+        "displayDescription": true
+    },
+    "thumbnailHoverEffect2": "labelAppear75|descriptionSlideUp",
+    "galleryDisplayMode": "pagination",
+    "galleryMaxRows": {{ $maxRows }},
+    "thumbnailAlignment": "center",
+    "thumbnailOpenImage": true,
+    "viewerTools": {
+        "topLeft": "pageCounter, label",
+        "topRight": "playPauseButton, rotateLeft, rotateRight, fullscreenButton, closeButton"
+    }
+}'>
+{{ .Inner }}
+</div>
