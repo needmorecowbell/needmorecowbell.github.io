@@ -7,7 +7,8 @@ This phase establishes the development environment and builds a working CLI tool
 - [x] Create a `develop` branch from master to isolate all development work from the live site
   - Branch created and pushed to origin on 2026-01-02
 
-- [ ] Create a `scripts/` directory in the blog root for the publishing tools
+- [x] Create a `scripts/` directory in the blog root for the publishing tools
+  - Created `/home/adam/Dev/blog/needmorecowbell.github.io/scripts/` on 2026-01-02
 
 - [ ] Create `scripts/publish.py` as the main CLI entry point with argparse supporting these subcommands: `scan` (find publishable notes), `convert` (process a single note), and `list` (show what would be published)
 
