@@ -73,7 +73,14 @@ This phase establishes the development environment and builds a working CLI tool
   - Returns 'untitled' for empty/invalid titles
   - Added 23 comprehensive unit tests (total tests in scripts/ now 202, previously 179)
 
-- [ ] Create `scripts/hugo_writer.py` module with a `write_hugo_post()` function that takes transformed frontmatter and converted body content, then writes a properly formatted Hugo markdown file to a specified output path
+- [x] Create `scripts/hugo_writer.py` module with a `write_hugo_post()` function that takes transformed frontmatter and converted body content, then writes a properly formatted Hugo markdown file to a specified output path
+  - Created `hugo_writer.py` with `write_hugo_post()`, `preview_hugo_post()`, and `format_frontmatter()` functions on 2026-01-02
+  - `write_hugo_post(frontmatter, body, output_path)` writes complete Hugo posts with proper frontmatter formatting
+  - `preview_hugo_post(frontmatter, body)` returns the formatted content as string (for --dry-run functionality)
+  - Formats frontmatter with proper YAML syntax, maintains field ordering (layout, title, subtitle, author, date, draft, etc.)
+  - Handles YAML quoting correctly: quotes strings with colons/special chars, preserves unquoted dates and paths
+  - Creates parent directories automatically, ensures files end with newline
+  - Added comprehensive test suite in `test_hugo_writer.py` (46 tests passing, 248 total tests in scripts/)
 
 - [ ] Implement the `scan` subcommand in `publish.py` that calls `find_publishable_notes()` and prints a formatted table showing: filename, title, date, and tags for each publishable note found
 
