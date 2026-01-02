@@ -6,3 +6,6 @@ pyyaml>=6.0
 
 # Beautiful CLI output formatting
 rich>=13.0
+
+# MinIO object storage client for media uploads
+minio>=7.2.0

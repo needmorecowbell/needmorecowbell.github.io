@@ -23,7 +23,15 @@ This phase adds media handling to the publish pipeline. The CLI will extract all
   - Returns `None` when validation fails, path string otherwise
   - 13 unit tests added to `test_media_extractor.py` (total now 32 tests)
 
-- [ ] Create `scripts/minio_uploader.py` module with MinIO client initialization using environment variables: `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET`
+- [x] Create `scripts/minio_uploader.py` module with MinIO client initialization using environment variables: `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET`
+  - Implemented with lazy module loading to allow testing without minio package installed
+  - `get_minio_client()` reads from env vars or accepts direct parameters
+  - Supports `MINIO_SECURE` env var (defaults to True for HTTPS)
+  - `get_bucket_name()` helper for reading `MINIO_BUCKET` from environment
+  - `ensure_bucket_exists()` creates bucket if it doesn't exist
+  - Custom `MinioConfigError` exception for missing configuration
+  - Added `minio>=7.2.0` to requirements.txt
+  - 19 unit tests in `test_minio_uploader.py` (total project tests: 350)
 
 - [ ] Add `upload_file()` function to `scripts/minio_uploader.py` that uploads a single file to MinIO, preserving the relative path structure (e.g., `2021/06/image.jpg` becomes `assets/2021/06/image.jpg` in the bucket)
 
