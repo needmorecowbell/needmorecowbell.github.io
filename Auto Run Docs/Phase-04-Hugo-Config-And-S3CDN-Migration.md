@@ -65,9 +65,24 @@ This phase updates the Hugo configuration and s3cdn shortcode to work with your 
   - Added 17 new tests covering direct URL output and config_manager integration
   - All 872 tests pass
 
-- [ ] Add `--environment` flag to `publish.py` that sets the Hugo environment (development/production) and uses the appropriate config values
+- [x] Add `--environment` flag to `publish.py` that sets the Hugo environment (development/production) and uses the appropriate config values
+  - Added `-e`/`--environment` flag to both `publish` and `convert` subcommands
+  - Flag accepts environment name (e.g., `development`, `production`) to select Hugo config profile
+  - When environment is specified, uses `config_manager.get_s3cdn_url()` to get environment-specific S3CDN base URL
+  - Media URLs are embedded directly instead of using `{{<s3cdn>}}` shortcode when environment is specified
+  - Gracefully falls back to shortcode syntax if Hugo config is unavailable
+  - Environment is displayed in dry-run and publish summaries
+  - Added 6 new tests covering environment flag functionality
+  - All 878 tests pass
 
-- [ ] Create a `Makefile` in the blog root with common commands: `make dev` (hugo server with development config), `make build` (production build), `make publish-dry` (dry-run publish scan)
+- [x] Create a `Makefile` in the blog root with common commands: `make dev` (hugo server with development config), `make build` (production build), `make publish-dry` (dry-run publish scan)
+  - Created `Makefile` in blog root with the following targets:
+    - `make dev` - Starts Hugo dev server with `-e development` flag (includes --buildDrafts and --buildFuture)
+    - `make build` - Builds site for production with `-e production`
+    - `make publish-dry` - Runs `python3 scripts/publish.py publish --all --dry-run`
+  - Added additional utility targets: `build-verbose`, `publish-scan`, `publish-list`, `clean`, `test`
+  - Includes comprehensive `make help` target with documentation
+  - Verified all targets work correctly
 
 - [ ] Add `make test-publish` target that runs the publish pipeline in dry-run mode and builds Hugo to verify the output is valid
 
