@@ -9,7 +9,10 @@ internal links to ensure content is complete and valid before publishing.
 
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 from typing import List, Dict, Any, Optional
+
+from media_extractor import find_media_references, resolve_media_path, DEFAULT_MEDIA_BASE
 
 
 class ValidationSeverity(Enum):
@@ -204,3 +207,57 @@ def format_issues(issues: List[ValidationIssue]) -> str:
             lines.append(f"  - {issue.field}: {issue.message}")
 
     return "\n".join(lines)
+
+
+def validate_media_references(
+    content: str,
+    media_base: Optional[Path] = None
+) -> List[ValidationIssue]:
+    """
+    Validate that all embedded media references in content resolve to existing files.
+
+    Parses the content for Obsidian-style media embeds (![[path/to/file.ext]]) and
+    checks that each referenced media file exists on the filesystem.
+
+    Args:
+        content: The markdown content to validate
+        media_base: Base path for media files. Defaults to ~/Notes/Media
+                   (which is typically symlinked to ~/Media)
+
+    Returns:
+        List of ValidationIssue objects for any media files that cannot be found.
+        Each missing file is reported as an ERROR-level issue.
+        Empty list means all media references are valid.
+
+    Examples:
+        >>> content = "Here's an image: ![[2021/06/photo.jpg]]"
+        >>> issues = validate_media_references(content, Path("/tmp/media"))
+        >>> # If /tmp/media/2021/06/photo.jpg doesn't exist:
+        >>> len(issues)
+        1
+        >>> issues[0].field
+        'media'
+        >>> 'photo.jpg' in issues[0].message
+        True
+    """
+    if media_base is None:
+        media_base = DEFAULT_MEDIA_BASE
+
+    issues: List[ValidationIssue] = []
+
+    # Extract all media references from the content
+    references = find_media_references(content)
+
+    # Check each reference resolves to an existing file
+    for ref in references:
+        resolved = resolve_media_path(ref, media_base=media_base, validate=True)
+        if resolved is None:
+            # File doesn't exist or isn't a valid file
+            expected_path = media_base / ref.lstrip('/')
+            issues.append(ValidationIssue(
+                field='media',
+                message=f'Media file not found: "{ref}" (expected at: {expected_path})',
+                severity=ValidationSeverity.ERROR
+            ))
+
+    return issues

@@ -10,7 +10,11 @@ This phase adds validation, error handling, and quality-of-life improvements to 
   - Includes helper functions: `is_valid()`, `has_warnings()`, `format_issues()`
   - Added comprehensive test suite in `test_validators.py` (44 tests, all passing)
 
-- [ ] Add `validate_media_references()` function to `scripts/validators.py` that checks all embedded media references resolve to existing files
+- [x] Add `validate_media_references()` function to `scripts/validators.py` that checks all embedded media references resolve to existing files
+  - Uses `find_media_references()` from `media_extractor.py` to extract all `![[path/to/file.ext]]` embeds
+  - Uses `resolve_media_path()` to check each reference resolves to an existing file
+  - Returns ERROR-level `ValidationIssue` for each missing file with helpful error message showing the reference and expected path
+  - Added 20 tests covering: valid/missing images, videos, audio files, nested paths, edge cases (empty content, duplicates, non-media wikilinks)
 
 - [ ] Add `validate_internal_links()` function that checks wikilinks point to notes that either exist in the vault or have already been published to Hugo
 

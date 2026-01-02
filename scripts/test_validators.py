@@ -5,9 +5,13 @@ Tests for the validators module.
 Uses unittest (standard library) for compatibility.
 """
 
+import os
+import tempfile
 import unittest
+from pathlib import Path
 from validators import (
     validate_frontmatter,
+    validate_media_references,
     ValidationIssue,
     ValidationSeverity,
     REQUIRED_FIELDS,
@@ -447,6 +451,227 @@ class TestValidateFrontmatterIntegration(unittest.TestCase):
         }
         issues = validate_frontmatter(frontmatter)
         self.assertEqual(len(issues), 0)
+
+
+class TestValidateMediaReferences(unittest.TestCase):
+    """Tests for the validate_media_references function."""
+
+    def setUp(self):
+        """Create a temporary directory structure for testing."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.media_base = Path(self.temp_dir)
+
+        # Create some test media files
+        # images/test.jpg
+        images_dir = self.media_base / "images"
+        images_dir.mkdir(parents=True, exist_ok=True)
+        (images_dir / "test.jpg").touch()
+        (images_dir / "photo.png").touch()
+
+        # 2021/06/vacation.jpg
+        dated_dir = self.media_base / "2021" / "06"
+        dated_dir.mkdir(parents=True, exist_ok=True)
+        (dated_dir / "vacation.jpg").touch()
+
+        # videos/demo.mp4
+        videos_dir = self.media_base / "videos"
+        videos_dir.mkdir(parents=True, exist_ok=True)
+        (videos_dir / "demo.mp4").touch()
+
+    def tearDown(self):
+        """Clean up temporary directory."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_no_media_references_returns_empty(self):
+        """Test that content with no media references returns no issues."""
+        content = "This is just plain text with no images."
+        issues = validate_media_references(content, self.media_base)
+        self.assertEqual(len(issues), 0)
+
+    def test_valid_single_reference(self):
+        """Test that a valid media reference returns no issues."""
+        content = "Here's an image: ![[images/test.jpg]]"
+        issues = validate_media_references(content, self.media_base)
+        self.assertEqual(len(issues), 0)
+
+    def test_valid_multiple_references(self):
+        """Test that multiple valid media references return no issues."""
+        content = """
+        First image: ![[images/test.jpg]]
+        Second image: ![[images/photo.png]]
+        Video: ![[videos/demo.mp4]]
+        """
+        issues = validate_media_references(content, self.media_base)
+        self.assertEqual(len(issues), 0)
+
+    def test_valid_nested_path_reference(self):
+        """Test that a valid nested path reference returns no issues."""
+        content = "Vacation photo: ![[2021/06/vacation.jpg]]"
+        issues = validate_media_references(content, self.media_base)
+        self.assertEqual(len(issues), 0)
+
+    def test_missing_file_returns_error(self):
+        """Test that a missing file reference returns an error."""
+        content = "Missing image: ![[images/nonexistent.jpg]]"
+        issues = validate_media_references(content, self.media_base)
+        self.assertEqual(len(issues), 1)
+        self.assertEqual(issues[0].field, 'media')
+        self.assertEqual(issues[0].severity, ValidationSeverity.ERROR)
+        self.assertIn('nonexistent.jpg', issues[0].message)
+        self.assertIn('not found', issues[0].message.lower())
+
+    def test_missing_multiple_files_returns_multiple_errors(self):
+        """Test that multiple missing files return multiple errors."""
+        content = """
+        ![[missing1.jpg]]
+        ![[also/missing.png]]
+        ![[nope.gif]]
+        """
+        issues = validate_media_references(content, self.media_base)
+        self.assertEqual(len(issues), 3)
+        for issue in issues:
+            self.assertEqual(issue.field, 'media')
+            self.assertEqual(issue.severity, ValidationSeverity.ERROR)
+
+    def test_mixed_valid_and_invalid_references(self):
+        """Test content with both valid and invalid media references."""
+        content = """
+        Valid: ![[images/test.jpg]]
+        Invalid: ![[images/missing.jpg]]
+        Valid: ![[videos/demo.mp4]]
+        Invalid: ![[nonexistent.png]]
+        """
+        issues = validate_media_references(content, self.media_base)
+        self.assertEqual(len(issues), 2)
+        # Check that both missing files are reported
+        messages = [issue.message for issue in issues]
+        self.assertTrue(any('missing.jpg' in msg for msg in messages))
+        self.assertTrue(any('nonexistent.png' in msg for msg in messages))
+
+    def test_error_message_includes_reference_path(self):
+        """Test that the error message includes the original reference path."""
+        content = "![[some/deep/path/image.jpg]]"
+        issues = validate_media_references(content, self.media_base)
+        self.assertEqual(len(issues), 1)
+        self.assertIn('some/deep/path/image.jpg', issues[0].message)
+
+    def test_error_message_includes_expected_path(self):
+        """Test that the error message includes the expected filesystem path."""
+        content = "![[images/missing.jpg]]"
+        issues = validate_media_references(content, self.media_base)
+        self.assertEqual(len(issues), 1)
+        self.assertIn('expected at:', issues[0].message.lower())
+
+    def test_non_media_wikilinks_ignored(self):
+        """Test that non-media wikilinks (text links) are ignored."""
+        content = """
+        This is a [[link to another note]].
+        This is [[Another Note|with alias]].
+        Regular text without embeds.
+        """
+        issues = validate_media_references(content, self.media_base)
+        self.assertEqual(len(issues), 0)
+
+    def test_empty_content_returns_empty(self):
+        """Test that empty content returns no issues."""
+        issues = validate_media_references("", self.media_base)
+        self.assertEqual(len(issues), 0)
+
+    def test_whitespace_only_content_returns_empty(self):
+        """Test that whitespace-only content returns no issues."""
+        issues = validate_media_references("   \n\t\n  ", self.media_base)
+        self.assertEqual(len(issues), 0)
+
+    def test_leading_slash_in_reference_handled(self):
+        """Test that leading slashes in references are normalized."""
+        # Create a file that should match /images/test.jpg
+        content = "![[/images/test.jpg]]"
+        issues = validate_media_references(content, self.media_base)
+        self.assertEqual(len(issues), 0)
+
+    def test_is_valid_helper_with_media_issues(self):
+        """Test that is_valid works correctly with media validation issues."""
+        content = "![[missing.jpg]]"
+        issues = validate_media_references(content, self.media_base)
+        self.assertFalse(is_valid(issues))
+
+    def test_format_issues_with_media_errors(self):
+        """Test that format_issues works correctly with media validation errors."""
+        content = "![[missing1.jpg]]\n![[missing2.png]]"
+        issues = validate_media_references(content, self.media_base)
+        formatted = format_issues(issues)
+        self.assertIn('Errors (2):', formatted)
+        self.assertIn('missing1.jpg', formatted)
+        self.assertIn('missing2.png', formatted)
+
+    def test_duplicate_references_checked_separately(self):
+        """Test that duplicate media references are each validated."""
+        content = """
+        ![[missing.jpg]]
+        ![[missing.jpg]]
+        """
+        issues = validate_media_references(content, self.media_base)
+        # Both references are checked, resulting in 2 issues
+        self.assertEqual(len(issues), 2)
+
+
+class TestValidateMediaReferencesVideoAudio(unittest.TestCase):
+    """Tests for validate_media_references with video and audio files."""
+
+    def setUp(self):
+        """Create a temporary directory with video and audio files."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.media_base = Path(self.temp_dir)
+
+        # Create video files
+        videos_dir = self.media_base / "videos"
+        videos_dir.mkdir(parents=True, exist_ok=True)
+        (videos_dir / "presentation.mp4").touch()
+        (videos_dir / "clip.webm").touch()
+
+        # Create audio files
+        audio_dir = self.media_base / "audio"
+        audio_dir.mkdir(parents=True, exist_ok=True)
+        (audio_dir / "podcast.mp3").touch()
+        (audio_dir / "song.wav").touch()
+
+    def tearDown(self):
+        """Clean up temporary directory."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_valid_video_references(self):
+        """Test that valid video references return no issues."""
+        content = """
+        ![[videos/presentation.mp4]]
+        ![[videos/clip.webm]]
+        """
+        issues = validate_media_references(content, self.media_base)
+        self.assertEqual(len(issues), 0)
+
+    def test_valid_audio_references(self):
+        """Test that valid audio references return no issues."""
+        content = """
+        ![[audio/podcast.mp3]]
+        ![[audio/song.wav]]
+        """
+        issues = validate_media_references(content, self.media_base)
+        self.assertEqual(len(issues), 0)
+
+    def test_missing_video_returns_error(self):
+        """Test that missing video file returns an error."""
+        content = "![[videos/missing.mp4]]"
+        issues = validate_media_references(content, self.media_base)
+        self.assertEqual(len(issues), 1)
+        self.assertIn('missing.mp4', issues[0].message)
+
+    def test_missing_audio_returns_error(self):
+        """Test that missing audio file returns an error."""
+        content = "![[audio/missing.mp3]]"
+        issues = validate_media_references(content, self.media_base)
+        self.assertEqual(len(issues), 1)
+        self.assertIn('missing.mp3', issues[0].message)
 
 
 if __name__ == '__main__':
