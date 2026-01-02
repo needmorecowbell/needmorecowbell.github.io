@@ -25,6 +25,7 @@ from publish import (
     upload_media_to_minio,
     cmd_scan,
     cmd_list,
+    cmd_media,
     cmd_convert,
     DEFAULT_OUTPUT_DIR
 )
@@ -512,6 +513,164 @@ This is a test note for integration testing.
 
                 # Should show count of 1
                 self.assertIn("Found 1 publishable note(s).", output)
+
+
+class TestCmdMedia(unittest.TestCase):
+    """Tests for cmd_media function."""
+
+    def test_media_file_not_found(self):
+        """media command exits with error for missing file."""
+        mock_args = MagicMock()
+        mock_args.path = '/nonexistent/note.md'
+
+        with patch('sys.stderr', new_callable=StringIO) as mock_stderr:
+            with self.assertRaises(SystemExit) as context:
+                cmd_media(mock_args)
+            self.assertEqual(context.exception.code, 1)
+            self.assertIn("Note not found", mock_stderr.getvalue())
+
+    def test_media_no_media_references(self):
+        """media command shows message when note has no media."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "no-media.md"
+            note_path.write_text("""---
+title: No Media Note
+date: 2024-01-01
+publish: true
+---
+
+Just plain text, no media here.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_media(mock_args)
+                output = mock_stdout.getvalue()
+
+                self.assertIn("Media references in:", output)
+                self.assertIn("No media references found in this note.", output)
+
+    def test_media_shows_resolved_files(self):
+        """media command shows resolved media files."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "with-media.md"
+            note_path.write_text("""---
+title: With Media
+date: 2024-01-01
+publish: true
+---
+
+![[photo.jpg]]
+![[video.mp4]]
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+
+            with patch('publish.resolve_media_path') as mock_resolve:
+                mock_resolve.side_effect = lambda ref: f"/media/{ref}"
+
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    cmd_media(mock_args)
+                    output = mock_stdout.getvalue()
+
+                    self.assertIn("Resolved (2 file(s)):", output)
+                    self.assertIn("photo.jpg", output)
+                    self.assertIn("/media/photo.jpg", output)
+                    self.assertIn("video.mp4", output)
+                    self.assertIn("/media/video.mp4", output)
+                    self.assertIn("Summary: 2 reference(s), 2 resolved, 0 missing", output)
+
+    def test_media_shows_missing_files(self):
+        """media command shows missing media files."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "missing-media.md"
+            note_path.write_text("""---
+title: Missing Media
+date: 2024-01-01
+publish: true
+---
+
+![[exists.jpg]]
+![[missing.png]]
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+
+            with patch('publish.resolve_media_path') as mock_resolve:
+                # Only resolve exists.jpg, return None for missing.png
+                def resolve_side_effect(ref):
+                    if ref == "exists.jpg":
+                        return "/media/exists.jpg"
+                    return None
+                mock_resolve.side_effect = resolve_side_effect
+
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    cmd_media(mock_args)
+                    output = mock_stdout.getvalue()
+
+                    self.assertIn("Resolved (1 file(s)):", output)
+                    self.assertIn("exists.jpg", output)
+                    self.assertIn("Missing (1 file(s)):", output)
+                    self.assertIn("missing.png [NOT FOUND]", output)
+                    self.assertIn("Summary: 2 reference(s), 1 resolved, 1 missing", output)
+
+    def test_media_shows_all_missing(self):
+        """media command handles case where all files are missing."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "all-missing.md"
+            note_path.write_text("""---
+title: All Missing
+date: 2024-01-01
+publish: true
+---
+
+![[missing1.jpg]]
+![[missing2.png]]
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+
+            with patch('publish.resolve_media_path', return_value=None):
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    cmd_media(mock_args)
+                    output = mock_stdout.getvalue()
+
+                    self.assertNotIn("Resolved", output)
+                    self.assertIn("Missing (2 file(s)):", output)
+                    self.assertIn("missing1.jpg [NOT FOUND]", output)
+                    self.assertIn("missing2.png [NOT FOUND]", output)
+                    self.assertIn("Summary: 2 reference(s), 0 resolved, 2 missing", output)
+
+    def test_media_shows_paths_with_directories(self):
+        """media command correctly shows media paths with subdirectories."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "subdirs.md"
+            note_path.write_text("""---
+title: Subdirs
+date: 2024-01-01
+publish: true
+---
+
+![[2021/06/vacation/beach.jpg]]
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+
+            with patch('publish.resolve_media_path') as mock_resolve:
+                mock_resolve.return_value = "/home/user/Media/2021/06/vacation/beach.jpg"
+
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    cmd_media(mock_args)
+                    output = mock_stdout.getvalue()
+
+                    self.assertIn("2021/06/vacation/beach.jpg", output)
+                    self.assertIn("/home/user/Media/2021/06/vacation/beach.jpg", output)
 
 
 class TestConvertNote(unittest.TestCase):

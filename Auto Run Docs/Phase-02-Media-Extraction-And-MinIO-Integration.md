@@ -90,7 +90,12 @@ This phase adds media handling to the publish pipeline. The CLI will extract all
   - Dry-run mode shows media files found and missing counts
   - 13 new unit tests added to `test_publish_cli.py` (total project tests: 417)
 
-- [ ] Add a `media` subcommand to `publish.py` that lists all media files referenced by a given note without uploading them (useful for previewing what would be uploaded)
+- [x] Add a `media` subcommand to `publish.py` that lists all media files referenced by a given note without uploading them (useful for previewing what would be uploaded)
+  - Takes a note path as argument and analyzes it for `![[...]]` media embeds
+  - Shows resolved files with their full local paths (e.g., `/home/user/Media/2021/photo.jpg`)
+  - Shows missing files with `[NOT FOUND]` indicator
+  - Displays summary with counts: total references, resolved, missing
+  - 6 unit tests added to `test_publish_cli.py` (total project tests: 423)
 
 - [ ] Add progress bars using `rich` for media upload operations showing current file and overall progress
 

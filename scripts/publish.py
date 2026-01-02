@@ -8,6 +8,7 @@ It handles frontmatter transformation, wikilink conversion, and media embedding.
 Usage:
     python publish.py scan          # Find all publishable notes
     python publish.py list          # Show where notes will be published
+    python publish.py media PATH    # List media references in a note
     python publish.py convert PATH  # Convert a specific note
 """
 
@@ -393,6 +394,49 @@ def upload_media_to_minio(media_items: list) -> dict:
     return url_mapping
 
 
+def cmd_media(args):
+    """List all media files referenced by a note without uploading."""
+    note_path = Path(args.path)
+
+    if not note_path.exists():
+        print(f"Error: Note not found: {note_path}", file=sys.stderr)
+        sys.exit(1)
+
+    # Extract and resolve media references
+    media_items, missing_count = extract_and_resolve_media(note_path)
+
+    # Print header
+    print(f"Media references in: {note_path.name}")
+    print("=" * 60)
+
+    if not media_items and missing_count == 0:
+        print("No media references found in this note.")
+        return
+
+    # Print resolved media files
+    if media_items:
+        print(f"\nResolved ({len(media_items)} file(s)):")
+        for ref, resolved_path in media_items:
+            print(f"  {ref}")
+            print(f"    -> {resolved_path}")
+
+    # Print missing media files
+    if missing_count > 0:
+        print(f"\nMissing ({missing_count} file(s)):")
+        # Re-read the note to show which files are missing
+        content = note_path.read_text()
+        all_refs = find_media_references(content)
+        resolved_refs = {ref for ref, _ in media_items}
+        for ref in all_refs:
+            if ref not in resolved_refs:
+                print(f"  {ref} [NOT FOUND]")
+
+    # Print summary
+    print()
+    total = len(media_items) + missing_count
+    print(f"Summary: {total} reference(s), {len(media_items)} resolved, {missing_count} missing")
+
+
 def cmd_convert(args):
     """Convert a single Obsidian note to Hugo format."""
     note_path = Path(args.path)
@@ -511,6 +555,17 @@ Examples:
         help="Hugo output directory (default: content/english/post)"
     )
     list_parser.set_defaults(func=cmd_list)
+
+    # media subcommand
+    media_parser = subparsers.add_parser(
+        "media",
+        help="List all media files referenced by a note (without uploading)"
+    )
+    media_parser.add_argument(
+        "path",
+        help="Path to the Obsidian note to analyze"
+    )
+    media_parser.set_defaults(func=cmd_media)
 
     # convert subcommand
     convert_parser = subparsers.add_parser(
