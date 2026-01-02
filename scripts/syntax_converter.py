@@ -115,3 +115,89 @@ def convert_embedded_images(content: str, cdn_path: str = '') -> str:
         return f'![{alt_text}]({{{{<s3cdn>}}}}{full_path})'
 
     return embed_pattern.sub(replace_embedded_image, content)
+
+
+def convert_embedded_media(content: str, cdn_path: str = '') -> str:
+    """
+    Convert Obsidian embedded video/audio syntax to HTML5 media tags with s3cdn paths.
+
+    Transforms ![[path/to/video.mp4]] syntax to HTML5 video tags:
+    <video controls><source src="{{<s3cdn>}}/path/to/video.mp4" type="video/mp4"></video>
+
+    Transforms ![[path/to/audio.mp3]] syntax to HTML5 audio tags:
+    <audio controls><source src="{{<s3cdn>}}/path/to/audio.mp3" type="audio/mpeg"></audio>
+
+    Supported video formats: mp4, webm, ogg, mov, avi, mkv, m4v
+    Supported audio formats: mp3, wav, ogg, m4a, flac, aac, wma
+
+    Args:
+        content: The markdown content containing embedded media
+        cdn_path: Optional path prefix to prepend to media paths (default: '')
+
+    Returns:
+        Content with embedded media converted to HTML5 tags with s3cdn shortcodes
+    """
+    # Video extensions and their MIME types
+    video_types = {
+        'mp4': 'video/mp4',
+        'webm': 'video/webm',
+        'ogg': 'video/ogg',
+        'ogv': 'video/ogg',
+        'mov': 'video/quicktime',
+        'avi': 'video/x-msvideo',
+        'mkv': 'video/x-matroska',
+        'm4v': 'video/x-m4v',
+    }
+
+    # Audio extensions and their MIME types
+    audio_types = {
+        'mp3': 'audio/mpeg',
+        'wav': 'audio/wav',
+        'oga': 'audio/ogg',
+        'm4a': 'audio/mp4',
+        'flac': 'audio/flac',
+        'aac': 'audio/aac',
+        'wma': 'audio/x-ms-wma',
+    }
+
+    # Build regex patterns for video and audio extensions
+    video_extensions = '|'.join(video_types.keys())
+    audio_extensions = '|'.join(audio_types.keys())
+    media_extensions = f'({video_extensions}|{audio_extensions})'
+
+    # Pattern for embedded media: ![[path/to/file.ext]]
+    embed_pattern = re.compile(
+        rf'!\[\[\s*([^\]\s][^\]]*\.({media_extensions}))\s*\]\]',
+        re.IGNORECASE
+    )
+
+    def replace_embedded_media(match: re.Match) -> str:
+        media_path = match.group(1).strip()
+        extension = match.group(2).lower()
+
+        # Build the s3cdn path
+        if cdn_path:
+            full_path = f"{cdn_path.rstrip('/')}/{media_path.lstrip('/')}"
+        else:
+            full_path = f"/{media_path.lstrip('/')}"
+
+        # Determine if this is video or audio and get MIME type
+        if extension in video_types:
+            mime_type = video_types[extension]
+            return (
+                f'<video controls>'
+                f'<source src="{{{{<s3cdn>}}}}{full_path}" type="{mime_type}">'
+                f'</video>'
+            )
+        elif extension in audio_types:
+            mime_type = audio_types[extension]
+            return (
+                f'<audio controls>'
+                f'<source src="{{{{<s3cdn>}}}}{full_path}" type="{mime_type}">'
+                f'</audio>'
+            )
+        else:
+            # Should not reach here, but return original if unknown
+            return match.group(0)
+
+    return embed_pattern.sub(replace_embedded_media, content)

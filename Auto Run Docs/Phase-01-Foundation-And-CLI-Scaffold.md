@@ -41,7 +41,14 @@ This phase establishes the development environment and builds a working CLI tool
   - Correctly ignores non-image embeds (videos, audio, PDFs) for handling by other functions
   - Added 28 unit tests (total now 59 tests passing in syntax_converter)
 
-- [ ] Add `convert_embedded_media()` function to handle video embeds `![[path/to/video.mp4]]` by converting them to HTML5 video tags with s3cdn source paths
+- [x] Add `convert_embedded_media()` function to handle video embeds `![[path/to/video.mp4]]` by converting them to HTML5 video tags with s3cdn source paths
+  - Added `convert_embedded_media(content, cdn_path)` function on 2026-01-02
+  - Converts video embeds `![[video.mp4]]` to `<video controls><source src="{{<s3cdn>}}/video.mp4" type="video/mp4"></video>`
+  - Converts audio embeds `![[audio.mp3]]` to `<audio controls><source src="{{<s3cdn>}}/audio.mp3" type="audio/mpeg"></audio>`
+  - Supports video formats: mp4, webm, ogg, ogv, mov, avi, mkv, m4v
+  - Supports audio formats: mp3, wav, oga, m4a, flac, aac, wma
+  - Includes proper MIME type detection for all formats
+  - Added 34 comprehensive unit tests (total now 93 tests passing in syntax_converter)
 
 - [ ] Create `scripts/frontmatter_transformer.py` module with a `transform_to_hugo()` function that converts Obsidian frontmatter to Hugo-compatible format (ensuring required fields: title, date, draft, tags)
 

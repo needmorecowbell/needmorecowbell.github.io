@@ -6,7 +6,7 @@ Uses unittest (standard library) for compatibility.
 """
 
 import unittest
-from syntax_converter import slugify, convert_wikilinks, convert_embedded_images
+from syntax_converter import slugify, convert_wikilinks, convert_embedded_images, convert_embedded_media
 
 
 class TestSlugify(unittest.TestCase):
@@ -363,6 +363,233 @@ End of content."""
         content = '![[  photo.jpg  ]]'
         expected = '![photo]({{<s3cdn>}}/photo.jpg)'
         self.assertEqual(convert_embedded_images(content), expected)
+
+
+class TestConvertEmbeddedMedia(unittest.TestCase):
+    """Tests for the convert_embedded_media function."""
+
+    # =====================
+    # Video Tests
+    # =====================
+
+    def test_simple_video_mp4(self):
+        """Test converting a simple mp4 video embed."""
+        content = 'Check out this video: ![[my-video.mp4]]'
+        expected = 'Check out this video: <video controls><source src="{{<s3cdn>}}/my-video.mp4" type="video/mp4"></video>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_video_webm(self):
+        """Test webm video format."""
+        content = '![[clip.webm]]'
+        expected = '<video controls><source src="{{<s3cdn>}}/clip.webm" type="video/webm"></video>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_video_ogg(self):
+        """Test ogg video format."""
+        content = '![[video.ogg]]'
+        expected = '<video controls><source src="{{<s3cdn>}}/video.ogg" type="video/ogg"></video>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_video_ogv(self):
+        """Test ogv video format."""
+        content = '![[video.ogv]]'
+        expected = '<video controls><source src="{{<s3cdn>}}/video.ogv" type="video/ogg"></video>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_video_mov(self):
+        """Test mov video format."""
+        content = '![[recording.mov]]'
+        expected = '<video controls><source src="{{<s3cdn>}}/recording.mov" type="video/quicktime"></video>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_video_avi(self):
+        """Test avi video format."""
+        content = '![[old-video.avi]]'
+        expected = '<video controls><source src="{{<s3cdn>}}/old-video.avi" type="video/x-msvideo"></video>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_video_mkv(self):
+        """Test mkv video format."""
+        content = '![[movie.mkv]]'
+        expected = '<video controls><source src="{{<s3cdn>}}/movie.mkv" type="video/x-matroska"></video>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_video_m4v(self):
+        """Test m4v video format."""
+        content = '![[clip.m4v]]'
+        expected = '<video controls><source src="{{<s3cdn>}}/clip.m4v" type="video/x-m4v"></video>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_video_with_path(self):
+        """Test video with subdirectory path."""
+        content = '![[media/videos/tutorial.mp4]]'
+        expected = '<video controls><source src="{{<s3cdn>}}/media/videos/tutorial.mp4" type="video/mp4"></video>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_video_case_insensitive(self):
+        """Test that video extensions are case insensitive."""
+        content = '![[video.MP4]] and ![[other.WebM]]'
+        expected = '<video controls><source src="{{<s3cdn>}}/video.MP4" type="video/mp4"></video> and <video controls><source src="{{<s3cdn>}}/other.WebM" type="video/webm"></video>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    # =====================
+    # Audio Tests
+    # =====================
+
+    def test_simple_audio_mp3(self):
+        """Test converting a simple mp3 audio embed."""
+        content = 'Listen to this: ![[song.mp3]]'
+        expected = 'Listen to this: <audio controls><source src="{{<s3cdn>}}/song.mp3" type="audio/mpeg"></audio>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_audio_wav(self):
+        """Test wav audio format."""
+        content = '![[sound.wav]]'
+        expected = '<audio controls><source src="{{<s3cdn>}}/sound.wav" type="audio/wav"></audio>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_audio_oga(self):
+        """Test oga (ogg audio) format."""
+        content = '![[audio.oga]]'
+        expected = '<audio controls><source src="{{<s3cdn>}}/audio.oga" type="audio/ogg"></audio>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_audio_m4a(self):
+        """Test m4a audio format."""
+        content = '![[podcast.m4a]]'
+        expected = '<audio controls><source src="{{<s3cdn>}}/podcast.m4a" type="audio/mp4"></audio>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_audio_flac(self):
+        """Test flac audio format."""
+        content = '![[lossless.flac]]'
+        expected = '<audio controls><source src="{{<s3cdn>}}/lossless.flac" type="audio/flac"></audio>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_audio_aac(self):
+        """Test aac audio format."""
+        content = '![[track.aac]]'
+        expected = '<audio controls><source src="{{<s3cdn>}}/track.aac" type="audio/aac"></audio>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_audio_wma(self):
+        """Test wma audio format."""
+        content = '![[legacy.wma]]'
+        expected = '<audio controls><source src="{{<s3cdn>}}/legacy.wma" type="audio/x-ms-wma"></audio>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_audio_with_path(self):
+        """Test audio with subdirectory path."""
+        content = '![[music/albums/track.mp3]]'
+        expected = '<audio controls><source src="{{<s3cdn>}}/music/albums/track.mp3" type="audio/mpeg"></audio>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_audio_case_insensitive(self):
+        """Test that audio extensions are case insensitive."""
+        content = '![[song.MP3]] and ![[other.FLAC]]'
+        expected = '<audio controls><source src="{{<s3cdn>}}/song.MP3" type="audio/mpeg"></audio> and <audio controls><source src="{{<s3cdn>}}/other.FLAC" type="audio/flac"></audio>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    # =====================
+    # Mixed and Edge Cases
+    # =====================
+
+    def test_multiple_videos(self):
+        """Test converting multiple video embeds."""
+        content = '![[video1.mp4]] and ![[video2.webm]]'
+        expected = '<video controls><source src="{{<s3cdn>}}/video1.mp4" type="video/mp4"></video> and <video controls><source src="{{<s3cdn>}}/video2.webm" type="video/webm"></video>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_multiple_audio(self):
+        """Test converting multiple audio embeds."""
+        content = '![[song1.mp3]] and ![[song2.wav]]'
+        expected = '<audio controls><source src="{{<s3cdn>}}/song1.mp3" type="audio/mpeg"></audio> and <audio controls><source src="{{<s3cdn>}}/song2.wav" type="audio/wav"></audio>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_mixed_video_and_audio(self):
+        """Test converting mixed video and audio embeds."""
+        content = 'Watch ![[tutorial.mp4]] and listen to ![[intro.mp3]]'
+        expected = 'Watch <video controls><source src="{{<s3cdn>}}/tutorial.mp4" type="video/mp4"></video> and listen to <audio controls><source src="{{<s3cdn>}}/intro.mp3" type="audio/mpeg"></audio>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_custom_cdn_path(self):
+        """Test using a custom CDN path prefix."""
+        content = '![[video.mp4]]'
+        expected = '<video controls><source src="{{<s3cdn>}}/media/videos/video.mp4" type="video/mp4"></video>'
+        self.assertEqual(convert_embedded_media(content, cdn_path='/media/videos'), expected)
+
+    def test_custom_cdn_path_with_trailing_slash(self):
+        """Test custom CDN path with trailing slash is normalized."""
+        content = '![[song.mp3]]'
+        expected = '<audio controls><source src="{{<s3cdn>}}/audio/song.mp3" type="audio/mpeg"></audio>'
+        self.assertEqual(convert_embedded_media(content, cdn_path='/audio/'), expected)
+
+    def test_media_path_with_leading_slash(self):
+        """Test media path with leading slash is normalized."""
+        content = '![[/videos/clip.mp4]]'
+        expected = '<video controls><source src="{{<s3cdn>}}/videos/clip.mp4" type="video/mp4"></video>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_whitespace_in_embed(self):
+        """Test handling of whitespace in embed syntax."""
+        content = '![[  video.mp4  ]]'
+        expected = '<video controls><source src="{{<s3cdn>}}/video.mp4" type="video/mp4"></video>'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_does_not_match_images(self):
+        """Test that image files are NOT converted (handled by separate function)."""
+        content = '![[photo.jpg]] and ![[image.png]]'
+        expected = '![[photo.jpg]] and ![[image.png]]'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_does_not_match_pdf(self):
+        """Test that PDF files are NOT converted."""
+        content = '![[document.pdf]]'
+        expected = '![[document.pdf]]'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_does_not_match_wikilinks(self):
+        """Test that wikilinks (without !) are NOT converted."""
+        content = '[[My Page]] should stay as wikilink'
+        expected = '[[My Page]] should stay as wikilink'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_no_embedded_media(self):
+        """Test content with no embedded media returns unchanged."""
+        content = 'Just regular text with no media.'
+        expected = 'Just regular text with no media.'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_empty_content(self):
+        """Test empty content returns empty string."""
+        self.assertEqual(convert_embedded_media(''), '')
+
+    def test_multiline_content(self):
+        """Test embedded media across multiple lines."""
+        content = """First video: ![[clip1.mp4]]
+
+Second paragraph with ![[folder/clip2.webm]].
+
+And some audio: ![[song.mp3]]"""
+        expected = """First video: <video controls><source src="{{<s3cdn>}}/clip1.mp4" type="video/mp4"></video>
+
+Second paragraph with <video controls><source src="{{<s3cdn>}}/folder/clip2.webm" type="video/webm"></video>.
+
+And some audio: <audio controls><source src="{{<s3cdn>}}/song.mp3" type="audio/mpeg"></audio>"""
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_mixed_media_images_wikilinks(self):
+        """Test content with media, images, and wikilinks."""
+        content = 'See [[My Page]] and watch ![[video.mp4]] and view ![[photo.jpg]]'
+        # Only video should be converted, image and wikilink should remain
+        expected = 'See [[My Page]] and watch <video controls><source src="{{<s3cdn>}}/video.mp4" type="video/mp4"></video> and view ![[photo.jpg]]'
+        self.assertEqual(convert_embedded_media(content), expected)
+
+    def test_deeply_nested_path(self):
+        """Test media with deeply nested path."""
+        content = '![[a/b/c/d/e/video.mp4]]'
+        expected = '<video controls><source src="{{<s3cdn>}}/a/b/c/d/e/video.mp4" type="video/mp4"></video>'
+        self.assertEqual(convert_embedded_media(content), expected)
 
 
 if __name__ == '__main__':
