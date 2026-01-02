@@ -32,7 +32,14 @@ This phase establishes the development environment and builds a working CLI tool
   - Supports custom base paths for different content types (default: `/post/`)
   - Added comprehensive test suite in `test_syntax_converter.py` (30 tests passing)
 
-- [ ] Add `convert_embedded_images()` function to `scripts/syntax_converter.py` that transforms `![[path/to/image.jpg]]` syntax to the Hugo shortcode format `{{</* s3cdn */>}}/path/to/image.jpg` (using a placeholder path for now)
+- [x] Add `convert_embedded_images()` function to `scripts/syntax_converter.py` that transforms `![[path/to/image.jpg]]` syntax to the Hugo shortcode format `{{</* s3cdn */>}}/path/to/image.jpg` (using a placeholder path for now)
+  - Added `convert_embedded_images(content, cdn_path)` function on 2026-01-02
+  - Transforms `![[image.jpg]]` to `![alt text]({{<s3cdn>}}/image.jpg)` markdown format
+  - Supports all common image extensions: jpg, jpeg, png, gif, webp, svg, bmp, tiff, ico
+  - Auto-generates alt text from filename (removes hyphens/underscores, converts to spaces)
+  - Supports optional `cdn_path` prefix for custom image directory paths
+  - Correctly ignores non-image embeds (videos, audio, PDFs) for handling by other functions
+  - Added 28 unit tests (total now 59 tests passing in syntax_converter)
 
 - [ ] Add `convert_embedded_media()` function to handle video embeds `![[path/to/video.mp4]]` by converting them to HTML5 video tags with s3cdn source paths
 

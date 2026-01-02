@@ -6,7 +6,7 @@ Uses unittest (standard library) for compatibility.
 """
 
 import unittest
-from syntax_converter import slugify, convert_wikilinks
+from syntax_converter import slugify, convert_wikilinks, convert_embedded_images
 
 
 class TestSlugify(unittest.TestCase):
@@ -179,6 +179,190 @@ And [Link Three](/post/link-three/) at the end."""
         content = "[[What's New?]]"
         expected = "[What's New?](/post/whats-new/)"
         self.assertEqual(convert_wikilinks(content), expected)
+
+
+class TestConvertEmbeddedImages(unittest.TestCase):
+    """Tests for the convert_embedded_images function."""
+
+    def test_simple_image(self):
+        """Test converting a simple embedded image."""
+        content = 'Here is an image: ![[my-photo.jpg]]'
+        expected = 'Here is an image: ![my photo]({{<s3cdn>}}/my-photo.jpg)'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_image_with_path(self):
+        """Test converting embedded image with subdirectory path."""
+        content = '![[assets/images/photo.png]]'
+        expected = '![photo]({{<s3cdn>}}/assets/images/photo.png)'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_multiple_images(self):
+        """Test converting multiple embedded images."""
+        content = '![[image1.jpg]] and ![[folder/image2.png]]'
+        expected = '![image1]({{<s3cdn>}}/image1.jpg) and ![image2]({{<s3cdn>}}/folder/image2.png)'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_image_extensions_jpg(self):
+        """Test jpg extension."""
+        content = '![[photo.jpg]]'
+        expected = '![photo]({{<s3cdn>}}/photo.jpg)'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_image_extensions_jpeg(self):
+        """Test jpeg extension."""
+        content = '![[photo.jpeg]]'
+        expected = '![photo]({{<s3cdn>}}/photo.jpeg)'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_image_extensions_png(self):
+        """Test png extension."""
+        content = '![[photo.png]]'
+        expected = '![photo]({{<s3cdn>}}/photo.png)'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_image_extensions_gif(self):
+        """Test gif extension."""
+        content = '![[animation.gif]]'
+        expected = '![animation]({{<s3cdn>}}/animation.gif)'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_image_extensions_webp(self):
+        """Test webp extension."""
+        content = '![[modern.webp]]'
+        expected = '![modern]({{<s3cdn>}}/modern.webp)'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_image_extensions_svg(self):
+        """Test svg extension."""
+        content = '![[icon.svg]]'
+        expected = '![icon]({{<s3cdn>}}/icon.svg)'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_image_extensions_bmp(self):
+        """Test bmp extension."""
+        content = '![[legacy.bmp]]'
+        expected = '![legacy]({{<s3cdn>}}/legacy.bmp)'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_image_extensions_tiff(self):
+        """Test tiff extension."""
+        content = '![[scan.tiff]]'
+        expected = '![scan]({{<s3cdn>}}/scan.tiff)'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_image_extensions_tif(self):
+        """Test tif extension (short form)."""
+        content = '![[scan.tif]]'
+        expected = '![scan]({{<s3cdn>}}/scan.tif)'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_image_extensions_ico(self):
+        """Test ico extension."""
+        content = '![[favicon.ico]]'
+        expected = '![favicon]({{<s3cdn>}}/favicon.ico)'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_case_insensitive_extension(self):
+        """Test that extensions are case insensitive."""
+        content = '![[photo.JPG]] and ![[other.PNG]]'
+        expected = '![photo]({{<s3cdn>}}/photo.JPG) and ![other]({{<s3cdn>}}/other.PNG)'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_does_not_match_video(self):
+        """Test that video files are NOT converted (handled by separate function)."""
+        content = '![[video.mp4]]'
+        expected = '![[video.mp4]]'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_does_not_match_audio(self):
+        """Test that audio files are NOT converted."""
+        content = '![[audio.mp3]]'
+        expected = '![[audio.mp3]]'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_does_not_match_pdf(self):
+        """Test that PDF files are NOT converted."""
+        content = '![[document.pdf]]'
+        expected = '![[document.pdf]]'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_does_not_match_wikilinks(self):
+        """Test that wikilinks (without !) are NOT converted."""
+        content = '[[My Page]] should stay as wikilink'
+        expected = '[[My Page]] should stay as wikilink'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_alt_text_from_filename(self):
+        """Test that alt text is derived from filename."""
+        content = '![[my_awesome_photo.jpg]]'
+        expected = '![my awesome photo]({{<s3cdn>}}/my_awesome_photo.jpg)'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_alt_text_with_hyphens(self):
+        """Test alt text conversion removes hyphens."""
+        content = '![[my-cool-image.png]]'
+        expected = '![my cool image]({{<s3cdn>}}/my-cool-image.png)'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_custom_cdn_path(self):
+        """Test using a custom CDN path prefix."""
+        content = '![[photo.jpg]]'
+        expected = '![photo]({{<s3cdn>}}/images/blog/photo.jpg)'
+        self.assertEqual(convert_embedded_images(content, cdn_path='/images/blog'), expected)
+
+    def test_custom_cdn_path_with_trailing_slash(self):
+        """Test custom CDN path with trailing slash is normalized."""
+        content = '![[photo.jpg]]'
+        expected = '![photo]({{<s3cdn>}}/assets/photo.jpg)'
+        self.assertEqual(convert_embedded_images(content, cdn_path='/assets/'), expected)
+
+    def test_image_path_with_leading_slash(self):
+        """Test image path with leading slash is normalized."""
+        content = '![[/images/photo.jpg]]'
+        expected = '![photo]({{<s3cdn>}}/images/photo.jpg)'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_no_embedded_images(self):
+        """Test content with no embedded images returns unchanged."""
+        content = 'Just regular text with no images.'
+        expected = 'Just regular text with no images.'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_empty_content(self):
+        """Test empty content returns empty string."""
+        self.assertEqual(convert_embedded_images(''), '')
+
+    def test_multiline_content(self):
+        """Test embedded images across multiple lines."""
+        content = """First image: ![[photo1.jpg]]
+
+Second paragraph with ![[folder/photo2.png]].
+
+End of content."""
+        expected = """First image: ![photo1]({{<s3cdn>}}/photo1.jpg)
+
+Second paragraph with ![photo2]({{<s3cdn>}}/folder/photo2.png).
+
+End of content."""
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_mixed_images_and_wikilinks(self):
+        """Test content with both embedded images and wikilinks."""
+        content = 'See [[My Page]] and look at ![[image.png]] for reference.'
+        expected = 'See [[My Page]] and look at ![image]({{<s3cdn>}}/image.png) for reference.'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_deeply_nested_path(self):
+        """Test image with deeply nested path."""
+        content = '![[a/b/c/d/e/photo.jpg]]'
+        expected = '![photo]({{<s3cdn>}}/a/b/c/d/e/photo.jpg)'
+        self.assertEqual(convert_embedded_images(content), expected)
+
+    def test_whitespace_in_embed(self):
+        """Test handling of whitespace in embed syntax."""
+        content = '![[  photo.jpg  ]]'
+        expected = '![photo]({{<s3cdn>}}/photo.jpg)'
+        self.assertEqual(convert_embedded_images(content), expected)
 
 
 if __name__ == '__main__':
