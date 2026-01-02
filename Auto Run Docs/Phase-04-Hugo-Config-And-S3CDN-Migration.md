@@ -92,8 +92,14 @@ This phase updates the Hugo configuration and s3cdn shortcode to work with your 
   - Target provides visual feedback with `==>` prefixed status messages
   - Verified target works: successfully runs dry-run and builds 114 pages
 
-- [ ] Update `.gitignore` to exclude `scripts/.env` and `scripts/.published.json` from version control
+- [x] Update `.gitignore` to exclude `scripts/.env` and `scripts/.published.json` from version control
+  - `scripts/.env` was already in `.gitignore`
+  - Added `scripts/.published.json` with comment "# Publish tracking state (local only)"
+  - Verified with `git check-ignore` that `.published.json` is properly ignored
 
-- [ ] Add `scripts/.env` to `.gitignore` but ensure `scripts/.env.example` is tracked
+- [x] Add `scripts/.env` to `.gitignore` but ensure `scripts/.env.example` is tracked
+  - Confirmed `scripts/.env` is in `.gitignore` (already present)
+  - Confirmed `scripts/.env.example` is tracked in git (verified with `git ls-files`)
+  - Both conditions are satisfied
 
 - [ ] Test the full pipeline by running `make dev` and verifying the site loads with the development S3CDN configuration

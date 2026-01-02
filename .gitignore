@@ -15,3 +15,6 @@ hugo.linux
 # Environment files with secrets (never commit these!)
 scripts/.env
 .env
+
+# Publish tracking state (local only)
+scripts/.published.json
