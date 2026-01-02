@@ -231,6 +231,40 @@ def upload_file(
         return None
 
 
+def check_existing(
+    client,
+    bucket_name: str,
+    object_name: str
+) -> bool:
+    """
+    Check if an object already exists in MinIO.
+
+    Uses the stat_object API to check for existence, which is efficient
+    as it only retrieves metadata without downloading the object.
+
+    Args:
+        client: Initialized Minio client
+        bucket_name: Name of the bucket to check
+        object_name: Object path in the bucket (e.g., 'assets/2021/06/image.jpg')
+
+    Returns:
+        True if the object exists, False otherwise
+    """
+    minio_module = _get_minio_module()
+
+    try:
+        client.stat_object(bucket_name, object_name)
+        logger.debug(f"Object exists: {bucket_name}/{object_name}")
+        return True
+    except minio_module.error.S3Error as e:
+        if e.code == "NoSuchKey":
+            logger.debug(f"Object does not exist: {bucket_name}/{object_name}")
+            return False
+        # Re-raise for other S3 errors (permissions, network issues, etc.)
+        logger.error(f"Error checking object existence: {e}")
+        raise
+
+
 def build_minio_url(
     endpoint: str,
     bucket_name: str,

@@ -17,6 +17,7 @@ from minio_uploader import (
     get_bucket_name,
     ensure_bucket_exists,
     upload_file,
+    check_existing,
     build_minio_url,
     upload_media_batch,
     MinioConfigError,
@@ -572,6 +573,112 @@ class TestUploadFile(unittest.TestCase):
             self.assertEqual(result, "custom/prefix/2021/image.jpg")
         finally:
             os.unlink(temp_path)
+
+
+class TestCheckExisting(unittest.TestCase):
+    """Tests for check_existing() function."""
+
+    def test_returns_true_when_object_exists(self):
+        """Returns True when object exists in bucket."""
+        mock_client = MagicMock()
+        mock_stat = MagicMock()
+        mock_stat.size = 12345
+        mock_stat.etag = "abc123"
+        mock_client.stat_object.return_value = mock_stat
+        mock_minio = MagicMock()
+
+        with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+            result = check_existing(
+                mock_client,
+                "my-bucket",
+                "assets/2021/06/image.jpg"
+            )
+
+        self.assertTrue(result)
+        mock_client.stat_object.assert_called_once_with(
+            "my-bucket",
+            "assets/2021/06/image.jpg"
+        )
+
+    def test_returns_false_when_object_does_not_exist(self):
+        """Returns False when object does not exist (NoSuchKey error)."""
+        mock_client = MagicMock()
+        mock_minio = MagicMock()
+
+        # Create a custom exception class that simulates S3Error with code attribute
+        class MockS3Error(Exception):
+            def __init__(self, code):
+                self.code = code
+                super().__init__(f"S3Error: {code}")
+
+        mock_minio.error.S3Error = MockS3Error
+        mock_client.stat_object.side_effect = MockS3Error("NoSuchKey")
+
+        with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+            result = check_existing(
+                mock_client,
+                "my-bucket",
+                "assets/nonexistent.jpg"
+            )
+
+        self.assertFalse(result)
+
+    def test_raises_on_other_s3_errors(self):
+        """Re-raises S3Error for non-NoSuchKey errors (e.g., permissions)."""
+        mock_client = MagicMock()
+        mock_minio = MagicMock()
+
+        # Create a custom exception class that simulates S3Error with code attribute
+        class MockS3Error(Exception):
+            def __init__(self, code):
+                self.code = code
+                super().__init__(f"S3Error: {code}")
+
+        mock_minio.error.S3Error = MockS3Error
+        mock_client.stat_object.side_effect = MockS3Error("AccessDenied")
+
+        with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+            with self.assertRaises(MockS3Error):
+                check_existing(
+                    mock_client,
+                    "my-bucket",
+                    "assets/forbidden.jpg"
+                )
+
+    def test_handles_nested_paths(self):
+        """Correctly handles deeply nested object paths."""
+        mock_client = MagicMock()
+        mock_client.stat_object.return_value = MagicMock()
+        mock_minio = MagicMock()
+
+        with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+            result = check_existing(
+                mock_client,
+                "my-bucket",
+                "assets/2021/06/subfolder/deep/image.jpg"
+            )
+
+        self.assertTrue(result)
+        mock_client.stat_object.assert_called_once_with(
+            "my-bucket",
+            "assets/2021/06/subfolder/deep/image.jpg"
+        )
+
+    def test_handles_root_level_object(self):
+        """Correctly handles objects at bucket root level."""
+        mock_client = MagicMock()
+        mock_client.stat_object.return_value = MagicMock()
+        mock_minio = MagicMock()
+
+        with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+            result = check_existing(
+                mock_client,
+                "my-bucket",
+                "file.jpg"
+            )
+
+        self.assertTrue(result)
+        mock_client.stat_object.assert_called_once_with("my-bucket", "file.jpg")
 
 
 class TestBuildMinioUrl(unittest.TestCase):

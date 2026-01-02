@@ -62,7 +62,11 @@ This phase adds media handling to the publish pipeline. The CLI will extract all
   - Falls back to s3cdn shortcode when: mapping is None, path not in mapping, or URL value is None (failed upload)
   - 17 new unit tests added: 8 for images, 9 for video/audio (total project tests: 395)
 
-- [ ] Add `check_existing()` function to `scripts/minio_uploader.py` that checks if a file already exists in MinIO (by path) to avoid redundant uploads
+- [x] Add `check_existing()` function to `scripts/minio_uploader.py` that checks if a file already exists in MinIO (by path) to avoid redundant uploads
+  - Uses MinIO `stat_object` API for efficient metadata-only lookup
+  - Returns `True` if object exists, `False` if `NoSuchKey` error
+  - Re-raises other S3 errors (permissions, network issues) for proper error handling
+  - 5 unit tests added to `test_minio_uploader.py` (total project tests: 400)
 
 - [ ] Create `scripts/.env.example` file documenting the required environment variables for MinIO configuration
 
