@@ -7,7 +7,7 @@ formats, including wikilinks, embedded images, and embedded media.
 """
 
 import re
-from typing import Callable
+from typing import Callable, Dict, Optional
 
 
 def slugify(text: str) -> str:
@@ -69,21 +69,31 @@ def convert_wikilinks(content: str, base_path: str = '/post/') -> str:
     return wikilink_pattern.sub(replace_wikilink, content)
 
 
-def convert_embedded_images(content: str, cdn_path: str = '') -> str:
+def convert_embedded_images(
+    content: str,
+    cdn_path: str = '',
+    media_url_map: Optional[Dict[str, str]] = None
+) -> str:
     """
     Convert Obsidian embedded image syntax to Hugo s3cdn shortcode format.
 
     Transforms ![[path/to/image.jpg]] syntax to markdown images using the s3cdn
     shortcode: ![image]({{<s3cdn>}}/path/to/image.jpg)
 
+    If a media_url_map is provided and contains the image path, the full MinIO URL
+    is used instead of the s3cdn shortcode path.
+
     Supports common image formats: jpg, jpeg, png, gif, webp, svg, bmp, tiff, ico
 
     Args:
         content: The markdown content containing embedded images
         cdn_path: Optional path prefix to prepend to image paths (default: '')
+        media_url_map: Optional dict mapping Obsidian media references to their
+                      MinIO URLs (e.g., {'2021/06/photo.jpg': 'https://...'})
 
     Returns:
         Content with embedded images converted to Hugo s3cdn shortcode format
+        or direct URLs if media_url_map is provided
     """
     # Pattern for embedded images: ![[path/to/image.ext]]
     # Only matches common image extensions
@@ -104,7 +114,14 @@ def convert_embedded_images(content: str, cdn_path: str = '') -> str:
         # Clean up alt text: replace hyphens/underscores with spaces
         alt_text = alt_text.replace('-', ' ').replace('_', ' ')
 
-        # Build the s3cdn path
+        # Check if we have a MinIO URL for this image
+        if media_url_map is not None:
+            # Try to find the image in the mapping (normalize leading slashes)
+            normalized_path = image_path.lstrip('/')
+            if normalized_path in media_url_map and media_url_map[normalized_path]:
+                return f'![{alt_text}]({media_url_map[normalized_path]})'
+
+        # Fall back to s3cdn shortcode path
         if cdn_path:
             full_path = f"{cdn_path.rstrip('/')}/{image_path.lstrip('/')}"
         else:
@@ -117,7 +134,11 @@ def convert_embedded_images(content: str, cdn_path: str = '') -> str:
     return embed_pattern.sub(replace_embedded_image, content)
 
 
-def convert_embedded_media(content: str, cdn_path: str = '') -> str:
+def convert_embedded_media(
+    content: str,
+    cdn_path: str = '',
+    media_url_map: Optional[Dict[str, str]] = None
+) -> str:
     """
     Convert Obsidian embedded video/audio syntax to HTML5 media tags with s3cdn paths.
 
@@ -127,15 +148,21 @@ def convert_embedded_media(content: str, cdn_path: str = '') -> str:
     Transforms ![[path/to/audio.mp3]] syntax to HTML5 audio tags:
     <audio controls><source src="{{<s3cdn>}}/path/to/audio.mp3" type="audio/mpeg"></audio>
 
+    If a media_url_map is provided and contains the media path, the full MinIO URL
+    is used instead of the s3cdn shortcode path.
+
     Supported video formats: mp4, webm, ogg, mov, avi, mkv, m4v
     Supported audio formats: mp3, wav, ogg, m4a, flac, aac, wma
 
     Args:
         content: The markdown content containing embedded media
         cdn_path: Optional path prefix to prepend to media paths (default: '')
+        media_url_map: Optional dict mapping Obsidian media references to their
+                      MinIO URLs (e.g., {'videos/demo.mp4': 'https://...'})
 
     Returns:
         Content with embedded media converted to HTML5 tags with s3cdn shortcodes
+        or direct URLs if media_url_map is provided
     """
     # Video extensions and their MIME types
     video_types = {
@@ -175,25 +202,35 @@ def convert_embedded_media(content: str, cdn_path: str = '') -> str:
         media_path = match.group(1).strip()
         extension = match.group(2).lower()
 
-        # Build the s3cdn path
-        if cdn_path:
-            full_path = f"{cdn_path.rstrip('/')}/{media_path.lstrip('/')}"
-        else:
-            full_path = f"/{media_path.lstrip('/')}"
+        # Check if we have a MinIO URL for this media
+        src_url = None
+        if media_url_map is not None:
+            # Try to find the media in the mapping (normalize leading slashes)
+            normalized_path = media_path.lstrip('/')
+            if normalized_path in media_url_map and media_url_map[normalized_path]:
+                src_url = media_url_map[normalized_path]
+
+        # Fall back to s3cdn shortcode path if no URL found
+        if src_url is None:
+            if cdn_path:
+                full_path = f"{cdn_path.rstrip('/')}/{media_path.lstrip('/')}"
+            else:
+                full_path = f"/{media_path.lstrip('/')}"
+            src_url = f"{{{{<s3cdn>}}}}{full_path}"
 
         # Determine if this is video or audio and get MIME type
         if extension in video_types:
             mime_type = video_types[extension]
             return (
                 f'<video controls>'
-                f'<source src="{{{{<s3cdn>}}}}{full_path}" type="{mime_type}">'
+                f'<source src="{src_url}" type="{mime_type}">'
                 f'</video>'
             )
         elif extension in audio_types:
             mime_type = audio_types[extension]
             return (
                 f'<audio controls>'
-                f'<source src="{{{{<s3cdn>}}}}{full_path}" type="{mime_type}">'
+                f'<source src="{src_url}" type="{mime_type}">'
                 f'</audio>'
             )
         else:

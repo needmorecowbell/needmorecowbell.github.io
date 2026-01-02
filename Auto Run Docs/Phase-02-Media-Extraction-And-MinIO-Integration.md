@@ -55,7 +55,12 @@ This phase adds media handling to the publish pipeline. The CLI will extract all
   - Dry-run output shows "Media upload: SKIPPED" when flag is active
   - 3 new unit tests in `test_publish_cli.py` (total project tests: 378)
 
-- [ ] Update `syntax_converter.py` to accept the media URL mapping and use actual MinIO URLs instead of placeholder paths when converting embedded images/videos
+- [x] Update `syntax_converter.py` to accept the media URL mapping and use actual MinIO URLs instead of placeholder paths when converting embedded images/videos
+  - Added `media_url_map: Optional[Dict[str, str]]` parameter to both `convert_embedded_images()` and `convert_embedded_media()` functions
+  - When a media reference is found in the mapping, the full MinIO URL is used instead of the `{{<s3cdn>}}` shortcode
+  - Normalizes leading slashes in content paths for consistent lookup
+  - Falls back to s3cdn shortcode when: mapping is None, path not in mapping, or URL value is None (failed upload)
+  - 17 new unit tests added: 8 for images, 9 for video/audio (total project tests: 395)
 
 - [ ] Add `check_existing()` function to `scripts/minio_uploader.py` that checks if a file already exists in MinIO (by path) to avoid redundant uploads
 

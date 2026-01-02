@@ -592,5 +592,176 @@ And some audio: <audio controls><source src="{{<s3cdn>}}/song.mp3" type="audio/m
         self.assertEqual(convert_embedded_media(content), expected)
 
 
+class TestMediaUrlMapImages(unittest.TestCase):
+    """Tests for convert_embedded_images with media_url_map parameter."""
+
+    def test_uses_minio_url_when_available(self):
+        """Test that MinIO URL is used when present in mapping."""
+        content = '![[2021/06/photo.jpg]]'
+        media_url_map = {
+            '2021/06/photo.jpg': 'https://minio.example.com/bucket/assets/2021/06/photo.jpg'
+        }
+        expected = '![photo](https://minio.example.com/bucket/assets/2021/06/photo.jpg)'
+        self.assertEqual(convert_embedded_images(content, media_url_map=media_url_map), expected)
+
+    def test_falls_back_to_s3cdn_when_not_in_map(self):
+        """Test fallback to s3cdn shortcode when image not in mapping."""
+        content = '![[photo.jpg]]'
+        media_url_map = {
+            'other/image.jpg': 'https://minio.example.com/bucket/assets/other/image.jpg'
+        }
+        expected = '![photo]({{<s3cdn>}}/photo.jpg)'
+        self.assertEqual(convert_embedded_images(content, media_url_map=media_url_map), expected)
+
+    def test_falls_back_when_url_is_none(self):
+        """Test fallback to s3cdn when mapping value is None (failed upload)."""
+        content = '![[failed/photo.jpg]]'
+        media_url_map = {
+            'failed/photo.jpg': None
+        }
+        expected = '![photo]({{<s3cdn>}}/failed/photo.jpg)'
+        self.assertEqual(convert_embedded_images(content, media_url_map=media_url_map), expected)
+
+    def test_normalizes_leading_slash_in_content(self):
+        """Test that leading slash in content is normalized for lookup."""
+        content = '![[/2021/06/photo.jpg]]'
+        media_url_map = {
+            '2021/06/photo.jpg': 'https://minio.example.com/bucket/assets/2021/06/photo.jpg'
+        }
+        expected = '![photo](https://minio.example.com/bucket/assets/2021/06/photo.jpg)'
+        self.assertEqual(convert_embedded_images(content, media_url_map=media_url_map), expected)
+
+    def test_multiple_images_mixed_mapping(self):
+        """Test multiple images where some are in map and some are not."""
+        content = '![[mapped.jpg]] and ![[unmapped.png]]'
+        media_url_map = {
+            'mapped.jpg': 'https://minio.example.com/bucket/assets/mapped.jpg'
+        }
+        expected = '![mapped](https://minio.example.com/bucket/assets/mapped.jpg) and ![unmapped]({{<s3cdn>}}/unmapped.png)'
+        self.assertEqual(convert_embedded_images(content, media_url_map=media_url_map), expected)
+
+    def test_empty_media_url_map(self):
+        """Test with empty media_url_map (falls back to s3cdn)."""
+        content = '![[photo.jpg]]'
+        media_url_map = {}
+        expected = '![photo]({{<s3cdn>}}/photo.jpg)'
+        self.assertEqual(convert_embedded_images(content, media_url_map=media_url_map), expected)
+
+    def test_cdn_path_ignored_when_minio_url_available(self):
+        """Test that cdn_path is ignored when MinIO URL is available."""
+        content = '![[photo.jpg]]'
+        media_url_map = {
+            'photo.jpg': 'https://minio.example.com/bucket/assets/photo.jpg'
+        }
+        # cdn_path should be ignored since we have a MinIO URL
+        expected = '![photo](https://minio.example.com/bucket/assets/photo.jpg)'
+        self.assertEqual(
+            convert_embedded_images(content, cdn_path='/custom/path', media_url_map=media_url_map),
+            expected
+        )
+
+    def test_cdn_path_used_when_not_in_map(self):
+        """Test that cdn_path is used for images not in the mapping."""
+        content = '![[photo.jpg]]'
+        media_url_map = {}
+        expected = '![photo]({{<s3cdn>}}/custom/path/photo.jpg)'
+        self.assertEqual(
+            convert_embedded_images(content, cdn_path='/custom/path', media_url_map=media_url_map),
+            expected
+        )
+
+
+class TestMediaUrlMapMedia(unittest.TestCase):
+    """Tests for convert_embedded_media with media_url_map parameter."""
+
+    def test_video_uses_minio_url_when_available(self):
+        """Test that MinIO URL is used for video when present in mapping."""
+        content = '![[videos/demo.mp4]]'
+        media_url_map = {
+            'videos/demo.mp4': 'https://minio.example.com/bucket/assets/videos/demo.mp4'
+        }
+        expected = '<video controls><source src="https://minio.example.com/bucket/assets/videos/demo.mp4" type="video/mp4"></video>'
+        self.assertEqual(convert_embedded_media(content, media_url_map=media_url_map), expected)
+
+    def test_audio_uses_minio_url_when_available(self):
+        """Test that MinIO URL is used for audio when present in mapping."""
+        content = '![[music/song.mp3]]'
+        media_url_map = {
+            'music/song.mp3': 'https://minio.example.com/bucket/assets/music/song.mp3'
+        }
+        expected = '<audio controls><source src="https://minio.example.com/bucket/assets/music/song.mp3" type="audio/mpeg"></audio>'
+        self.assertEqual(convert_embedded_media(content, media_url_map=media_url_map), expected)
+
+    def test_video_falls_back_to_s3cdn_when_not_in_map(self):
+        """Test fallback to s3cdn shortcode for video not in mapping."""
+        content = '![[video.mp4]]'
+        media_url_map = {
+            'other/video.webm': 'https://minio.example.com/bucket/assets/other/video.webm'
+        }
+        expected = '<video controls><source src="{{<s3cdn>}}/video.mp4" type="video/mp4"></video>'
+        self.assertEqual(convert_embedded_media(content, media_url_map=media_url_map), expected)
+
+    def test_audio_falls_back_when_url_is_none(self):
+        """Test fallback to s3cdn for audio when mapping value is None."""
+        content = '![[failed/audio.mp3]]'
+        media_url_map = {
+            'failed/audio.mp3': None
+        }
+        expected = '<audio controls><source src="{{<s3cdn>}}/failed/audio.mp3" type="audio/mpeg"></audio>'
+        self.assertEqual(convert_embedded_media(content, media_url_map=media_url_map), expected)
+
+    def test_normalizes_leading_slash_for_video(self):
+        """Test that leading slash is normalized for video lookup."""
+        content = '![[/videos/clip.mp4]]'
+        media_url_map = {
+            'videos/clip.mp4': 'https://minio.example.com/bucket/assets/videos/clip.mp4'
+        }
+        expected = '<video controls><source src="https://minio.example.com/bucket/assets/videos/clip.mp4" type="video/mp4"></video>'
+        self.assertEqual(convert_embedded_media(content, media_url_map=media_url_map), expected)
+
+    def test_mixed_video_audio_with_mapping(self):
+        """Test mixed video and audio with partial mapping."""
+        content = '![[video.mp4]] and ![[song.mp3]]'
+        media_url_map = {
+            'video.mp4': 'https://minio.example.com/bucket/assets/video.mp4'
+            # song.mp3 not in mapping
+        }
+        expected = (
+            '<video controls><source src="https://minio.example.com/bucket/assets/video.mp4" type="video/mp4"></video>'
+            ' and '
+            '<audio controls><source src="{{<s3cdn>}}/song.mp3" type="audio/mpeg"></audio>'
+        )
+        self.assertEqual(convert_embedded_media(content, media_url_map=media_url_map), expected)
+
+    def test_empty_media_url_map_for_video(self):
+        """Test with empty media_url_map for video (falls back to s3cdn)."""
+        content = '![[clip.webm]]'
+        media_url_map = {}
+        expected = '<video controls><source src="{{<s3cdn>}}/clip.webm" type="video/webm"></video>'
+        self.assertEqual(convert_embedded_media(content, media_url_map=media_url_map), expected)
+
+    def test_cdn_path_ignored_when_minio_url_available_for_audio(self):
+        """Test that cdn_path is ignored for audio when MinIO URL is available."""
+        content = '![[podcast.mp3]]'
+        media_url_map = {
+            'podcast.mp3': 'https://minio.example.com/bucket/assets/podcast.mp3'
+        }
+        expected = '<audio controls><source src="https://minio.example.com/bucket/assets/podcast.mp3" type="audio/mpeg"></audio>'
+        self.assertEqual(
+            convert_embedded_media(content, cdn_path='/audio/files', media_url_map=media_url_map),
+            expected
+        )
+
+    def test_cdn_path_used_when_video_not_in_map(self):
+        """Test that cdn_path is used for video not in the mapping."""
+        content = '![[clip.mp4]]'
+        media_url_map = {}
+        expected = '<video controls><source src="{{<s3cdn>}}/videos/clip.mp4" type="video/mp4"></video>'
+        self.assertEqual(
+            convert_embedded_media(content, cdn_path='/videos', media_url_map=media_url_map),
+            expected
+        )
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
