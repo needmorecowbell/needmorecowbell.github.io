@@ -9,7 +9,11 @@ This phase adds intelligent content routing so notes are published to the approp
   - Updated `transform_to_hugo()` to include `content_type` in output when valid
   - Added 28 new tests covering validation, normalization, and integration
 
-- [ ] Create `scripts/content_router.py` module with a `determine_content_type()` function that infers the content type from tags if not explicitly set (e.g., `project` tag -> projects section, `photography` tag -> photography section, default to post)
+- [x] Create `scripts/content_router.py` module with a `determine_content_type()` function that infers the content type from tags if not explicitly set (e.g., `project` tag -> projects section, `photography` tag -> photography section, default to post)
+  - Implemented `determine_content_type()` that checks explicit content_type first, then infers from tags
+  - Added `infer_content_type_from_tags()` with PROJECT_TAGS (project, projects, woodworking, diy, maker, build, craft, crafts) and PHOTOGRAPHY_TAGS (photography, photos, photo, travel, trip, gallery)
+  - Added `get_hugo_section_path()` helper to map content types to Hugo directory paths
+  - Created 63 comprehensive tests in `test_content_router.py`
 
 - [ ] Update `hugo_writer.py` to accept the content type and write to the appropriate directory: `content/english/post/`, `content/english/projects/`, or `content/english/photography/`
 
