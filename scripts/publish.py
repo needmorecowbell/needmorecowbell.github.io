@@ -16,6 +16,30 @@ import sys
 from pathlib import Path
 
 from obsidian_parser import find_publishable_notes
+from frontmatter_transformer import generate_slug, transform_to_hugo
+
+# Default Hugo content output directory (relative to blog root)
+DEFAULT_OUTPUT_DIR = "content/english/post"
+
+
+def get_target_path(frontmatter, body, output_dir=DEFAULT_OUTPUT_DIR):
+    """
+    Compute the target Hugo path for a note.
+
+    Uses transform_to_hugo to get normalized frontmatter, then generates
+    a slug from the title and date for the output filename.
+
+    Args:
+        frontmatter: Dict of Obsidian frontmatter
+        body: Body content (used for title extraction if needed)
+        output_dir: Base output directory for Hugo posts
+
+    Returns:
+        Target path as a string (e.g., 'content/english/post/2024-01-15-my-post.md')
+    """
+    hugo_fm = transform_to_hugo(frontmatter, body)
+    slug = generate_slug(hugo_fm.get('title', ''), hugo_fm.get('date'))
+    return f"{output_dir}/{slug}.md"
 
 
 def format_tags(tags):
@@ -96,6 +120,61 @@ def print_scan_table(notes):
     print(f"Found {len(notes)} publishable note(s).")
 
 
+def print_list_table(notes, output_dir=DEFAULT_OUTPUT_DIR):
+    """
+    Print a formatted table of publishable notes with their target paths.
+
+    Similar to print_scan_table but includes an additional column showing
+    where each note will be published in the Hugo content directory.
+
+    Args:
+        notes: List of note dicts with 'path', 'frontmatter', and 'body' keys
+        output_dir: Base output directory for Hugo posts
+    """
+    if not notes:
+        print("No publishable notes found.")
+        return
+
+    # Define column widths
+    col_widths = {
+        'filename': 25,
+        'title': 30,
+        'date': 12,
+        'target': 55
+    }
+
+    # Print header
+    header = (
+        f"{'Filename':<{col_widths['filename']}} "
+        f"{'Title':<{col_widths['title']}} "
+        f"{'Date':<{col_widths['date']}} "
+        f"{'Target Path':<{col_widths['target']}}"
+    )
+    print(header)
+    print("-" * len(header))
+
+    # Print each note
+    for note in notes:
+        fm = note['frontmatter']
+        body = note.get('body', '')
+        filename = truncate(note['path'].name, col_widths['filename'])
+        title = truncate(fm.get('title', '-'), col_widths['title'])
+        date = format_date(fm.get('date'))
+        target = truncate(get_target_path(fm, body, output_dir), col_widths['target'])
+
+        row = (
+            f"{filename:<{col_widths['filename']}} "
+            f"{title:<{col_widths['title']}} "
+            f"{date:<{col_widths['date']}} "
+            f"{target:<{col_widths['target']}}"
+        )
+        print(row)
+
+    # Print summary
+    print()
+    print(f"Found {len(notes)} publishable note(s).")
+
+
 def cmd_scan(args):
     """Find and display all notes marked for publishing."""
     vault_path = Path(args.vault) if args.vault else None
@@ -113,9 +192,18 @@ def cmd_scan(args):
 
 def cmd_list(args):
     """Show publishable notes with their target Hugo paths."""
-    # Will be implemented when obsidian_parser module is created
-    print("Listing publishable notes with target paths...")
-    print("(Implementation pending: obsidian_parser.find_publishable_notes)")
+    vault_path = Path(args.vault) if args.vault else None
+    output_dir = args.output if args.output else DEFAULT_OUTPUT_DIR
+
+    try:
+        notes = find_publishable_notes(vault_path=vault_path)
+        print_list_table(notes, output_dir)
+    except FileNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except NotADirectoryError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 def cmd_convert(args):
@@ -178,6 +266,14 @@ Examples:
     list_parser = subparsers.add_parser(
         "list",
         help="Show publishable notes with their target Hugo paths"
+    )
+    list_parser.add_argument(
+        "--vault",
+        help="Path to the Obsidian vault (default: ~/Notes)"
+    )
+    list_parser.add_argument(
+        "--output",
+        help="Hugo output directory (default: content/english/post)"
     )
     list_parser.set_defaults(func=cmd_list)
 

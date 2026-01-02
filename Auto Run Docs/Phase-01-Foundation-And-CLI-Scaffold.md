@@ -93,7 +93,15 @@ This phase establishes the development environment and builds a working CLI tool
   - Proper error handling for FileNotFoundError and NotADirectoryError
   - Added comprehensive test suite in `test_publish_cli.py` (25 tests passing, 273 total tests in scripts/)
 
-- [ ] Implement the `list` subcommand that shows the same information as `scan` but also displays where each note would be published in the Hugo content directory
+- [x] Implement the `list` subcommand that shows the same information as `scan` but also displays where each note would be published in the Hugo content directory
+  - Implemented `cmd_list()` with `print_list_table()` helper function on 2026-01-02
+  - Added `get_target_path(frontmatter, body, output_dir)` helper to compute Hugo target paths
+  - Uses `transform_to_hugo()` for frontmatter normalization and `generate_slug()` for filename generation
+  - Displays table with columns: Filename, Title, Date, Target Path
+  - Supports `--vault` argument to specify custom Obsidian vault path
+  - Supports `--output` argument to specify custom Hugo output directory (default: content/english/post)
+  - Added 15 comprehensive tests (5 for get_target_path, 4 for print_list_table, 5 for cmd_list, 1 integration test)
+  - Total tests in scripts/ now 288 (previously 273)
 
 - [ ] Implement the `convert` subcommand that takes a note path as argument, runs the full conversion pipeline (parse -> transform frontmatter -> convert syntax), and writes the result to `content/english/post/` with a `--dry-run` flag that prints output instead of writing
 

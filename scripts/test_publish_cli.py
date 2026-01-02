@@ -18,7 +18,11 @@ from publish import (
     format_date,
     truncate,
     print_scan_table,
-    cmd_scan
+    print_list_table,
+    get_target_path,
+    cmd_scan,
+    cmd_list,
+    DEFAULT_OUTPUT_DIR
 )
 
 
@@ -278,6 +282,229 @@ This note should not appear.
                 # Should NOT include the non-publishable note
                 self.assertNotIn("other-note.md", output)
                 self.assertNotIn("Not Published", output)
+
+                # Should show count of 1
+                self.assertIn("Found 1 publishable note(s).", output)
+
+
+class TestGetTargetPath(unittest.TestCase):
+    """Tests for get_target_path function."""
+
+    def test_basic_target_path(self):
+        """Generates correct target path from frontmatter."""
+        fm = {'title': 'My Blog Post', 'date': '2024-01-15'}
+        result = get_target_path(fm, '')
+        self.assertEqual(result, 'content/english/post/2024-01-15-my-blog-post.md')
+
+    def test_custom_output_dir(self):
+        """Respects custom output directory."""
+        fm = {'title': 'Test Post', 'date': '2024-06-20'}
+        result = get_target_path(fm, '', 'content/english/projects')
+        self.assertEqual(result, 'content/english/projects/2024-06-20-test-post.md')
+
+    def test_title_from_body_h1(self):
+        """Extracts title from body H1 when not in frontmatter."""
+        fm = {'date': '2024-03-10'}
+        body = '# My Article Title\n\nSome content here.'
+        result = get_target_path(fm, body)
+        self.assertEqual(result, 'content/english/post/2024-03-10-my-article-title.md')
+
+    def test_special_characters_in_title(self):
+        """Handles special characters in title correctly."""
+        fm = {'title': "What's New: A Developer's Guide!", 'date': '2024-05-01'}
+        result = get_target_path(fm, '')
+        self.assertEqual(result, 'content/english/post/2024-05-01-whats-new-a-developers-guide.md')
+
+    def test_empty_title_uses_untitled(self):
+        """Uses 'untitled' for empty title."""
+        fm = {'date': '2024-02-28'}
+        result = get_target_path(fm, '')
+        self.assertEqual(result, 'content/english/post/2024-02-28-untitled.md')
+
+
+class TestPrintListTable(unittest.TestCase):
+    """Tests for print_list_table function."""
+
+    def test_no_notes_prints_message(self):
+        """Empty notes list prints 'no publishable notes' message."""
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            print_list_table([])
+            output = mock_stdout.getvalue()
+            self.assertIn("No publishable notes found.", output)
+
+    def test_single_note_prints_table_with_target(self):
+        """Single note is printed in table format with target path."""
+        notes = [{
+            'path': Path('/tmp/test-note.md'),
+            'frontmatter': {
+                'title': 'Test Title',
+                'date': '2024-01-15',
+                'tags': ['python', 'testing']
+            },
+            'body': 'Content'
+        }]
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            print_list_table(notes)
+            output = mock_stdout.getvalue()
+
+            # Check header is present
+            self.assertIn("Filename", output)
+            self.assertIn("Title", output)
+            self.assertIn("Date", output)
+            self.assertIn("Target Path", output)
+
+            # Check note data is present
+            self.assertIn("test-note.md", output)
+            self.assertIn("Test Title", output)
+            self.assertIn("2024-01-15", output)
+
+            # Check target path is present
+            self.assertIn("content/english/post/2024-01-15-test-title.md", output)
+
+            # Check summary
+            self.assertIn("Found 1 publishable note(s).", output)
+
+    def test_multiple_notes_prints_count(self):
+        """Multiple notes show correct count in summary."""
+        notes = [
+            {
+                'path': Path('/tmp/note1.md'),
+                'frontmatter': {'title': 'Note 1', 'date': '2024-01-01'},
+                'body': 'Content 1'
+            },
+            {
+                'path': Path('/tmp/note2.md'),
+                'frontmatter': {'title': 'Note 2', 'date': '2024-01-02'},
+                'body': 'Content 2'
+            }
+        ]
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            print_list_table(notes)
+            output = mock_stdout.getvalue()
+            self.assertIn("Found 2 publishable note(s).", output)
+
+    def test_custom_output_dir(self):
+        """Respects custom output directory in target paths."""
+        notes = [{
+            'path': Path('/tmp/project-note.md'),
+            'frontmatter': {'title': 'My Project', 'date': '2024-05-20'},
+            'body': 'Content'
+        }]
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            print_list_table(notes, 'content/english/projects')
+            output = mock_stdout.getvalue()
+            self.assertIn("content/english/projects/2024-05-20-my-project.md", output)
+
+
+class TestCmdList(unittest.TestCase):
+    """Tests for cmd_list function."""
+
+    def test_list_calls_find_publishable_notes(self):
+        """list command calls find_publishable_notes."""
+        mock_args = MagicMock()
+        mock_args.vault = None
+        mock_args.output = None
+
+        with patch('publish.find_publishable_notes', return_value=[]) as mock_find:
+            with patch('sys.stdout', new_callable=StringIO):
+                cmd_list(mock_args)
+                mock_find.assert_called_once_with(vault_path=None)
+
+    def test_list_with_custom_vault_path(self):
+        """list command passes custom vault path."""
+        mock_args = MagicMock()
+        mock_args.vault = '/custom/vault/path'
+        mock_args.output = None
+
+        with patch('publish.find_publishable_notes', return_value=[]) as mock_find:
+            with patch('sys.stdout', new_callable=StringIO):
+                cmd_list(mock_args)
+                mock_find.assert_called_once()
+                call_args = mock_find.call_args
+                self.assertEqual(str(call_args.kwargs['vault_path']), '/custom/vault/path')
+
+    def test_list_with_custom_output_dir(self):
+        """list command uses custom output directory."""
+        notes = [{
+            'path': Path('/tmp/note.md'),
+            'frontmatter': {'title': 'Test', 'date': '2024-01-01'},
+            'body': 'Content'
+        }]
+        mock_args = MagicMock()
+        mock_args.vault = None
+        mock_args.output = 'content/english/projects'
+
+        with patch('publish.find_publishable_notes', return_value=notes):
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_list(mock_args)
+                output = mock_stdout.getvalue()
+                self.assertIn("content/english/projects/", output)
+
+    def test_list_handles_file_not_found(self):
+        """list command exits with error on FileNotFoundError."""
+        mock_args = MagicMock()
+        mock_args.vault = '/nonexistent/path'
+        mock_args.output = None
+
+        with patch('publish.find_publishable_notes', side_effect=FileNotFoundError("Vault not found")):
+            with patch('sys.stderr', new_callable=StringIO) as mock_stderr:
+                with self.assertRaises(SystemExit) as context:
+                    cmd_list(mock_args)
+                self.assertEqual(context.exception.code, 1)
+                self.assertIn("Vault not found", mock_stderr.getvalue())
+
+    def test_list_handles_not_a_directory(self):
+        """list command exits with error on NotADirectoryError."""
+        mock_args = MagicMock()
+        mock_args.vault = '/some/file.txt'
+        mock_args.output = None
+
+        with patch('publish.find_publishable_notes', side_effect=NotADirectoryError("Not a directory")):
+            with patch('sys.stderr', new_callable=StringIO) as mock_stderr:
+                with self.assertRaises(SystemExit) as context:
+                    cmd_list(mock_args)
+                self.assertEqual(context.exception.code, 1)
+                self.assertIn("Not a directory", mock_stderr.getvalue())
+
+
+class TestCmdListIntegration(unittest.TestCase):
+    """Integration tests for cmd_list with actual filesystem."""
+
+    def test_list_with_test_vault(self):
+        """list command works with a test vault directory."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a publishable note
+            note_path = Path(tmpdir) / "test-note.md"
+            note_path.write_text("""---
+title: Integration Test Note
+date: 2024-06-15
+tags:
+  - test
+  - integration
+publish: true
+---
+
+This is a test note for integration testing.
+""")
+
+            mock_args = MagicMock()
+            mock_args.vault = tmpdir
+            mock_args.output = None
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_list(mock_args)
+                output = mock_stdout.getvalue()
+
+                # Should find the publishable note
+                self.assertIn("test-note.md", output)
+                self.assertIn("Integration Test Note", output)
+                self.assertIn("2024-06-15", output)
+
+                # Should include target path (may be truncated in table)
+                self.assertIn("content/english/post/2024-06-15-integration-test-not", output)
 
                 # Should show count of 1
                 self.assertIn("Found 1 publishable note(s).", output)
