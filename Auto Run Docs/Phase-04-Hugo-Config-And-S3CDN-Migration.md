@@ -9,7 +9,12 @@ This phase updates the Hugo configuration and s3cdn shortcode to work with your 
   - Added `mediaBasePath` parameter for publish script integration
   - Verified Hugo correctly reads the override (tested with `hugo config -e development`)
 
-- [ ] Update `config/_default/params.toml` to document both the production S3CDN URL and instructions for switching between environments
+- [x] Update `config/_default/params.toml` to document both the production S3CDN URL and instructions for switching between environments
+  - Added comprehensive documentation header explaining S3CDN configuration
+  - Documented both production (`https://s3cdn.617a.net/amblog/assets`) and development (`http://localhost:9000/blog-assets`) URLs
+  - Added instructions for switching environments: `hugo server -e development` vs `hugo -e production`
+  - Added `mediaBasePath = "amblog/assets"` parameter for publish script integration
+  - Cross-referenced config/development/params.toml and scripts/.env files
 
 - [ ] Enhance `layouts/shortcodes/s3cdn.html` to support optional path parameter: `{{</* s3cdn "path/to/file.jpg" */>}}` outputs the full URL, while `{{</* s3cdn */>}}` outputs just the base URL (maintaining backward compatibility)
 

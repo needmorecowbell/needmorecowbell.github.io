@@ -1,10 +1,48 @@
+# =============================================================================
+# Site Parameters
+# =============================================================================
 
 title = "Adam's Dev Log"
 author = "Adam Musciano"
 copyright = "2017-{{ YEAR }}"
 description = "A Developer's Ramblings"
+
+# =============================================================================
+# Media/S3CDN Configuration
+# =============================================================================
+#
+# This blog uses an S3-compatible storage backend (MinIO) for media files.
+# The S3CDN parameter sets the public URL prefix for all media assets.
+#
+# PRODUCTION (this file - _default/params.toml):
+#   S3CDN = "https://s3cdn.617a.net/amblog/assets"
+#   - Used when building for production: `hugo` or `hugo -e production`
+#   - Points to the production CDN/S3 bucket
+#
+# DEVELOPMENT (config/development/params.toml):
+#   S3CDN = "http://localhost:9000/blog-assets"
+#   - Used when running locally: `hugo server -e development`
+#   - Points to local MinIO instance for testing
+#
+# To switch environments:
+#   - Development: hugo server -e development
+#   - Production:  hugo server (or just `hugo` for build)
+#
+# The shortcode {{< s3cdn "path/to/file.jpg" >}} outputs the full URL
+# by combining S3CDN + path.
+#
+# See also:
+#   - config/development/params.toml for development overrides
+#   - scripts/.env for MinIO credentials (not tracked in git)
+#   - scripts/.env.example for configuration template
+# =============================================================================
+
 profilePicture = "https://s3cdn.617a.net/amblog/assets/img/prof.jpg"
 S3CDN = "https://s3cdn.617a.net/amblog/assets"
+
+# Media upload path for the publish script (production bucket)
+# This should match the bucket configured in your production MinIO/S3 setup
+mediaBasePath = "amblog/assets"
 keywords = ""
 favicon = "favicons/"
 # example ["css/custom.css"]
