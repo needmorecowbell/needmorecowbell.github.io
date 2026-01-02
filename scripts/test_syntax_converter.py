@@ -763,5 +763,189 @@ class TestMediaUrlMapMedia(unittest.TestCase):
         )
 
 
+class TestS3cdnBaseUrlImages(unittest.TestCase):
+    """Tests for convert_embedded_images with s3cdn_base_url parameter."""
+
+    def test_uses_direct_url_instead_of_shortcode(self):
+        """Test that direct S3CDN URL is used when s3cdn_base_url is provided."""
+        content = '![[photo.jpg]]'
+        s3cdn_url = 'https://s3cdn.example.com/assets'
+        expected = '![photo](https://s3cdn.example.com/assets/photo.jpg)'
+        self.assertEqual(
+            convert_embedded_images(content, s3cdn_base_url=s3cdn_url),
+            expected
+        )
+
+    def test_direct_url_with_path(self):
+        """Test direct URL with subdirectory path."""
+        content = '![[images/gallery/photo.png]]'
+        s3cdn_url = 'https://cdn.example.com/blog'
+        expected = '![photo](https://cdn.example.com/blog/images/gallery/photo.png)'
+        self.assertEqual(
+            convert_embedded_images(content, s3cdn_base_url=s3cdn_url),
+            expected
+        )
+
+    def test_direct_url_with_trailing_slash(self):
+        """Test that trailing slash in s3cdn_base_url is normalized."""
+        content = '![[photo.jpg]]'
+        s3cdn_url = 'https://s3cdn.example.com/assets/'
+        expected = '![photo](https://s3cdn.example.com/assets/photo.jpg)'
+        self.assertEqual(
+            convert_embedded_images(content, s3cdn_base_url=s3cdn_url),
+            expected
+        )
+
+    def test_direct_url_with_cdn_path(self):
+        """Test direct URL combined with cdn_path prefix."""
+        content = '![[photo.jpg]]'
+        s3cdn_url = 'https://s3cdn.example.com'
+        expected = '![photo](https://s3cdn.example.com/blog/assets/photo.jpg)'
+        self.assertEqual(
+            convert_embedded_images(content, cdn_path='/blog/assets', s3cdn_base_url=s3cdn_url),
+            expected
+        )
+
+    def test_media_url_map_takes_precedence(self):
+        """Test that media_url_map takes precedence over s3cdn_base_url."""
+        content = '![[photo.jpg]]'
+        s3cdn_url = 'https://s3cdn.example.com/assets'
+        media_url_map = {'photo.jpg': 'https://minio.local/bucket/photo.jpg'}
+        expected = '![photo](https://minio.local/bucket/photo.jpg)'
+        self.assertEqual(
+            convert_embedded_images(content, s3cdn_base_url=s3cdn_url, media_url_map=media_url_map),
+            expected
+        )
+
+    def test_fallback_to_direct_url_when_not_in_map(self):
+        """Test fallback to s3cdn_base_url when image not in media_url_map."""
+        content = '![[photo.jpg]]'
+        s3cdn_url = 'https://s3cdn.example.com/assets'
+        media_url_map = {'other.jpg': 'https://minio.local/bucket/other.jpg'}
+        expected = '![photo](https://s3cdn.example.com/assets/photo.jpg)'
+        self.assertEqual(
+            convert_embedded_images(content, s3cdn_base_url=s3cdn_url, media_url_map=media_url_map),
+            expected
+        )
+
+    def test_multiple_images_with_direct_url(self):
+        """Test multiple images all using direct URL."""
+        content = '![[image1.jpg]] and ![[folder/image2.png]]'
+        s3cdn_url = 'https://cdn.example.com'
+        expected = '![image1](https://cdn.example.com/image1.jpg) and ![image2](https://cdn.example.com/folder/image2.png)'
+        self.assertEqual(
+            convert_embedded_images(content, s3cdn_base_url=s3cdn_url),
+            expected
+        )
+
+
+class TestS3cdnBaseUrlMedia(unittest.TestCase):
+    """Tests for convert_embedded_media with s3cdn_base_url parameter."""
+
+    def test_video_uses_direct_url(self):
+        """Test that direct S3CDN URL is used for video when s3cdn_base_url is provided."""
+        content = '![[video.mp4]]'
+        s3cdn_url = 'https://s3cdn.example.com/assets'
+        expected = '<video controls><source src="https://s3cdn.example.com/assets/video.mp4" type="video/mp4"></video>'
+        self.assertEqual(
+            convert_embedded_media(content, s3cdn_base_url=s3cdn_url),
+            expected
+        )
+
+    def test_audio_uses_direct_url(self):
+        """Test that direct S3CDN URL is used for audio when s3cdn_base_url is provided."""
+        content = '![[podcast.mp3]]'
+        s3cdn_url = 'https://cdn.example.com/media'
+        expected = '<audio controls><source src="https://cdn.example.com/media/podcast.mp3" type="audio/mpeg"></audio>'
+        self.assertEqual(
+            convert_embedded_media(content, s3cdn_base_url=s3cdn_url),
+            expected
+        )
+
+    def test_direct_url_with_trailing_slash(self):
+        """Test that trailing slash in s3cdn_base_url is normalized."""
+        content = '![[clip.webm]]'
+        s3cdn_url = 'https://s3cdn.example.com/assets/'
+        expected = '<video controls><source src="https://s3cdn.example.com/assets/clip.webm" type="video/webm"></video>'
+        self.assertEqual(
+            convert_embedded_media(content, s3cdn_base_url=s3cdn_url),
+            expected
+        )
+
+    def test_direct_url_with_cdn_path(self):
+        """Test direct URL combined with cdn_path prefix."""
+        content = '![[song.mp3]]'
+        s3cdn_url = 'https://s3cdn.example.com'
+        expected = '<audio controls><source src="https://s3cdn.example.com/audio/files/song.mp3" type="audio/mpeg"></audio>'
+        self.assertEqual(
+            convert_embedded_media(content, cdn_path='/audio/files', s3cdn_base_url=s3cdn_url),
+            expected
+        )
+
+    def test_media_url_map_takes_precedence_over_direct_url(self):
+        """Test that media_url_map takes precedence over s3cdn_base_url."""
+        content = '![[video.mp4]]'
+        s3cdn_url = 'https://s3cdn.example.com/assets'
+        media_url_map = {'video.mp4': 'https://minio.local/bucket/video.mp4'}
+        expected = '<video controls><source src="https://minio.local/bucket/video.mp4" type="video/mp4"></video>'
+        self.assertEqual(
+            convert_embedded_media(content, s3cdn_base_url=s3cdn_url, media_url_map=media_url_map),
+            expected
+        )
+
+    def test_fallback_to_direct_url_when_not_in_map(self):
+        """Test fallback to s3cdn_base_url when media not in media_url_map."""
+        content = '![[video.mp4]]'
+        s3cdn_url = 'https://s3cdn.example.com/assets'
+        media_url_map = {'other.webm': 'https://minio.local/bucket/other.webm'}
+        expected = '<video controls><source src="https://s3cdn.example.com/assets/video.mp4" type="video/mp4"></video>'
+        self.assertEqual(
+            convert_embedded_media(content, s3cdn_base_url=s3cdn_url, media_url_map=media_url_map),
+            expected
+        )
+
+    def test_mixed_video_audio_with_direct_url(self):
+        """Test mixed video and audio all using direct URL."""
+        content = '![[video.mp4]] and ![[song.mp3]]'
+        s3cdn_url = 'https://cdn.example.com'
+        expected = (
+            '<video controls><source src="https://cdn.example.com/video.mp4" type="video/mp4"></video>'
+            ' and '
+            '<audio controls><source src="https://cdn.example.com/song.mp3" type="audio/mpeg"></audio>'
+        )
+        self.assertEqual(
+            convert_embedded_media(content, s3cdn_base_url=s3cdn_url),
+            expected
+        )
+
+
+class TestGetS3cdnBaseUrl(unittest.TestCase):
+    """Tests for the get_s3cdn_base_url function."""
+
+    def test_returns_production_url(self):
+        """Test that production S3CDN URL is returned."""
+        from syntax_converter import get_s3cdn_base_url
+        # This should return the production S3CDN URL from the Hugo config
+        url = get_s3cdn_base_url('production')
+        self.assertIsInstance(url, str)
+        self.assertTrue(url.startswith('http'))
+
+    def test_returns_development_url(self):
+        """Test that development S3CDN URL is returned."""
+        from syntax_converter import get_s3cdn_base_url
+        # This should return the development S3CDN URL from the Hugo config
+        url = get_s3cdn_base_url('development')
+        self.assertIsInstance(url, str)
+        self.assertTrue(url.startswith('http'))
+
+    def test_production_and_development_differ(self):
+        """Test that production and development URLs are different."""
+        from syntax_converter import get_s3cdn_base_url
+        prod_url = get_s3cdn_base_url('production')
+        dev_url = get_s3cdn_base_url('development')
+        # They should be different (prod uses s3cdn.617a.net, dev uses localhost)
+        self.assertNotEqual(prod_url, dev_url)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

@@ -56,7 +56,14 @@ This phase updates the Hugo configuration and s3cdn shortcode to work with your 
   - Created comprehensive test suite with 37 tests covering TOML loading, config merging, and real config integration
   - All 855 project tests pass
 
-- [ ] Update `syntax_converter.py` to use `config_manager.py` for the S3CDN base URL instead of hardcoded values
+- [x] Update `syntax_converter.py` to use `config_manager.py` for the S3CDN base URL instead of hardcoded values
+  - Added `get_s3cdn_base_url(environment)` convenience function that wraps `config_manager.get_s3cdn_url()`
+  - Updated `convert_embedded_images()` to accept optional `s3cdn_base_url` parameter for direct URL output
+  - Updated `convert_embedded_media()` to accept optional `s3cdn_base_url` parameter for direct URL output
+  - When `s3cdn_base_url` is provided, outputs actual URLs instead of `{{<s3cdn>}}` shortcodes
+  - `media_url_map` still takes precedence over `s3cdn_base_url` when both are provided
+  - Added 17 new tests covering direct URL output and config_manager integration
+  - All 872 tests pass
 
 - [ ] Add `--environment` flag to `publish.py` that sets the Hugo environment (development/production) and uses the appropriate config values
 

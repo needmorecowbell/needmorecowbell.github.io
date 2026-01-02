@@ -4,10 +4,61 @@ Obsidian to Hugo Syntax Converter
 
 This module handles converting Obsidian-specific markdown syntax to Hugo-compatible
 formats, including wikilinks, embedded images, and embedded media.
+
+Supports two modes for S3CDN URLs:
+1. Shortcode mode (default): Outputs {{<s3cdn>}} shortcodes that Hugo expands at render time
+2. Direct URL mode: Uses the actual S3CDN URL from Hugo config via config_manager
+
+Usage with config_manager:
+    from syntax_converter import convert_embedded_images, get_s3cdn_base_url
+
+    # Get the S3CDN URL for the current environment
+    s3cdn_url = get_s3cdn_base_url('production')  # or 'development'
+
+    # Convert images using direct URLs
+    content = convert_embedded_images(content, s3cdn_base_url=s3cdn_url)
 """
 
 import re
 from typing import Callable, Dict, Optional
+
+# Lazy import for config_manager to avoid circular imports and allow
+# syntax_converter to work standalone without config_manager
+_config_manager = None
+
+
+def _get_config_manager():
+    """Lazily import config_manager module."""
+    global _config_manager
+    if _config_manager is None:
+        try:
+            from . import config_manager as cm
+            _config_manager = cm
+        except ImportError:
+            # Handle direct script execution
+            import config_manager as cm
+            _config_manager = cm
+    return _config_manager
+
+
+def get_s3cdn_base_url(environment: str = 'production') -> str:
+    """
+    Get the S3CDN base URL from Hugo configuration.
+
+    This is a convenience wrapper around config_manager.get_s3cdn_url()
+    for use in content conversion pipelines.
+
+    Args:
+        environment: Hugo environment name ('production' or 'development')
+
+    Returns:
+        The S3CDN base URL string (e.g., 'https://s3cdn.617a.net/amblog/assets')
+
+    Raises:
+        config_manager.HugoConfigError: If S3CDN is not configured
+    """
+    cm = _get_config_manager()
+    return cm.get_s3cdn_url(environment)
 
 
 def slugify(text: str) -> str:
@@ -72,7 +123,8 @@ def convert_wikilinks(content: str, base_path: str = '/post/') -> str:
 def convert_embedded_images(
     content: str,
     cdn_path: str = '',
-    media_url_map: Optional[Dict[str, str]] = None
+    media_url_map: Optional[Dict[str, str]] = None,
+    s3cdn_base_url: Optional[str] = None
 ) -> str:
     """
     Convert Obsidian embedded image syntax to Hugo s3cdn shortcode format.
@@ -83,6 +135,10 @@ def convert_embedded_images(
     If a media_url_map is provided and contains the image path, the full MinIO URL
     is used instead of the s3cdn shortcode path.
 
+    If s3cdn_base_url is provided, the actual URL is used instead of the {{<s3cdn>}}
+    shortcode. This is useful when generating content that needs resolved URLs
+    (e.g., for previews or non-Hugo rendering).
+
     Supports common image formats: jpg, jpeg, png, gif, webp, svg, bmp, tiff, ico
 
     Args:
@@ -90,10 +146,14 @@ def convert_embedded_images(
         cdn_path: Optional path prefix to prepend to image paths (default: '')
         media_url_map: Optional dict mapping Obsidian media references to their
                       MinIO URLs (e.g., {'2021/06/photo.jpg': 'https://...'})
+        s3cdn_base_url: Optional S3CDN base URL from Hugo config. If provided,
+                       uses this URL instead of {{<s3cdn>}} shortcode.
+                       Get this value using get_s3cdn_base_url() or
+                       config_manager.get_s3cdn_url().
 
     Returns:
         Content with embedded images converted to Hugo s3cdn shortcode format
-        or direct URLs if media_url_map is provided
+        or direct URLs if media_url_map or s3cdn_base_url is provided
     """
     # Pattern for embedded images: ![[path/to/image.ext]]
     # Only matches common image extensions
@@ -121,15 +181,21 @@ def convert_embedded_images(
             if normalized_path in media_url_map and media_url_map[normalized_path]:
                 return f'![{alt_text}]({media_url_map[normalized_path]})'
 
-        # Fall back to s3cdn shortcode path
+        # Build the path suffix
         if cdn_path:
             full_path = f"{cdn_path.rstrip('/')}/{image_path.lstrip('/')}"
         else:
             full_path = f"/{image_path.lstrip('/')}"
 
-        # Return markdown image with s3cdn shortcode
-        # The shortcode {{<s3cdn>}} outputs the CDN base URL
-        return f'![{alt_text}]({{{{<s3cdn>}}}}{full_path})'
+        # Use direct S3CDN URL if provided, otherwise use shortcode
+        if s3cdn_base_url:
+            # Use the actual S3CDN URL from Hugo config
+            base_url = s3cdn_base_url.rstrip('/')
+            return f'![{alt_text}]({base_url}{full_path})'
+        else:
+            # Return markdown image with s3cdn shortcode
+            # The shortcode {{<s3cdn>}} outputs the CDN base URL
+            return f'![{alt_text}]({{{{<s3cdn>}}}}{full_path})'
 
     return embed_pattern.sub(replace_embedded_image, content)
 
@@ -137,7 +203,8 @@ def convert_embedded_images(
 def convert_embedded_media(
     content: str,
     cdn_path: str = '',
-    media_url_map: Optional[Dict[str, str]] = None
+    media_url_map: Optional[Dict[str, str]] = None,
+    s3cdn_base_url: Optional[str] = None
 ) -> str:
     """
     Convert Obsidian embedded video/audio syntax to HTML5 media tags with s3cdn paths.
@@ -151,6 +218,10 @@ def convert_embedded_media(
     If a media_url_map is provided and contains the media path, the full MinIO URL
     is used instead of the s3cdn shortcode path.
 
+    If s3cdn_base_url is provided, the actual URL is used instead of the {{<s3cdn>}}
+    shortcode. This is useful when generating content that needs resolved URLs
+    (e.g., for previews or non-Hugo rendering).
+
     Supported video formats: mp4, webm, ogg, mov, avi, mkv, m4v
     Supported audio formats: mp3, wav, ogg, m4a, flac, aac, wma
 
@@ -159,10 +230,14 @@ def convert_embedded_media(
         cdn_path: Optional path prefix to prepend to media paths (default: '')
         media_url_map: Optional dict mapping Obsidian media references to their
                       MinIO URLs (e.g., {'videos/demo.mp4': 'https://...'})
+        s3cdn_base_url: Optional S3CDN base URL from Hugo config. If provided,
+                       uses this URL instead of {{<s3cdn>}} shortcode.
+                       Get this value using get_s3cdn_base_url() or
+                       config_manager.get_s3cdn_url().
 
     Returns:
         Content with embedded media converted to HTML5 tags with s3cdn shortcodes
-        or direct URLs if media_url_map is provided
+        or direct URLs if media_url_map or s3cdn_base_url is provided
     """
     # Video extensions and their MIME types
     video_types = {
@@ -210,13 +285,19 @@ def convert_embedded_media(
             if normalized_path in media_url_map and media_url_map[normalized_path]:
                 src_url = media_url_map[normalized_path]
 
-        # Fall back to s3cdn shortcode path if no URL found
+        # Fall back to s3cdn URL or shortcode if no URL found
         if src_url is None:
             if cdn_path:
                 full_path = f"{cdn_path.rstrip('/')}/{media_path.lstrip('/')}"
             else:
                 full_path = f"/{media_path.lstrip('/')}"
-            src_url = f"{{{{<s3cdn>}}}}{full_path}"
+
+            # Use direct S3CDN URL if provided, otherwise use shortcode
+            if s3cdn_base_url:
+                base_url = s3cdn_base_url.rstrip('/')
+                src_url = f"{base_url}{full_path}"
+            else:
+                src_url = f"{{{{<s3cdn>}}}}{full_path}"
 
         # Determine if this is video or audio and get MIME type
         if extension in video_types:
