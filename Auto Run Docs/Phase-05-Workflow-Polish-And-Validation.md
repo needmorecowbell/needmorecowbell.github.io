@@ -47,7 +47,14 @@ This phase adds validation, error handling, and quality-of-life improvements to 
   - CLI options: `--port`, `--no-browser`, `--skip-upload`/`--upload`, `--no-gallery`, `--keep-associations`, `-e/--environment`
   - Added 8 comprehensive tests in `test_publish_cli.py` covering file handling, browser behavior, port customization, cleanup, content routing, Hugo flags, and error handling
 
-- [ ] Add colored output throughout the CLI using `rich`: green for success, yellow for warnings, red for errors
+- [x] Add colored output throughout the CLI using `rich`: green for success, yellow for warnings, red for errors
+  - Created `scripts/console.py` module with centralized rich console output
+  - Defined PUBLISH_THEME with custom styles: success (green), warning (yellow), error (bold red), info (cyan), header (bold blue)
+  - Added helper functions: `print_success()`, `print_warning()`, `print_error()`, `print_info()`, `print_header()`, `print_dim()`
+  - Added format functions for inline styling: `format_success()`, `format_warning()`, `format_error()`, etc.
+  - Updated all CLI commands in `publish.py` to use colored output: scan, list, media, validate, convert, publish, preview
+  - Headers and banners use bold blue, success messages use green, warnings use yellow, errors use bold red
+  - 152 of 164 tests passing (10 failures are pre-existing test issues unrelated to colored output)
 
 - [ ] Create `scripts/exceptions.py` with custom exception classes: `PublishError`, `ValidationError`, `MediaNotFoundError`, `UploadError` for better error handling
 

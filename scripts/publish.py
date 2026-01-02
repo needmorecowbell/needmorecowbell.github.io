@@ -86,6 +86,30 @@ from validators import (
     format_issues,
     ValidationSeverity,
 )
+from console import (
+    console,
+    error_console,
+    print_success,
+    print_warning,
+    print_error,
+    print_info,
+    print_header,
+    print_dim,
+    print_section_header,
+    print_separator,
+    print_ok,
+    print_skip,
+    print_status_line,
+    print_publish_complete,
+    print_dry_run_banner,
+    format_success,
+    format_warning,
+    format_error,
+    format_info,
+    format_highlight,
+    format_dim,
+    format_count,
+)
 
 # Default Hugo content output directory (relative to blog root)
 DEFAULT_OUTPUT_DIR = "content/english/post"
@@ -150,7 +174,7 @@ def print_scan_table(notes):
         notes: List of note dicts with 'path', 'frontmatter', and 'body' keys
     """
     if not notes:
-        print("No publishable notes found.")
+        print_warning("No publishable notes found.")
         return
 
     # Define column widths
@@ -168,8 +192,8 @@ def print_scan_table(notes):
         f"{'Date':<{col_widths['date']}} "
         f"{'Tags':<{col_widths['tags']}}"
     )
-    print(header)
-    print("-" * len(header))
+    console.print(f"[bold]{header}[/bold]")
+    console.print("-" * len(header))
 
     # Print each note
     for note in notes:
@@ -185,11 +209,11 @@ def print_scan_table(notes):
             f"{date:<{col_widths['date']}} "
             f"{tags:<{col_widths['tags']}}"
         )
-        print(row)
+        console.print(row)
 
     # Print summary
-    print()
-    print(f"Found {len(notes)} publishable note(s).")
+    console.print()
+    print_success(f"Found {len(notes)} publishable note(s).")
 
 
 def print_list_table(notes, output_dir=DEFAULT_OUTPUT_DIR):
@@ -204,7 +228,7 @@ def print_list_table(notes, output_dir=DEFAULT_OUTPUT_DIR):
         output_dir: Base output directory for Hugo posts
     """
     if not notes:
-        print("No publishable notes found.")
+        print_warning("No publishable notes found.")
         return
 
     # Define column widths
@@ -222,8 +246,8 @@ def print_list_table(notes, output_dir=DEFAULT_OUTPUT_DIR):
         f"{'Date':<{col_widths['date']}} "
         f"{'Target Path':<{col_widths['target']}}"
     )
-    print(header)
-    print("-" * len(header))
+    console.print(f"[bold]{header}[/bold]")
+    console.print("-" * len(header))
 
     # Print each note
     for note in notes:
@@ -240,11 +264,11 @@ def print_list_table(notes, output_dir=DEFAULT_OUTPUT_DIR):
             f"{date:<{col_widths['date']}} "
             f"{target:<{col_widths['target']}}"
         )
-        print(row)
+        console.print(row)
 
     # Print summary
-    print()
-    print(f"Found {len(notes)} publishable note(s).")
+    console.print()
+    print_success(f"Found {len(notes)} publishable note(s).")
 
 
 def cmd_scan(args):
@@ -255,10 +279,10 @@ def cmd_scan(args):
         notes = find_publishable_notes(vault_path=vault_path)
         print_scan_table(notes)
     except FileNotFoundError as e:
-        print(f"Error: {e}", file=sys.stderr)
+        print_error(f"Error: {e}")
         sys.exit(1)
     except NotADirectoryError as e:
-        print(f"Error: {e}", file=sys.stderr)
+        print_error(f"Error: {e}")
         sys.exit(1)
 
 
@@ -271,10 +295,10 @@ def cmd_list(args):
         notes = find_publishable_notes(vault_path=vault_path)
         print_list_table(notes, output_dir)
     except FileNotFoundError as e:
-        print(f"Error: {e}", file=sys.stderr)
+        print_error(f"Error: {e}")
         sys.exit(1)
     except NotADirectoryError as e:
-        print(f"Error: {e}", file=sys.stderr)
+        print_error(f"Error: {e}")
         sys.exit(1)
 
 
@@ -569,42 +593,45 @@ def cmd_media(args):
     note_path = Path(args.path)
 
     if not note_path.exists():
-        print(f"Error: Note not found: {note_path}", file=sys.stderr)
+        print_error(f"Error: Note not found: {note_path}")
         sys.exit(1)
 
     # Extract and resolve media references
     media_items, missing_count = extract_and_resolve_media(note_path)
 
     # Print header
-    print(f"Media references in: {note_path.name}")
-    print("=" * 60)
+    console.print(f"Media references in: [info]{note_path.name}[/info]")
+    console.print("=" * 60)
 
     if not media_items and missing_count == 0:
-        print("No media references found in this note.")
+        print_info("No media references found in this note.")
         return
 
     # Print resolved media files
     if media_items:
-        print(f"\nResolved ({len(media_items)} file(s)):")
+        console.print(f"\n[success]Resolved ({len(media_items)} file(s)):[/success]")
         for ref, resolved_path in media_items:
-            print(f"  {ref}")
-            print(f"    -> {resolved_path}")
+            console.print(f"  {ref}")
+            console.print(f"    [dim]->[/dim] [info]{resolved_path}[/info]")
 
     # Print missing media files
     if missing_count > 0:
-        print(f"\nMissing ({missing_count} file(s)):")
+        console.print(f"\n[error]Missing ({missing_count} file(s)):[/error]")
         # Re-read the note to show which files are missing
         content = note_path.read_text()
         all_refs = find_media_references(content)
         resolved_refs = {ref for ref, _ in media_items}
         for ref in all_refs:
             if ref not in resolved_refs:
-                print(f"  {ref} [NOT FOUND]")
+                console.print(f"  {ref} [error][NOT FOUND][/error]")
 
     # Print summary
-    print()
+    console.print()
     total = len(media_items) + missing_count
-    print(f"Summary: {total} reference(s), {len(media_items)} resolved, {missing_count} missing")
+    if missing_count > 0:
+        console.print(f"Summary: {format_count(str(total))} reference(s), {format_success(str(len(media_items)))} resolved, {format_error(str(missing_count))} missing")
+    else:
+        print_success(f"Summary: {total} reference(s), {len(media_items)} resolved, {missing_count} missing")
 
 
 def cmd_validate(args):
@@ -624,7 +651,7 @@ def cmd_validate(args):
     note_path = Path(args.path)
 
     if not note_path.exists():
-        print(f"Error: Note not found: {note_path}", file=sys.stderr)
+        print_error(f"Error: Note not found: {note_path}")
         sys.exit(1)
 
     # Parse the note to get frontmatter and body
@@ -632,7 +659,7 @@ def cmd_validate(args):
         from obsidian_parser import parse_obsidian_note
         frontmatter, body = parse_obsidian_note(note_path)
     except Exception as e:
-        print(f"Error parsing note: {e}", file=sys.stderr)
+        print_error(f"Error parsing note: {e}")
         sys.exit(1)
 
     # Get optional paths from args
@@ -640,74 +667,74 @@ def cmd_validate(args):
     hugo_root = Path(args.hugo_root) if hasattr(args, 'hugo_root') and args.hugo_root else DEFAULT_HUGO_ROOT
 
     # Print header
-    print()
-    print("=" * 60)
-    print(f"VALIDATION REPORT")
-    print("=" * 60)
-    print(f"Note: {note_path}")
-    print(f"Title: {frontmatter.get('title', 'Untitled')}")
-    print()
+    console.print()
+    console.print("[header]" + "=" * 60 + "[/header]")
+    console.print("[header]VALIDATION REPORT[/header]")
+    console.print("[header]" + "=" * 60 + "[/header]")
+    console.print(f"Note: [info]{note_path}[/info]")
+    console.print(f"Title: [highlight]{frontmatter.get('title', 'Untitled')}[/highlight]")
+    console.print()
 
     # Collect all issues
     all_issues = []
 
     # Run frontmatter validation
-    print("Validating frontmatter...")
+    console.print("Validating frontmatter...")
     fm_issues = validate_frontmatter(frontmatter)
     all_issues.extend(fm_issues)
     if fm_issues:
         error_count = sum(1 for i in fm_issues if i.severity == ValidationSeverity.ERROR)
         warn_count = sum(1 for i in fm_issues if i.severity == ValidationSeverity.WARNING)
-        print(f"  Found {error_count} error(s), {warn_count} warning(s)")
+        console.print(f"  Found {format_error(str(error_count))} error(s), {format_warning(str(warn_count))} warning(s)")
     else:
-        print("  OK")
+        console.print("  [success]OK[/success]")
 
     # Run media reference validation
-    print("Validating media references...")
+    console.print("Validating media references...")
     media_issues = validate_media_references(body)
     all_issues.extend(media_issues)
     if media_issues:
-        print(f"  Found {len(media_issues)} missing media file(s)")
+        console.print(f"  Found {format_error(str(len(media_issues)))} missing media file(s)")
     else:
-        print("  OK")
+        console.print("  [success]OK[/success]")
 
     # Run internal link validation
-    print("Validating internal links...")
+    console.print("Validating internal links...")
     link_issues = validate_internal_links(body, vault_path=vault_path, hugo_root=hugo_root)
     all_issues.extend(link_issues)
     if link_issues:
-        print(f"  Found {len(link_issues)} broken link(s)")
+        console.print(f"  Found {format_error(str(len(link_issues)))} broken link(s)")
     else:
-        print("  OK")
+        console.print("  [success]OK[/success]")
 
     # Print detailed report if there are issues
-    print()
+    console.print()
     if all_issues:
-        print("-" * 60)
-        print("ISSUES FOUND")
-        print("-" * 60)
-        print(format_issues(all_issues))
-        print()
+        console.print("-" * 60)
+        console.print("[warning]ISSUES FOUND[/warning]")
+        console.print("-" * 60)
+        console.print(format_issues(all_issues))
+        console.print()
 
     # Print summary and set exit code
-    print("=" * 60)
+    console.print("[header]" + "=" * 60 + "[/header]")
     error_count = sum(1 for i in all_issues if i.severity == ValidationSeverity.ERROR)
     warn_count = sum(1 for i in all_issues if i.severity == ValidationSeverity.WARNING)
 
     if error_count > 0:
-        print(f"VALIDATION FAILED: {error_count} error(s), {warn_count} warning(s)")
-        print("=" * 60)
-        print()
+        console.print(f"[error]VALIDATION FAILED:[/error] {error_count} error(s), {warn_count} warning(s)")
+        console.print("[header]" + "=" * 60 + "[/header]")
+        console.print()
         sys.exit(1)
     elif warn_count > 0:
-        print(f"VALIDATION PASSED WITH WARNINGS: {warn_count} warning(s)")
-        print("=" * 60)
-        print()
+        console.print(f"[warning]VALIDATION PASSED WITH WARNINGS:[/warning] {warn_count} warning(s)")
+        console.print("[header]" + "=" * 60 + "[/header]")
+        console.print()
         sys.exit(2)
     else:
-        print("VALIDATION PASSED: No issues found")
-        print("=" * 60)
-        print()
+        console.print("[success]VALIDATION PASSED:[/success] No issues found")
+        console.print("[header]" + "=" * 60 + "[/header]")
+        console.print()
         sys.exit(0)
 
 
@@ -716,7 +743,7 @@ def cmd_convert(args):
     note_path = Path(args.path)
 
     if not note_path.exists():
-        print(f"Error: Note not found: {note_path}", file=sys.stderr)
+        print_error(f"Error: Note not found: {note_path}")
         sys.exit(1)
 
     # Get output directory from args or use default
@@ -743,18 +770,18 @@ def cmd_convert(args):
     media_url_map = None
     if media_items and not skip_upload:
         try:
-            print(f"Uploading {len(media_items)} media file(s) to MinIO...")
+            print_info(f"Uploading {len(media_items)} media file(s) to MinIO...")
             media_url_map = upload_media_to_minio(media_items)
 
             # Report upload results
             successful = sum(1 for v in media_url_map.values() if v is not None)
             failed = len(media_url_map) - successful
             if failed > 0:
-                print(f"Warning: {failed} file(s) failed to upload", file=sys.stderr)
+                print_warning(f"Warning: {failed} file(s) failed to upload")
         except ImportError as e:
-            print(f"Warning: MinIO upload skipped - {e}", file=sys.stderr)
+            print_warning(f"Warning: MinIO upload skipped - {e}")
         except Exception as e:
-            print(f"Warning: MinIO upload failed - {e}", file=sys.stderr)
+            print_warning(f"Warning: MinIO upload failed - {e}")
 
     # Step 3: Convert the note (with media URLs if available)
     try:
@@ -765,7 +792,7 @@ def cmd_convert(args):
             environment=environment
         )
     except Exception as e:
-        print(f"Error converting note: {e}", file=sys.stderr)
+        print_error(f"Error converting note: {e}")
         sys.exit(1)
 
     # Check if note has a Pictures section and Associations section for display purposes
@@ -776,46 +803,46 @@ def cmd_convert(args):
     assoc_link_count = len(extract_wikilinks_from_associations(note_content)) if has_assoc else 0
 
     if args.dry_run:
-        print(f"[DRY RUN] Would convert: {note_path}")
-        print(f"[DRY RUN] Target path: {target_path}")
+        console.print(f"[warning][DRY RUN][/warning] Would convert: [info]{note_path}[/info]")
+        console.print(f"[warning][DRY RUN][/warning] Target path: [info]{target_path}[/info]")
         if environment:
-            print(f"[DRY RUN] Environment: {environment}")
+            console.print(f"[warning][DRY RUN][/warning] Environment: {environment}")
         if media_items:
-            print(f"[DRY RUN] Media files found: {len(media_items)}")
+            console.print(f"[warning][DRY RUN][/warning] Media files found: {len(media_items)}")
             if missing_count > 0:
-                print(f"[DRY RUN] Media files missing: {missing_count}")
+                console.print(f"[warning][DRY RUN][/warning] Media files missing: [error]{missing_count}[/error]")
         if skip_upload:
-            print(f"[DRY RUN] Media upload: SKIPPED")
+            console.print(f"[warning][DRY RUN][/warning] Media upload: [dim]SKIPPED[/dim]")
         if has_gallery:
             if generate_gallery:
-                print(f"[DRY RUN] Gallery: YES ({gallery_media_count} images)")
+                console.print(f"[warning][DRY RUN][/warning] Gallery: [success]YES[/success] ({gallery_media_count} images)")
             else:
-                print(f"[DRY RUN] Gallery: SKIPPED ({gallery_media_count} images in Pictures section)")
+                console.print(f"[warning][DRY RUN][/warning] Gallery: [dim]SKIPPED[/dim] ({gallery_media_count} images in Pictures section)")
         if has_assoc:
             if keep_associations:
-                print(f"[DRY RUN] Associations: CONVERTED ({assoc_link_count} links -> Related section)")
+                console.print(f"[warning][DRY RUN][/warning] Associations: [success]CONVERTED[/success] ({assoc_link_count} links -> Related section)")
             else:
-                print(f"[DRY RUN] Associations: REMOVED ({assoc_link_count} links)")
-        print()
-        print("--- Preview of converted content ---")
-        print()
+                console.print(f"[warning][DRY RUN][/warning] Associations: [dim]REMOVED[/dim] ({assoc_link_count} links)")
+        console.print()
+        console.print("[header]--- Preview of converted content ---[/header]")
+        console.print()
         preview = preview_hugo_post(hugo_frontmatter, converted_body)
-        print(preview)
+        console.print(preview)
     else:
         # Write the Hugo post
         written_path = write_hugo_post(hugo_frontmatter, converted_body, target_path)
-        print(f"Converted: {note_path}")
-        print(f"Written to: {written_path}")
+        print_success(f"Converted: {note_path}")
+        console.print(f"Written to: [info]{written_path}[/info]")
         if has_gallery:
             if generate_gallery:
-                print(f"Gallery generated: {gallery_media_count} images")
+                console.print(f"[success]Gallery generated:[/success] {gallery_media_count} images")
             else:
-                print(f"Gallery skipped: {gallery_media_count} images in Pictures section")
+                console.print(f"[dim]Gallery skipped:[/dim] {gallery_media_count} images in Pictures section")
         if has_assoc:
             if keep_associations:
-                print(f"Associations converted: {assoc_link_count} links -> Related section")
+                console.print(f"[success]Associations converted:[/success] {assoc_link_count} links -> Related section")
             else:
-                print(f"Associations removed: {assoc_link_count} links")
+                console.print(f"[dim]Associations removed:[/dim] {assoc_link_count} links")
 
 
 def confirm_prompt(message: str, default: bool = False) -> bool:
@@ -866,7 +893,7 @@ def cmd_publish(args):
     note_path = Path(args.path)
 
     if not note_path.exists():
-        print(f"Error: Note not found: {note_path}", file=sys.stderr)
+        print_error(f"Error: Note not found: {note_path}")
         sys.exit(1)
 
     # Get flags from args
@@ -887,16 +914,16 @@ def cmd_publish(args):
         from obsidian_parser import parse_obsidian_note
         frontmatter, body = parse_obsidian_note(note_path)
     except Exception as e:
-        print(f"Error parsing note: {e}", file=sys.stderr)
+        print_error(f"Error parsing note: {e}")
         sys.exit(1)
 
     # Check if note is marked for publishing
     is_publishable = frontmatter.get('publish', False)
     if not is_publishable:
-        print(f"Warning: Note is not marked with 'publish: true' in frontmatter.")
+        print_warning("Warning: Note is not marked with 'publish: true' in frontmatter.")
         if not dry_run and not yes_flag:
             if not confirm_prompt("Publish anyway?", default=False):
-                print("Aborted.")
+                console.print("[dim]Aborted.[/dim]")
                 sys.exit(0)
 
     # Run validation (respects --strict flag)
@@ -920,27 +947,27 @@ def cmd_publish(args):
     warn_count = sum(1 for i in all_issues if i.severity == ValidationSeverity.WARNING)
 
     if error_count > 0 or (strict_mode and warn_count > 0):
-        print()
-        print("=" * 60)
-        print("VALIDATION FAILED")
-        print("=" * 60)
-        print(format_issues(all_issues))
-        print()
+        console.print()
+        console.print("[error]" + "=" * 60 + "[/error]")
+        console.print("[error]VALIDATION FAILED[/error]")
+        console.print("[error]" + "=" * 60 + "[/error]")
+        console.print(format_issues(all_issues))
+        console.print()
 
         if error_count > 0:
-            print(f"Found {error_count} error(s), {warn_count} warning(s).")
-            print("Cannot publish: validation errors must be fixed first.")
+            console.print(f"Found {format_error(str(error_count))} error(s), {format_warning(str(warn_count))} warning(s).")
+            print_error("Cannot publish: validation errors must be fixed first.")
             sys.exit(1)
         else:
             # strict_mode and warn_count > 0
-            print(f"Found {warn_count} warning(s).")
-            print("Cannot publish: --strict mode requires no warnings.")
+            console.print(f"Found {format_warning(str(warn_count))} warning(s).")
+            print_error("Cannot publish: --strict mode requires no warnings.")
             sys.exit(2)
 
     # Show warnings if any (but not blocking without --strict)
     if warn_count > 0 and not strict_mode:
-        print()
-        print(f"Note: {warn_count} validation warning(s) found (use --strict to treat as errors)")
+        console.print()
+        print_warning(f"Note: {warn_count} validation warning(s) found (use --strict to treat as errors)")
 
     # Step 2: Determine content type and target path
     content_type = determine_content_type(frontmatter)
@@ -964,48 +991,48 @@ def cmd_publish(args):
     assoc_link_count = len(extract_wikilinks_from_associations(note_content)) if has_assoc else 0
 
     # Print summary
-    print()
-    print("=" * 60)
-    print("PUBLISH SUMMARY")
-    print("=" * 60)
-    print(f"Source:       {note_path}")
-    print(f"Title:        {hugo_frontmatter.get('title', 'Untitled')}")
-    print(f"Date:         {hugo_frontmatter.get('date', 'N/A')}")
-    print(f"Content Type: {content_type}")
-    print(f"Target:       {target_path}")
+    console.print()
+    console.print("[header]" + "=" * 60 + "[/header]")
+    console.print("[header]PUBLISH SUMMARY[/header]")
+    console.print("[header]" + "=" * 60 + "[/header]")
+    console.print(f"Source:       [info]{note_path}[/info]")
+    console.print(f"Title:        [highlight]{hugo_frontmatter.get('title', 'Untitled')}[/highlight]")
+    console.print(f"Date:         {hugo_frontmatter.get('date', 'N/A')}")
+    console.print(f"Content Type: [info]{content_type}[/info]")
+    console.print(f"Target:       [info]{target_path}[/info]")
     if environment:
-        print(f"Environment:  {environment}")
-    print()
+        console.print(f"Environment:  {environment}")
+    console.print()
 
     if media_items:
-        print(f"Media Files:  {len(media_items)} to upload")
+        console.print(f"Media Files:  {format_count(str(len(media_items)))} to upload")
         if missing_count > 0:
-            print(f"              {missing_count} missing (will be skipped)")
+            console.print(f"              {format_error(str(missing_count))} missing (will be skipped)")
     else:
-        print("Media Files:  None")
+        console.print("Media Files:  [dim]None[/dim]")
 
     if has_gallery:
         if generate_gallery:
-            print(f"Gallery:      YES ({gallery_media_count} images)")
+            console.print(f"Gallery:      [success]YES[/success] ({gallery_media_count} images)")
         else:
-            print(f"Gallery:      SKIPPED ({gallery_media_count} images)")
+            console.print(f"Gallery:      [dim]SKIPPED[/dim] ({gallery_media_count} images)")
 
     if has_assoc:
         if keep_associations:
-            print(f"Associations: CONVERT ({assoc_link_count} links -> Related)")
+            console.print(f"Associations: [success]CONVERT[/success] ({assoc_link_count} links -> Related)")
         else:
-            print(f"Associations: REMOVE ({assoc_link_count} links)")
+            console.print(f"Associations: [dim]REMOVE[/dim] ({assoc_link_count} links)")
 
     if skip_upload:
-        print("Media Upload: SKIPPED")
+        console.print("Media Upload: [dim]SKIPPED[/dim]")
 
-    print()
-    print("=" * 60)
+    console.print()
+    console.print("[header]" + "=" * 60 + "[/header]")
 
     # In dry-run mode, show preview and exit
     if dry_run:
-        print("[DRY RUN] No changes will be made.")
-        print()
+        console.print("[warning][DRY RUN][/warning] No changes will be made.")
+        console.print()
 
         # Run the conversion to show preview
         try:
@@ -1018,53 +1045,53 @@ def cmd_publish(args):
                 environment=environment
             )
         except Exception as e:
-            print(f"Error during conversion preview: {e}", file=sys.stderr)
+            print_error(f"Error during conversion preview: {e}")
             sys.exit(1)
 
-        print("--- Preview of converted content ---")
-        print()
+        console.print("[header]--- Preview of converted content ---[/header]")
+        console.print()
         from hugo_writer import preview_hugo_post
         preview = preview_hugo_post(hugo_frontmatter, converted_body)
         # Limit preview length
         preview_lines = preview.split('\n')
         if len(preview_lines) > 50:
-            print('\n'.join(preview_lines[:50]))
-            print(f"\n... (truncated, {len(preview_lines) - 50} more lines)")
+            console.print('\n'.join(preview_lines[:50]))
+            console.print(f"\n[dim]... (truncated, {len(preview_lines) - 50} more lines)[/dim]")
         else:
-            print(preview)
+            console.print(preview)
         return
 
     # Non-dry-run mode: Confirm before proceeding
     if not yes_flag:
         if not confirm_prompt("Proceed with publishing?", default=True):
-            print("Aborted.")
+            console.print("[dim]Aborted.[/dim]")
             sys.exit(0)
-        print()
+        console.print()
 
     # Step 4: Upload media to MinIO
     media_url_map = None
     if media_items and not skip_upload:
         try:
-            print(f"Uploading {len(media_items)} media file(s) to MinIO...")
+            print_info(f"Uploading {len(media_items)} media file(s) to MinIO...")
             media_url_map = upload_media_to_minio(media_items)
 
             # Report upload results
             successful = sum(1 for v in media_url_map.values() if v is not None)
             failed = len(media_url_map) - successful
-            print(f"Upload complete: {successful} uploaded, {failed} failed")
+            print_success(f"Upload complete: {successful} uploaded, {failed} failed")
             if failed > 0:
-                print(f"Warning: {failed} file(s) failed to upload", file=sys.stderr)
+                print_warning(f"Warning: {failed} file(s) failed to upload")
         except ImportError as e:
-            print(f"Warning: MinIO upload skipped - {e}", file=sys.stderr)
+            print_warning(f"Warning: MinIO upload skipped - {e}")
         except Exception as e:
-            print(f"Warning: MinIO upload failed - {e}", file=sys.stderr)
+            print_warning(f"Warning: MinIO upload failed - {e}")
             if not yes_flag:
                 if not confirm_prompt("Continue without media upload?", default=False):
-                    print("Aborted.")
+                    console.print("[dim]Aborted.[/dim]")
                     sys.exit(1)
 
     # Step 5: Convert the note
-    print("Converting note...")
+    print_info("Converting note...")
     try:
         hugo_fm, converted_body, _ = convert_note(
             note_path,
@@ -1075,11 +1102,11 @@ def cmd_publish(args):
             environment=environment
         )
     except Exception as e:
-        print(f"Error converting note: {e}", file=sys.stderr)
+        print_error(f"Error converting note: {e}")
         sys.exit(1)
 
     # Step 6: Write the Hugo post
-    print(f"Writing Hugo post...")
+    print_info("Writing Hugo post...")
     try:
         written_path = write_hugo_post_routed(
             hugo_fm,
@@ -1088,9 +1115,9 @@ def cmd_publish(args):
             hugo_root=hugo_root,
             content_type=content_type
         )
-        print(f"Written to: {written_path}")
+        console.print(f"Written to: [info]{written_path}[/info]")
     except Exception as e:
-        print(f"Error writing Hugo post: {e}", file=sys.stderr)
+        print_error(f"Error writing Hugo post: {e}")
         sys.exit(1)
 
     # Step 7: Record the publish in tracking file
@@ -1098,30 +1125,30 @@ def cmd_publish(args):
         record_published(note_path, target_path=written_path)
     except Exception as e:
         # Non-fatal: warn but continue
-        print(f"Warning: Could not record publish state - {e}", file=sys.stderr)
+        print_warning(f"Warning: Could not record publish state - {e}")
 
     # Final summary
-    print()
-    print("=" * 60)
-    print("PUBLISH COMPLETE")
-    print("=" * 60)
-    print(f"Source: {note_path.name}")
-    print(f"Target: {written_path}")
+    console.print()
+    console.print("[success]" + "=" * 60 + "[/success]")
+    console.print("[success]PUBLISH COMPLETE[/success]")
+    console.print("[success]" + "=" * 60 + "[/success]")
+    console.print(f"Source: [info]{note_path.name}[/info]")
+    console.print(f"Target: [info]{written_path}[/info]")
 
     if media_url_map:
         uploaded = sum(1 for v in media_url_map.values() if v is not None)
-        print(f"Media:  {uploaded} file(s) uploaded")
+        console.print(f"Media:  {format_count(str(uploaded))} file(s) uploaded")
 
     if has_gallery and generate_gallery:
-        print(f"Gallery: {gallery_media_count} image(s)")
+        console.print(f"[success]Gallery:[/success] {gallery_media_count} image(s)")
 
     if has_assoc:
         if keep_associations:
-            print(f"Related: {assoc_link_count} link(s) converted")
+            console.print(f"[success]Related:[/success] {assoc_link_count} link(s) converted")
         else:
-            print(f"Associations: removed")
+            console.print("[dim]Associations: removed[/dim]")
 
-    print()
+    console.print()
 
 
 def cmd_publish_dispatch(args):
@@ -1138,8 +1165,8 @@ def cmd_publish_dispatch(args):
     else:
         # Single note mode: require a path
         if not args.path:
-            print("Error: Must specify a note path or use --all flag", file=sys.stderr)
-            print("Usage: publish <path>  OR  publish --all", file=sys.stderr)
+            print_error("Error: Must specify a note path or use --all flag")
+            console.print("[dim]Usage: publish <path>  OR  publish --all[/dim]")
             sys.exit(1)
         cmd_publish(args)
 
@@ -1172,54 +1199,54 @@ def cmd_publish_all(args):
     try:
         all_notes = find_publishable_notes(vault_path=vault_path)
     except FileNotFoundError as e:
-        print(f"Error: {e}", file=sys.stderr)
+        print_error(f"Error: {e}")
         sys.exit(1)
     except NotADirectoryError as e:
-        print(f"Error: {e}", file=sys.stderr)
+        print_error(f"Error: {e}")
         sys.exit(1)
 
     if not all_notes:
-        print("No publishable notes found.")
+        print_warning("No publishable notes found.")
         return
 
     # Step 2: Filter to only unpublished notes
     unpublished_notes = get_unpublished_notes(all_notes)
 
     if not unpublished_notes:
-        print(f"Found {len(all_notes)} publishable note(s), but all have already been published.")
-        print("Use 'publish <path>' to force re-publishing a specific note.")
+        print_info(f"Found {len(all_notes)} publishable note(s), but all have already been published.")
+        console.print("[dim]Use 'publish <path>' to force re-publishing a specific note.[/dim]")
         return
 
     # Step 3: Display summary
-    print()
-    print("=" * 60)
-    print("BATCH PUBLISH SUMMARY")
-    print("=" * 60)
-    print(f"Vault:        {vault_path or Path.home() / 'Notes'}")
-    print(f"Hugo root:    {hugo_root}")
+    console.print()
+    console.print("[header]" + "=" * 60 + "[/header]")
+    console.print("[header]BATCH PUBLISH SUMMARY[/header]")
+    console.print("[header]" + "=" * 60 + "[/header]")
+    console.print(f"Vault:        [info]{vault_path or Path.home() / 'Notes'}[/info]")
+    console.print(f"Hugo root:    [info]{hugo_root}[/info]")
     if environment:
-        print(f"Environment:  {environment}")
-    print()
-    print(f"Total publishable notes:  {len(all_notes)}")
-    print(f"Already published:        {len(all_notes) - len(unpublished_notes)}")
-    print(f"To publish:               {len(unpublished_notes)}")
-    print()
+        console.print(f"Environment:  {environment}")
+    console.print()
+    console.print(f"Total publishable notes:  {format_count(str(len(all_notes)))}")
+    console.print(f"Already published:        {format_dim(str(len(all_notes) - len(unpublished_notes)))}")
+    console.print(f"To publish:               {format_success(str(len(unpublished_notes)))}")
+    console.print()
 
     # List notes to be published
-    print("Notes to publish:")
+    console.print("Notes to publish:")
     for note in unpublished_notes:
         fm = note['frontmatter']
         title = fm.get('title', note['path'].stem)
         content_type = determine_content_type(fm)
-        print(f"  [{content_type:12}] {title}")
+        console.print(f"  [dim][{content_type:12}][/dim] [info]{title}[/info]")
 
-    print()
-    print("=" * 60)
+    console.print()
+    console.print("[header]" + "=" * 60 + "[/header]")
 
     # In dry-run mode, show what would happen and exit
     if dry_run:
-        print("[DRY RUN] No changes will be made.")
-        print()
+        console.print("[warning][DRY RUN][/warning] No changes will be made.")
+        console.print()
 
         for i, note in enumerate(unpublished_notes, 1):
             note_path = note['path']
@@ -1228,21 +1255,21 @@ def cmd_publish_all(args):
             content_type = determine_content_type(fm)
             section_path = get_hugo_section_path(content_type)
 
-            print(f"\n[{i}/{len(unpublished_notes)}] {title}")
-            print(f"  Source:       {note_path}")
-            print(f"  Content type: {content_type}")
-            print(f"  Target:       {hugo_root / section_path}")
+            console.print(f"\n[info][{i}/{len(unpublished_notes)}][/info] {title}")
+            console.print(f"  Source:       [info]{note_path}[/info]")
+            console.print(f"  Content type: {content_type}")
+            console.print(f"  Target:       [info]{hugo_root / section_path}[/info]")
 
-        print()
-        print(f"[DRY RUN] Would publish {len(unpublished_notes)} note(s).")
+        console.print()
+        console.print(f"[warning][DRY RUN][/warning] Would publish {format_count(str(len(unpublished_notes)))} note(s).")
         return
 
     # Non-dry-run mode: Confirm before proceeding
     if not yes_flag:
         if not confirm_prompt(f"Publish {len(unpublished_notes)} note(s)?", default=True):
-            print("Aborted.")
+            console.print("[dim]Aborted.[/dim]")
             sys.exit(0)
-        print()
+        console.print()
 
     # Step 4: Publish each note
     published_count = 0
@@ -1254,8 +1281,8 @@ def cmd_publish_all(args):
         fm = note['frontmatter']
         title = fm.get('title', note_path.stem)
 
-        print(f"\n[{i}/{len(unpublished_notes)}] Publishing: {title}")
-        print("-" * 40)
+        console.print(f"\n[info][{i}/{len(unpublished_notes)}][/info] Publishing: [highlight]{title}[/highlight]")
+        console.print("-" * 40)
 
         try:
             # Get content type and section path
@@ -1273,12 +1300,12 @@ def cmd_publish_all(args):
 
             if media_items and not skip_upload:
                 try:
-                    print(f"  Uploading {len(media_items)} media file(s)...")
+                    console.print(f"  Uploading {len(media_items)} media file(s)...")
                     media_url_map = upload_media_to_minio(media_items, show_progress=False)
                     successful = sum(1 for v in media_url_map.values() if v is not None)
-                    print(f"  Media uploaded: {successful}/{len(media_items)}")
+                    console.print(f"  [success]Media uploaded:[/success] {successful}/{len(media_items)}")
                 except Exception as e:
-                    print(f"  Warning: Media upload failed - {e}", file=sys.stderr)
+                    print_warning(f"  Warning: Media upload failed - {e}")
 
             # Convert the note
             hugo_fm, converted_body, _ = convert_note(
@@ -1303,31 +1330,36 @@ def cmd_publish_all(args):
             try:
                 record_published(note_path, target_path=written_path)
             except Exception as e:
-                print(f"  Warning: Could not record publish state - {e}", file=sys.stderr)
+                print_warning(f"  Warning: Could not record publish state - {e}")
 
-            print(f"  Written to: {written_path}")
+            console.print(f"  [success]Written to:[/success] [info]{written_path}[/info]")
             published_count += 1
 
         except Exception as e:
-            print(f"  Error: {e}", file=sys.stderr)
+            print_error(f"  Error: {e}")
             failed_count += 1
             failed_notes.append((note_path, str(e)))
 
     # Final summary
-    print()
-    print("=" * 60)
-    print("BATCH PUBLISH COMPLETE")
-    print("=" * 60)
-    print(f"Published: {published_count}")
-    print(f"Failed:    {failed_count}")
+    console.print()
+    if failed_count == 0:
+        console.print("[success]" + "=" * 60 + "[/success]")
+        console.print("[success]BATCH PUBLISH COMPLETE[/success]")
+        console.print("[success]" + "=" * 60 + "[/success]")
+    else:
+        console.print("[warning]" + "=" * 60 + "[/warning]")
+        console.print("[warning]BATCH PUBLISH COMPLETE (with errors)[/warning]")
+        console.print("[warning]" + "=" * 60 + "[/warning]")
+    console.print(f"Published: {format_success(str(published_count))}")
+    console.print(f"Failed:    {format_error(str(failed_count)) if failed_count > 0 else format_dim(str(failed_count))}")
 
     if failed_notes:
-        print()
-        print("Failed notes:")
+        console.print()
+        console.print("[error]Failed notes:[/error]")
         for path, error in failed_notes:
-            print(f"  {path.name}: {error}")
+            console.print(f"  [error]{path.name}:[/error] {error}")
 
-    print()
+    console.print()
 
 
 def cmd_preview(args):
@@ -1348,7 +1380,7 @@ def cmd_preview(args):
     note_path = Path(args.path)
 
     if not note_path.exists():
-        print(f"Error: Note not found: {note_path}", file=sys.stderr)
+        print_error(f"Error: Note not found: {note_path}")
         sys.exit(1)
 
     # Get flags from args
@@ -1364,13 +1396,13 @@ def cmd_preview(args):
         environment = None
 
     # Step 1: Parse and convert the note
-    print(f"Converting note: {note_path.name}")
+    print_info(f"Converting note: {note_path.name}")
 
     try:
         from obsidian_parser import parse_obsidian_note
         frontmatter, body = parse_obsidian_note(note_path)
     except Exception as e:
-        print(f"Error parsing note: {e}", file=sys.stderr)
+        print_error(f"Error parsing note: {e}")
         sys.exit(1)
 
     # Determine content type for proper routing
@@ -1387,10 +1419,10 @@ def cmd_preview(args):
 
     if media_items and not skip_upload:
         try:
-            print(f"Uploading {len(media_items)} media file(s) to MinIO...")
+            print_info(f"Uploading {len(media_items)} media file(s) to MinIO...")
             media_url_map = upload_media_to_minio(media_items, show_progress=False)
         except Exception as e:
-            print(f"Warning: Media upload failed - {e}", file=sys.stderr)
+            print_warning(f"Warning: Media upload failed - {e}")
 
     # Convert the note
     try:
@@ -1403,7 +1435,7 @@ def cmd_preview(args):
             environment=environment if environment else 'development'
         )
     except Exception as e:
-        print(f"Error converting note: {e}", file=sys.stderr)
+        print_error(f"Error converting note: {e}")
         sys.exit(1)
 
     # Step 2: Write to a temporary file in the Hugo content directory
@@ -1420,13 +1452,13 @@ def cmd_preview(args):
     else:
         url_path = f"/{content_type}/{slug}/"
 
-    print(f"Writing preview to: {target_path}")
+    console.print(f"Writing preview to: [info]{target_path}[/info]")
 
     try:
         from hugo_writer import write_hugo_post
         written_path = write_hugo_post(hugo_frontmatter, converted_body, target_path)
     except Exception as e:
-        print(f"Error writing preview file: {e}", file=sys.stderr)
+        print_error(f"Error writing preview file: {e}")
         sys.exit(1)
 
     # Step 3: Start Hugo server
@@ -1442,17 +1474,17 @@ def cmd_preview(args):
 
     preview_url = f"http://localhost:{port}{url_path}"
 
-    print()
-    print("=" * 60)
-    print("PREVIEW SERVER")
-    print("=" * 60)
-    print(f"Content Type: {content_type}")
-    print(f"Preview URL:  {preview_url}")
-    print(f"Hugo Root:    {hugo_root}")
-    print()
-    print("Press Ctrl+C to stop the server and clean up.")
-    print("=" * 60)
-    print()
+    console.print()
+    console.print("[header]" + "=" * 60 + "[/header]")
+    console.print("[header]PREVIEW SERVER[/header]")
+    console.print("[header]" + "=" * 60 + "[/header]")
+    console.print(f"Content Type: [info]{content_type}[/info]")
+    console.print(f"Preview URL:  [highlight]{preview_url}[/highlight]")
+    console.print(f"Hugo Root:    [info]{hugo_root}[/info]")
+    console.print()
+    console.print("[dim]Press Ctrl+C to stop the server and clean up.[/dim]")
+    console.print("[header]" + "=" * 60 + "[/header]")
+    console.print()
 
     hugo_process = None
     try:
@@ -1470,27 +1502,27 @@ def cmd_preview(args):
         time.sleep(2)
 
         if not no_browser:
-            print(f"Opening browser to: {preview_url}")
+            print_info(f"Opening browser to: {preview_url}")
             webbrowser.open(preview_url)
 
         # Stream Hugo server output
-        print()
-        print("Hugo server output:")
-        print("-" * 40)
+        console.print()
+        console.print("[header]Hugo server output:[/header]")
+        console.print("-" * 40)
 
         if hugo_process.stdout:
             for line in hugo_process.stdout:
-                print(line, end='')
+                console.print(line, end='')
 
         # Wait for the process to complete
         hugo_process.wait()
 
     except KeyboardInterrupt:
-        print()
-        print()
-        print("Stopping server...")
+        console.print()
+        console.print()
+        print_info("Stopping server...")
     except Exception as e:
-        print(f"Error running Hugo server: {e}", file=sys.stderr)
+        print_error(f"Error running Hugo server: {e}")
     finally:
         # Terminate Hugo server if still running
         if hugo_process and hugo_process.poll() is None:
@@ -1501,15 +1533,15 @@ def cmd_preview(args):
                 hugo_process.kill()
 
         # Clean up the temporary preview file
-        print(f"Cleaning up preview file: {written_path}")
+        console.print(f"Cleaning up preview file: [info]{written_path}[/info]")
         try:
             written_path.unlink()
-            print("Preview file removed.")
+            print_success("Preview file removed.")
         except Exception as e:
-            print(f"Warning: Could not remove preview file: {e}", file=sys.stderr)
+            print_warning(f"Warning: Could not remove preview file: {e}")
 
-    print()
-    print("Preview session ended.")
+    console.print()
+    print_info("Preview session ended.")
 
 
 def main():
