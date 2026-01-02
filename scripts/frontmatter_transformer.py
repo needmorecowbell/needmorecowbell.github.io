@@ -6,16 +6,45 @@ This module handles converting Obsidian frontmatter to Hugo-compatible format,
 ensuring all required fields are present and properly formatted.
 """
 
+import re
 from datetime import datetime, date
 from typing import Dict, Any, Optional
 
 
-def transform_to_hugo(frontmatter: Dict[str, Any]) -> Dict[str, Any]:
+def extract_title_from_body(body: str) -> Optional[str]:
+    """
+    Extract the first H1 heading from markdown body content.
+
+    Looks for the first line that starts with a single '#' followed by space
+    and extracts the heading text.
+
+    Args:
+        body: The markdown body content
+
+    Returns:
+        The H1 heading text if found, None otherwise
+    """
+    if not body:
+        return None
+
+    # Match lines that start with exactly one '#' followed by space and text
+    # This excludes ## (H2), ### (H3), etc.
+    pattern = r'^#\s+(.+?)$'
+
+    for line in body.split('\n'):
+        match = re.match(pattern, line.strip())
+        if match:
+            return match.group(1).strip()
+
+    return None
+
+
+def transform_to_hugo(frontmatter: Dict[str, Any], body: Optional[str] = None) -> Dict[str, Any]:
     """
     Convert Obsidian frontmatter to Hugo-compatible format.
 
     Ensures required Hugo fields are present:
-    - title: extracted from frontmatter or set to empty string
+    - title: extracted from frontmatter, or from first H1 heading in body if not present
     - date: normalized to ISO format string (YYYY-MM-DD)
     - draft: boolean, defaults to False
     - tags: list of strings, defaults to empty list
@@ -24,14 +53,20 @@ def transform_to_hugo(frontmatter: Dict[str, Any]) -> Dict[str, Any]:
 
     Args:
         frontmatter: Dict of parsed Obsidian frontmatter
+        body: Optional markdown body content for extracting title from H1 heading
 
     Returns:
         Dict with Hugo-compatible frontmatter fields
     """
     hugo_frontmatter = {}
 
-    # Title: required field
-    hugo_frontmatter['title'] = frontmatter.get('title', '')
+    # Title: required field - try frontmatter first, then body H1 heading
+    title = frontmatter.get('title', '')
+    if not title and body:
+        extracted_title = extract_title_from_body(body)
+        if extracted_title:
+            title = extracted_title
+    hugo_frontmatter['title'] = title
 
     # Date: required field, normalize to string
     hugo_frontmatter['date'] = _normalize_date(frontmatter.get('date'))

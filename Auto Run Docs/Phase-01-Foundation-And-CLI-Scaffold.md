@@ -58,7 +58,12 @@ This phase establishes the development environment and builds a working CLI tool
   - Removes Obsidian-specific `publish` field from output
   - Added comprehensive test suite in `test_frontmatter_transformer.py` (45 tests passing, 161 total tests in scripts/)
 
-- [ ] Add logic to `frontmatter_transformer.py` to extract the first H1 heading as the title if no title exists in frontmatter
+- [x] Add logic to `frontmatter_transformer.py` to extract the first H1 heading as the title if no title exists in frontmatter
+  - Added `extract_title_from_body(body)` function on 2026-01-02 that scans markdown content for the first H1 heading
+  - Modified `transform_to_hugo()` to accept optional `body` parameter for title extraction fallback
+  - When frontmatter has no title (or empty title), the first H1 heading (`# Title`) is used instead
+  - Added 18 new unit tests (12 for extract_title_from_body, 6 for integration with transform_to_hugo)
+  - Total tests in scripts/ now 179 (previously 161)
 
 - [ ] Add logic to generate a URL-friendly slug from the title for use as the output filename
 

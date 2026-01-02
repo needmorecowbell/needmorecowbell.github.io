@@ -9,6 +9,7 @@ import unittest
 from datetime import datetime, date
 from frontmatter_transformer import (
     transform_to_hugo,
+    extract_title_from_body,
     _normalize_date,
     _normalize_draft,
     _normalize_tags
@@ -80,6 +81,124 @@ class TestTransformToHugo(unittest.TestCase):
         result = transform_to_hugo(frontmatter)
         self.assertNotIn('custom_obsidian_field', result)
         self.assertNotIn('another_unknown', result)
+
+
+class TestExtractTitleFromBody(unittest.TestCase):
+    """Tests for the extract_title_from_body function."""
+
+    def test_simple_h1_heading(self):
+        """Test extracting a simple H1 heading."""
+        body = "# My Blog Post\n\nThis is the content."
+        result = extract_title_from_body(body)
+        self.assertEqual(result, 'My Blog Post')
+
+    def test_h1_with_preceding_content(self):
+        """Test H1 heading that's not on the first line."""
+        body = "Some intro text\n\n# The Real Title\n\nMore content"
+        result = extract_title_from_body(body)
+        self.assertEqual(result, 'The Real Title')
+
+    def test_no_h1_heading(self):
+        """Test body with no H1 heading."""
+        body = "## This is H2\n\n### This is H3\n\nJust some text."
+        result = extract_title_from_body(body)
+        self.assertIsNone(result)
+
+    def test_h2_not_matched(self):
+        """Test that H2 headings are not matched as title."""
+        body = "## Section Header\n\nContent here"
+        result = extract_title_from_body(body)
+        self.assertIsNone(result)
+
+    def test_h3_not_matched(self):
+        """Test that H3 headings are not matched as title."""
+        body = "### Subsection\n\nContent here"
+        result = extract_title_from_body(body)
+        self.assertIsNone(result)
+
+    def test_empty_body(self):
+        """Test empty body content."""
+        result = extract_title_from_body('')
+        self.assertIsNone(result)
+
+    def test_none_body(self):
+        """Test None body content."""
+        result = extract_title_from_body(None)
+        self.assertIsNone(result)
+
+    def test_first_h1_is_used(self):
+        """Test that only the first H1 heading is extracted."""
+        body = "# First Title\n\nSome content\n\n# Second Title\n\nMore content"
+        result = extract_title_from_body(body)
+        self.assertEqual(result, 'First Title')
+
+    def test_h1_with_extra_whitespace(self):
+        """Test H1 heading with extra whitespace."""
+        body = "#    Spaced Out Title   \n\nContent"
+        result = extract_title_from_body(body)
+        self.assertEqual(result, 'Spaced Out Title')
+
+    def test_h1_with_special_characters(self):
+        """Test H1 heading with special characters."""
+        body = "# My Post: A Journey (2024) - Part 1!\n\nContent"
+        result = extract_title_from_body(body)
+        self.assertEqual(result, 'My Post: A Journey (2024) - Part 1!')
+
+    def test_h1_found_before_code_block(self):
+        """Test H1 heading found before a code block with comment."""
+        body = "# My Title\n\n```python\n# comment in code\n```\n\nContent"
+        result = extract_title_from_body(body)
+        self.assertEqual(result, 'My Title')
+
+    def test_h1_with_markdown_formatting(self):
+        """Test H1 heading containing markdown formatting."""
+        body = "# My **Bold** and *Italic* Title\n\nContent"
+        result = extract_title_from_body(body)
+        self.assertEqual(result, 'My **Bold** and *Italic* Title')
+
+
+class TestTransformToHugoTitleExtraction(unittest.TestCase):
+    """Tests for title extraction from body in transform_to_hugo."""
+
+    def test_title_from_frontmatter_preferred(self):
+        """Test that frontmatter title is used when present."""
+        frontmatter = {'title': 'Frontmatter Title'}
+        body = "# Body Title\n\nContent"
+        result = transform_to_hugo(frontmatter, body)
+        self.assertEqual(result['title'], 'Frontmatter Title')
+
+    def test_title_from_body_when_no_frontmatter_title(self):
+        """Test title extraction from body when frontmatter has no title."""
+        frontmatter = {'publish': True}
+        body = "# My Post Title\n\nThis is the content."
+        result = transform_to_hugo(frontmatter, body)
+        self.assertEqual(result['title'], 'My Post Title')
+
+    def test_title_from_body_with_empty_frontmatter_title(self):
+        """Test title extraction when frontmatter title is empty string."""
+        frontmatter = {'title': ''}
+        body = "# Extracted Title\n\nContent"
+        result = transform_to_hugo(frontmatter, body)
+        self.assertEqual(result['title'], 'Extracted Title')
+
+    def test_empty_title_when_no_h1_in_body(self):
+        """Test that title is empty when no H1 and no frontmatter title."""
+        frontmatter = {'publish': True}
+        body = "## Just H2\n\nContent without H1"
+        result = transform_to_hugo(frontmatter, body)
+        self.assertEqual(result['title'], '')
+
+    def test_no_body_provided(self):
+        """Test that function works without body parameter."""
+        frontmatter = {'title': 'My Title'}
+        result = transform_to_hugo(frontmatter)
+        self.assertEqual(result['title'], 'My Title')
+
+    def test_none_body_with_no_title(self):
+        """Test empty title when body is None and no frontmatter title."""
+        frontmatter = {}
+        result = transform_to_hugo(frontmatter, None)
+        self.assertEqual(result['title'], '')
 
 
 class TestNormalizeDate(unittest.TestCase):
