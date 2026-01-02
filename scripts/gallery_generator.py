@@ -200,3 +200,156 @@ def remove_pictures_section(content: str) -> str:
         return before
     else:
         return after
+
+
+# Default nanogallery2 configuration matching existing project pages
+DEFAULT_NANOGALLERY_CONFIG = {
+    "thumbnailWidth": "250",
+    "thumbnailHeight": "250",
+    "thumbnailBorderVertical": 1,
+    "thumbnailBorderHorizontal": 1,
+    "thumbnailLabel": {
+        "position": "overImageOnBottom",
+        "displayDescription": True
+    },
+    "thumbnailHoverEffect2": "labelAppear75|descriptionSlideUp",
+    "galleryDisplayMode": "pagination",
+    "galleryMaxRows": 1,
+    "thumbnailAlignment": "center",
+    "thumbnailOpenImage": True,
+    "viewerTools": {
+        "topLeft": "pageCounter, label",
+        "topRight": "playPauseButton, rotateLeft, rotateRight, fullscreenButton, closeButton"
+    }
+}
+
+
+def generate_nanogallery_html(
+    media_files: List[str],
+    base_url: str,
+    thumbnail_suffix: Optional[str] = None,
+    descriptions: Optional[List[str]] = None,
+    config: Optional[dict] = None
+) -> str:
+    """
+    Generate nanogallery2 HTML structure for a list of media files.
+
+    Creates the HTML div and anchor tags matching the format used in existing
+    project pages on the blog. Supports both images and videos.
+
+    Args:
+        media_files: List of media filenames (e.g., ['image1.jpg', 'video.mp4']).
+                    These should be just the filenames, not full paths.
+        base_url: The base URL for the media files. Use Hugo shortcode syntax
+                 like '{{<s3cdn>}}/projects/my_project/' for S3 CDN URLs.
+        thumbnail_suffix: Optional suffix to add to thumbnail filenames.
+                         If None, thumbnails use the same filename as full images.
+                         E.g., '_thumb' would make 'image.jpg' -> 'image_thumb.jpg'
+        descriptions: Optional list of descriptions for each media file.
+                     Must match length of media_files if provided.
+        config: Optional custom nanogallery2 configuration dict.
+               Merged with defaults (custom values override defaults).
+
+    Returns:
+        The complete HTML string for the nanogallery2 gallery.
+        Returns empty string if media_files is empty.
+
+    Raises:
+        ValueError: If descriptions is provided but has different length than media_files.
+    """
+    import json
+    import os
+
+    if not media_files:
+        return ""
+
+    if descriptions is not None and len(descriptions) != len(media_files):
+        raise ValueError(
+            f"descriptions length ({len(descriptions)}) must match "
+            f"media_files length ({len(media_files)})"
+        )
+
+    # Build the configuration
+    gallery_config = DEFAULT_NANOGALLERY_CONFIG.copy()
+
+    # Deep merge the nested dicts
+    if config:
+        for key, value in config.items():
+            if isinstance(value, dict) and key in gallery_config and isinstance(gallery_config[key], dict):
+                gallery_config[key] = {**gallery_config[key], **value}
+            else:
+                gallery_config[key] = value
+
+    # Add the base URL to config
+    gallery_config["itemsBaseURL"] = base_url
+
+    # Format config as JSON with proper indentation
+    # Using a custom approach to match the existing format in project files
+    config_json = json.dumps(gallery_config, indent=4)
+
+    # Build the anchor tags for each media file
+    anchors = []
+    for i, media_file in enumerate(media_files):
+        # Get just the filename if a path was provided
+        filename = os.path.basename(media_file)
+
+        # Determine thumbnail filename
+        if thumbnail_suffix:
+            name, ext = os.path.splitext(filename)
+            thumb_filename = f"{name}{thumbnail_suffix}{ext}"
+        else:
+            thumb_filename = filename
+
+        # Get description
+        desc = descriptions[i] if descriptions else ""
+
+        # Build anchor tag
+        anchor = f'    <a href="{filename}" data-ngthumb="{thumb_filename}" data-ngdesc="{desc}"></a>'
+        anchors.append(anchor)
+
+    # Build the complete HTML
+    anchors_html = "\n".join(anchors)
+
+    html = f"""<div ID="gallery" data-nanogallery2='{config_json}'>
+{anchors_html}
+</div>"""
+
+    return html
+
+
+def generate_gallery_from_obsidian(
+    content: str,
+    project_slug: str,
+    cdn_shortcode: str = "{{<s3cdn>}}"
+) -> Optional[str]:
+    """
+    Generate nanogallery2 HTML from an Obsidian note's Pictures section.
+
+    Convenience function that extracts media from the Pictures section
+    and generates the gallery HTML with the standard project URL structure.
+
+    Args:
+        content: The full markdown content of the Obsidian note.
+        project_slug: The project identifier used in the URL path
+                     (e.g., 'wood_zippo_lighter' -> /projects/wood_zippo_lighter/).
+        cdn_shortcode: The Hugo shortcode for the CDN base URL.
+                      Defaults to '{{<s3cdn>}}' for the blog's S3 CDN.
+
+    Returns:
+        The nanogallery2 HTML string, or None if no Pictures section
+        or no media files found.
+    """
+    import os
+
+    # Extract media from Pictures section
+    media_refs = extract_media_from_pictures_section(content)
+    if not media_refs:
+        return None
+
+    # Extract just the filenames from the paths
+    filenames = [os.path.basename(ref) for ref in media_refs]
+
+    # Build the base URL
+    base_url = f"{cdn_shortcode}/projects/{project_slug}/"
+
+    return generate_nanogallery_html(filenames, base_url)
