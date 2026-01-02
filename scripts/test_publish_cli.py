@@ -28,6 +28,8 @@ from publish import (
     cmd_media,
     cmd_convert,
     cmd_publish,
+    cmd_publish_dispatch,
+    cmd_publish_all,
     confirm_prompt,
     DEFAULT_OUTPUT_DIR,
     DEFAULT_HUGO_ROOT
@@ -3073,6 +3075,385 @@ publish: true
 
             content = expected_path.read_text()
             self.assertIn("{{<s3cdn>}}", content)
+
+
+class TestCmdPublishDispatch(unittest.TestCase):
+    """Tests for cmd_publish_dispatch function."""
+
+    def test_dispatch_with_path_calls_cmd_publish(self):
+        """Dispatches to cmd_publish when path is provided."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test.md"
+            note_path.write_text("""---
+title: Test Note
+date: 2024-01-15
+publish: true
+---
+
+Content here.
+""")
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.publish_all = False
+            mock_args.dry_run = True
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.vault = None
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                from publish import cmd_publish_dispatch
+                cmd_publish_dispatch(mock_args)
+                output = mock_stdout.getvalue()
+                self.assertIn('PUBLISH SUMMARY', output)
+
+    def test_dispatch_with_all_flag_calls_cmd_publish_all(self):
+        """Dispatches to cmd_publish_all when --all is provided."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_args = MagicMock()
+            mock_args.path = None
+            mock_args.publish_all = True
+            mock_args.dry_run = True
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.vault = tmpdir
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                from publish import cmd_publish_dispatch
+                cmd_publish_dispatch(mock_args)
+                output = mock_stdout.getvalue()
+                # Should show "No publishable notes found" for empty vault
+                self.assertIn('No publishable notes found', output)
+
+    def test_dispatch_no_path_no_all_flag_exits_with_error(self):
+        """Exits with error when neither path nor --all is provided."""
+        mock_args = MagicMock()
+        mock_args.path = None
+        mock_args.publish_all = False
+
+        with patch('sys.stderr', new_callable=StringIO) as mock_stderr:
+            with self.assertRaises(SystemExit) as context:
+                from publish import cmd_publish_dispatch
+                cmd_publish_dispatch(mock_args)
+
+            self.assertEqual(context.exception.code, 1)
+            self.assertIn('Must specify a note path or use --all flag', mock_stderr.getvalue())
+
+
+class TestCmdPublishAll(unittest.TestCase):
+    """Tests for cmd_publish_all function."""
+
+    def test_no_publishable_notes_message(self):
+        """Shows message when no publishable notes found."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_args = MagicMock()
+            mock_args.publish_all = True
+            mock_args.vault = tmpdir
+            mock_args.dry_run = True
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                from publish import cmd_publish_all
+                cmd_publish_all(mock_args)
+                output = mock_stdout.getvalue()
+                self.assertIn('No publishable notes found', output)
+
+    def test_all_published_message(self):
+        """Shows message when all notes have already been published."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a publishable note
+            note_path = Path(tmpdir) / "test.md"
+            note_path.write_text("""---
+title: Already Published
+date: 2024-01-15
+publish: true
+---
+
+Content here.
+""")
+
+            mock_args = MagicMock()
+            mock_args.publish_all = True
+            mock_args.vault = tmpdir
+            mock_args.dry_run = True
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            # Patch get_unpublished_notes to return empty list (all published)
+            with patch('publish.get_unpublished_notes') as mock_get_unpub:
+                mock_get_unpub.return_value = []
+
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    from publish import cmd_publish_all
+                    cmd_publish_all(mock_args)
+                    output = mock_stdout.getvalue()
+                    self.assertIn('all have already been published', output)
+
+    def test_dry_run_shows_summary(self):
+        """Dry run shows batch summary without making changes."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create two publishable notes
+            note1 = Path(tmpdir) / "note1.md"
+            note1.write_text("""---
+title: Post One
+date: 2024-01-15
+publish: true
+---
+
+Content 1.
+""")
+            note2 = Path(tmpdir) / "note2.md"
+            note2.write_text("""---
+title: Post Two
+date: 2024-01-16
+tags:
+  - project
+publish: true
+---
+
+Content 2.
+""")
+
+            mock_args = MagicMock()
+            mock_args.publish_all = True
+            mock_args.vault = tmpdir
+            mock_args.dry_run = True
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                from publish import cmd_publish_all
+                cmd_publish_all(mock_args)
+                output = mock_stdout.getvalue()
+
+                self.assertIn('BATCH PUBLISH SUMMARY', output)
+                self.assertIn('Total publishable notes:', output)
+                self.assertIn('To publish:', output)
+                self.assertIn('[DRY RUN]', output)
+                self.assertIn('Post One', output)
+                self.assertIn('Post Two', output)
+
+    def test_publishes_multiple_notes(self):
+        """Actually publishes multiple notes in non-dry-run mode."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create output directories
+            output_post = Path(tmpdir) / "content" / "english" / "post"
+            output_post.mkdir(parents=True)
+            output_proj = Path(tmpdir) / "content" / "english" / "projects"
+            output_proj.mkdir(parents=True)
+
+            # Create publishable notes
+            note1 = Path(tmpdir) / "note1.md"
+            note1.write_text("""---
+title: Blog Post
+date: 2024-01-15
+publish: true
+---
+
+Blog content.
+""")
+            note2 = Path(tmpdir) / "note2.md"
+            note2.write_text("""---
+title: Project Post
+date: 2024-01-16
+tags:
+  - project
+publish: true
+---
+
+Project content.
+""")
+
+            mock_args = MagicMock()
+            mock_args.publish_all = True
+            mock_args.vault = tmpdir
+            mock_args.dry_run = False
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                from publish import cmd_publish_all
+                cmd_publish_all(mock_args)
+                output = mock_stdout.getvalue()
+
+                self.assertIn('BATCH PUBLISH COMPLETE', output)
+                self.assertIn('Published: 2', output)
+
+            # Check files were created
+            post_file = output_post / "2024-01-15-blog-post.md"
+            proj_file = output_proj / "2024-01-16-project-post.md"
+            self.assertTrue(post_file.exists())
+            self.assertTrue(proj_file.exists())
+
+    def test_confirmation_prompt_in_non_yes_mode(self):
+        """Prompts for confirmation when -y flag not set."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note = Path(tmpdir) / "note.md"
+            note.write_text("""---
+title: Test
+date: 2024-01-15
+publish: true
+---
+
+Content.
+""")
+
+            mock_args = MagicMock()
+            mock_args.publish_all = True
+            mock_args.vault = tmpdir
+            mock_args.dry_run = False
+            mock_args.yes = False  # Will require confirmation
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            with patch('sys.stdout', new_callable=StringIO):
+                with patch('builtins.input', return_value='n'):
+                    with self.assertRaises(SystemExit) as context:
+                        from publish import cmd_publish_all
+                        cmd_publish_all(mock_args)
+                    self.assertEqual(context.exception.code, 0)
+
+    def test_skips_already_published_notes(self):
+        """Skips notes that have already been published."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir) / "content" / "english" / "post"
+            output_dir.mkdir(parents=True)
+
+            # Create two notes
+            note1 = Path(tmpdir) / "published.md"
+            note1.write_text("""---
+title: Already Published
+date: 2024-01-15
+publish: true
+---
+
+Content 1.
+""")
+            note2 = Path(tmpdir) / "new.md"
+            note2.write_text("""---
+title: New Note
+date: 2024-01-16
+publish: true
+---
+
+Content 2.
+""")
+
+            # Mark note1 as published in the tracking file
+            tracking_file = Path(__file__).parent / '.published.json'
+            from publish_tracker import record_published, DEFAULT_TRACKING_FILE
+            record_published(note1, tracking_file=tracking_file)
+
+            mock_args = MagicMock()
+            mock_args.publish_all = True
+            mock_args.vault = tmpdir
+            mock_args.dry_run = True
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            try:
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    from publish import cmd_publish_all
+                    cmd_publish_all(mock_args)
+                    output = mock_stdout.getvalue()
+
+                    # Should show 1 already published, 1 to publish
+                    self.assertIn('Already published:        1', output)
+                    self.assertIn('To publish:               1', output)
+                    self.assertIn('New Note', output)
+            finally:
+                # Clean up tracking file
+                if tracking_file.exists():
+                    from publish_tracker import clear_publish_record
+                    clear_publish_record(note1)
+
+
+class TestCmdPublishAllIntegration(unittest.TestCase):
+    """Integration tests for cmd_publish_all."""
+
+    def test_records_published_notes_in_tracking_file(self):
+        """Recording published notes to tracking file works."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir) / "content" / "english" / "post"
+            output_dir.mkdir(parents=True)
+
+            note = Path(tmpdir) / "note.md"
+            note.write_text("""---
+title: Track Test
+date: 2024-01-15
+publish: true
+---
+
+Content.
+""")
+
+            # Use a custom tracking file in the temp directory
+            tracking_file = Path(tmpdir) / ".published.json"
+
+            mock_args = MagicMock()
+            mock_args.publish_all = True
+            mock_args.vault = tmpdir
+            mock_args.dry_run = False
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            # Patch the tracker to use our temp tracking file
+            with patch('publish.load_publish_state') as mock_load:
+                with patch('publish.record_published') as mock_record:
+                    mock_load.return_value = {'published': {}}
+
+                    with patch('sys.stdout', new_callable=StringIO):
+                        from publish import cmd_publish_all
+                        cmd_publish_all(mock_args)
+
+                    # Verify record_published was called
+                    mock_record.assert_called_once()
+
+    def test_handles_vault_not_found(self):
+        """Handles non-existent vault path gracefully."""
+        mock_args = MagicMock()
+        mock_args.publish_all = True
+        mock_args.vault = '/nonexistent/vault/path'
+        mock_args.dry_run = True
+        mock_args.yes = True
+        mock_args.hugo_root = '/tmp'
+        mock_args.skip_upload = True
+        mock_args.no_gallery = False
+        mock_args.keep_associations = False
+
+        with patch('sys.stderr', new_callable=StringIO) as mock_stderr:
+            with self.assertRaises(SystemExit) as context:
+                from publish import cmd_publish_all
+                cmd_publish_all(mock_args)
+
+            self.assertEqual(context.exception.code, 1)
+            self.assertIn('Vault not found', mock_stderr.getvalue())
 
 
 if __name__ == '__main__':

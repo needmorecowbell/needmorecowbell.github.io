@@ -116,6 +116,29 @@ This phase adds intelligent content routing so notes are published to the approp
   - Added `publish` subcommand to CLI with arguments: `--dry-run`, `-y`/`--yes`, `--hugo-root`, `--skip-upload`, `--no-gallery`, `--keep-associations`
   - Added 35 new tests covering all functionality including dry-run, confirmation, flags, content routing, and MinIO integration
 
-- [ ] Implement `--all` flag for the `publish` subcommand that processes all notes with `publish: true` that haven't been published yet (tracking published state in a local JSON file)
+- [x] Implement `--all` flag for the `publish` subcommand that processes all notes with `publish: true` that haven't been published yet (tracking published state in a local JSON file)
+  - Added `--all` flag to the `publish` subparser with `publish_all` destination
+  - Added `--vault` argument for specifying the Obsidian vault path (only used with `--all`)
+  - Implemented `cmd_publish_dispatch()` function to route between single-note and batch publish modes
+  - Implemented `cmd_publish_all()` function that:
+    - Scans vault for notes with `publish: true` using `find_publishable_notes()`
+    - Filters out already-published notes using `get_unpublished_notes()` from `publish_tracker.py`
+    - Displays batch summary showing total notes, already published count, and notes to publish
+    - In `--dry-run` mode: previews each note without making changes
+    - In normal mode: prompts for confirmation before proceeding (skipped with `-y`/`--yes`)
+    - Publishes each note sequentially with progress indicators
+    - Records each successful publish to the tracking file
+    - Displays final batch completion summary with success/failure counts
+  - Updated single-note `cmd_publish()` to record published state after successful publish
+  - Added 11 new tests covering dispatch, batch processing, confirmation, and error handling
 
-- [ ] Create `scripts/.published.json` tracking file that records which notes have been published (by file hash) to prevent duplicate publishing
+- [x] Create `scripts/.published.json` tracking file that records which notes have been published (by file hash) to prevent duplicate publishing
+  - Created new `scripts/publish_tracker.py` module with comprehensive publish tracking functionality
+  - Implemented `compute_file_hash()` using SHA-256 to track content changes
+  - Implemented `load_publish_state()` and `save_publish_state()` for JSON persistence
+  - Implemented `is_note_published()` to check if a note's current content matches the recorded hash
+  - Implemented `record_published()` to save publish record with hash, timestamp, source path, and target path
+  - Implemented `get_unpublished_notes()` to filter a list of notes to only those not yet published
+  - Implemented `clear_publish_record()` for manual untracking (useful for forcing re-publish)
+  - Implemented `get_publish_info()` to retrieve publish metadata for a note
+  - Added 32 new tests in `test_publish_tracker.py` covering all functions and edge cases

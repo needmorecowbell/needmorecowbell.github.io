@@ -64,6 +64,12 @@ from gallery_generator import (
 )
 from content_router import determine_content_type, get_hugo_section_path
 from hugo_writer import write_hugo_post_routed
+from publish_tracker import (
+    is_note_published,
+    record_published,
+    get_unpublished_notes,
+    load_publish_state,
+)
 
 # Default Hugo content output directory (relative to blog root)
 DEFAULT_OUTPUT_DIR = "content/english/post"
@@ -880,6 +886,13 @@ def cmd_publish(args):
         print(f"Error writing Hugo post: {e}", file=sys.stderr)
         sys.exit(1)
 
+    # Step 7: Record the publish in tracking file
+    try:
+        record_published(note_path, target_path=written_path)
+    except Exception as e:
+        # Non-fatal: warn but continue
+        print(f"Warning: Could not record publish state - {e}", file=sys.stderr)
+
     # Final summary
     print()
     print("=" * 60)
@@ -904,6 +917,205 @@ def cmd_publish(args):
     print()
 
 
+def cmd_publish_dispatch(args):
+    """
+    Dispatch to either cmd_publish (single note) or cmd_publish_all (batch).
+
+    This function checks the --all flag to determine which publish mode to use.
+    """
+    publish_all = getattr(args, 'publish_all', False)
+
+    if publish_all:
+        # Batch mode: publish all unpublished notes
+        cmd_publish_all(args)
+    else:
+        # Single note mode: require a path
+        if not args.path:
+            print("Error: Must specify a note path or use --all flag", file=sys.stderr)
+            print("Usage: publish <path>  OR  publish --all", file=sys.stderr)
+            sys.exit(1)
+        cmd_publish(args)
+
+
+def cmd_publish_all(args):
+    """
+    Publish all unpublished Obsidian notes with publish: true.
+
+    Scans the vault for notes with publish: true in frontmatter,
+    filters out notes that have already been published (and haven't
+    changed), then publishes each remaining note.
+
+    Uses a tracking file (.published.json) to record which notes have
+    been published and their content hashes to detect changes.
+    """
+    # Get flags from args
+    dry_run = getattr(args, 'dry_run', False)
+    skip_upload = getattr(args, 'skip_upload', False)
+    generate_gallery = not getattr(args, 'no_gallery', False)
+    keep_associations = getattr(args, 'keep_associations', False)
+    yes_flag = getattr(args, 'yes', False)
+    hugo_root = Path(args.hugo_root) if hasattr(args, 'hugo_root') and args.hugo_root else DEFAULT_HUGO_ROOT
+    vault_path = Path(args.vault) if hasattr(args, 'vault') and args.vault else None
+
+    # Step 1: Find all publishable notes
+    try:
+        all_notes = find_publishable_notes(vault_path=vault_path)
+    except FileNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except NotADirectoryError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    if not all_notes:
+        print("No publishable notes found.")
+        return
+
+    # Step 2: Filter to only unpublished notes
+    unpublished_notes = get_unpublished_notes(all_notes)
+
+    if not unpublished_notes:
+        print(f"Found {len(all_notes)} publishable note(s), but all have already been published.")
+        print("Use 'publish <path>' to force re-publishing a specific note.")
+        return
+
+    # Step 3: Display summary
+    print()
+    print("=" * 60)
+    print("BATCH PUBLISH SUMMARY")
+    print("=" * 60)
+    print(f"Vault:        {vault_path or Path.home() / 'Notes'}")
+    print(f"Hugo root:    {hugo_root}")
+    print()
+    print(f"Total publishable notes:  {len(all_notes)}")
+    print(f"Already published:        {len(all_notes) - len(unpublished_notes)}")
+    print(f"To publish:               {len(unpublished_notes)}")
+    print()
+
+    # List notes to be published
+    print("Notes to publish:")
+    for note in unpublished_notes:
+        fm = note['frontmatter']
+        title = fm.get('title', note['path'].stem)
+        content_type = determine_content_type(fm)
+        print(f"  [{content_type:12}] {title}")
+
+    print()
+    print("=" * 60)
+
+    # In dry-run mode, show what would happen and exit
+    if dry_run:
+        print("[DRY RUN] No changes will be made.")
+        print()
+
+        for i, note in enumerate(unpublished_notes, 1):
+            note_path = note['path']
+            fm = note['frontmatter']
+            title = fm.get('title', note_path.stem)
+            content_type = determine_content_type(fm)
+            section_path = get_hugo_section_path(content_type)
+
+            print(f"\n[{i}/{len(unpublished_notes)}] {title}")
+            print(f"  Source:       {note_path}")
+            print(f"  Content type: {content_type}")
+            print(f"  Target:       {hugo_root / section_path}")
+
+        print()
+        print(f"[DRY RUN] Would publish {len(unpublished_notes)} note(s).")
+        return
+
+    # Non-dry-run mode: Confirm before proceeding
+    if not yes_flag:
+        if not confirm_prompt(f"Publish {len(unpublished_notes)} note(s)?", default=True):
+            print("Aborted.")
+            sys.exit(0)
+        print()
+
+    # Step 4: Publish each note
+    published_count = 0
+    failed_count = 0
+    failed_notes = []
+
+    for i, note in enumerate(unpublished_notes, 1):
+        note_path = note['path']
+        fm = note['frontmatter']
+        title = fm.get('title', note_path.stem)
+
+        print(f"\n[{i}/{len(unpublished_notes)}] Publishing: {title}")
+        print("-" * 40)
+
+        try:
+            # Get content type and section path
+            content_type = determine_content_type(fm)
+            section_path = get_hugo_section_path(content_type)
+
+            # Transform frontmatter
+            body = note['body']
+            hugo_fm = transform_to_hugo(fm, body)
+            slug = generate_slug(hugo_fm.get('title', ''), hugo_fm.get('date'))
+
+            # Extract and upload media
+            media_items, missing_count = extract_and_resolve_media(note_path)
+            media_url_map = None
+
+            if media_items and not skip_upload:
+                try:
+                    print(f"  Uploading {len(media_items)} media file(s)...")
+                    media_url_map = upload_media_to_minio(media_items, show_progress=False)
+                    successful = sum(1 for v in media_url_map.values() if v is not None)
+                    print(f"  Media uploaded: {successful}/{len(media_items)}")
+                except Exception as e:
+                    print(f"  Warning: Media upload failed - {e}", file=sys.stderr)
+
+            # Convert the note
+            hugo_fm, converted_body, _ = convert_note(
+                note_path,
+                str(hugo_root / section_path),
+                media_url_map=media_url_map,
+                generate_gallery=generate_gallery,
+                keep_associations=keep_associations
+            )
+
+            # Write the Hugo post
+            written_path = write_hugo_post_routed(
+                hugo_fm,
+                converted_body,
+                f"{slug}.md",
+                hugo_root=hugo_root,
+                content_type=content_type
+            )
+
+            # Record the publish
+            try:
+                record_published(note_path, target_path=written_path)
+            except Exception as e:
+                print(f"  Warning: Could not record publish state - {e}", file=sys.stderr)
+
+            print(f"  Written to: {written_path}")
+            published_count += 1
+
+        except Exception as e:
+            print(f"  Error: {e}", file=sys.stderr)
+            failed_count += 1
+            failed_notes.append((note_path, str(e)))
+
+    # Final summary
+    print()
+    print("=" * 60)
+    print("BATCH PUBLISH COMPLETE")
+    print("=" * 60)
+    print(f"Published: {published_count}")
+    print(f"Failed:    {failed_count}")
+
+    if failed_notes:
+        print()
+        print("Failed notes:")
+        for path, error in failed_notes:
+            print(f"  {path.name}: {error}")
+
+    print()
+
+
 def main():
     """Main entry point for the CLI."""
     parser = argparse.ArgumentParser(
@@ -920,6 +1132,15 @@ Examples:
 
     python publish.py publish ~/Notes/Blog/my-post.md -y
         Publish without confirmation prompts
+
+    python publish.py publish --all
+        Publish all unpublished notes with publish: true
+
+    python publish.py publish --all --dry-run
+        Preview batch publishing without making changes
+
+    python publish.py publish --all --vault ~/MyVault
+        Publish all from a specific vault
 
     python publish.py scan
         Scan the Obsidian vault for notes with publish: true
@@ -942,11 +1163,22 @@ Examples:
     # publish subcommand (main command)
     publish_parser = subparsers.add_parser(
         "publish",
-        help="Publish a single Obsidian note to the Hugo blog (main command)"
+        help="Publish Obsidian note(s) to the Hugo blog (main command)"
     )
     publish_parser.add_argument(
         "path",
-        help="Path to the Obsidian note to publish"
+        nargs='?',  # Make path optional when using --all
+        help="Path to the Obsidian note to publish (not required with --all)"
+    )
+    publish_parser.add_argument(
+        "--all",
+        action="store_true",
+        dest="publish_all",
+        help="Publish all notes with publish: true that haven't been published yet"
+    )
+    publish_parser.add_argument(
+        "--vault",
+        help="Path to the Obsidian vault (default: ~/Notes). Only used with --all"
     )
     publish_parser.add_argument(
         "--dry-run",
@@ -977,7 +1209,7 @@ Examples:
         action="store_true",
         help="Convert Associations section to Hugo links (default: remove)"
     )
-    publish_parser.set_defaults(func=cmd_publish)
+    publish_parser.set_defaults(func=cmd_publish_dispatch)
 
     # scan subcommand
     scan_parser = subparsers.add_parser(
