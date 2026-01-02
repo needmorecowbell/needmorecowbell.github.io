@@ -27,7 +27,10 @@ from publish import (
     cmd_list,
     cmd_media,
     cmd_convert,
-    DEFAULT_OUTPUT_DIR
+    cmd_publish,
+    confirm_prompt,
+    DEFAULT_OUTPUT_DIR,
+    DEFAULT_HUGO_ROOT
 )
 
 
@@ -2390,6 +2393,686 @@ Just regular content, no Associations section.
 
                 # Should not mention Associations at all
                 self.assertNotIn('Associations:', output)
+
+
+class TestConfirmPrompt(unittest.TestCase):
+    """Tests for confirm_prompt function."""
+
+    def test_confirm_yes_response(self):
+        """Returns True for 'y' response."""
+        with patch('builtins.input', return_value='y'):
+            self.assertTrue(confirm_prompt("Continue?"))
+
+    def test_confirm_yes_full_response(self):
+        """Returns True for 'yes' response."""
+        with patch('builtins.input', return_value='yes'):
+            self.assertTrue(confirm_prompt("Continue?"))
+
+    def test_confirm_no_response(self):
+        """Returns False for 'n' response."""
+        with patch('builtins.input', return_value='n'):
+            self.assertFalse(confirm_prompt("Continue?"))
+
+    def test_confirm_no_full_response(self):
+        """Returns False for 'no' response."""
+        with patch('builtins.input', return_value='no'):
+            self.assertFalse(confirm_prompt("Continue?"))
+
+    def test_confirm_empty_response_default_false(self):
+        """Returns False for empty response when default=False."""
+        with patch('builtins.input', return_value=''):
+            self.assertFalse(confirm_prompt("Continue?", default=False))
+
+    def test_confirm_empty_response_default_true(self):
+        """Returns True for empty response when default=True."""
+        with patch('builtins.input', return_value=''):
+            self.assertTrue(confirm_prompt("Continue?", default=True))
+
+    def test_confirm_case_insensitive(self):
+        """Response is case-insensitive."""
+        with patch('builtins.input', return_value='Y'):
+            self.assertTrue(confirm_prompt("Continue?"))
+
+        with patch('builtins.input', return_value='YES'):
+            self.assertTrue(confirm_prompt("Continue?"))
+
+    def test_confirm_handles_whitespace(self):
+        """Handles whitespace in response."""
+        with patch('builtins.input', return_value='  y  '):
+            self.assertTrue(confirm_prompt("Continue?"))
+
+    def test_confirm_handles_eof_error(self):
+        """Returns default on EOFError (non-interactive mode)."""
+        with patch('builtins.input', side_effect=EOFError):
+            self.assertFalse(confirm_prompt("Continue?", default=False))
+            self.assertTrue(confirm_prompt("Continue?", default=True))
+
+
+class TestCmdPublish(unittest.TestCase):
+    """Tests for cmd_publish function."""
+
+    def test_publish_file_not_found(self):
+        """publish command exits with error for missing file."""
+        mock_args = MagicMock()
+        mock_args.path = '/nonexistent/note.md'
+        mock_args.dry_run = False
+        mock_args.yes = True
+        mock_args.hugo_root = None
+
+        with patch('sys.stderr', new_callable=StringIO) as mock_stderr:
+            with self.assertRaises(SystemExit) as context:
+                cmd_publish(mock_args)
+            self.assertEqual(context.exception.code, 1)
+            self.assertIn("Note not found", mock_stderr.getvalue())
+
+    def test_publish_dry_run_shows_summary(self):
+        """publish --dry-run shows summary without making changes."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test-note.md"
+            note_path.write_text("""---
+title: Dry Run Test Post
+date: 2024-06-15
+tags:
+  - testing
+  - python
+publish: true
+---
+
+This is test content for the dry run.
+
+Here's a [[wikilink]] to another page.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.yes = False
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_publish(mock_args)
+                output = mock_stdout.getvalue()
+
+                # Should show summary
+                self.assertIn("PUBLISH SUMMARY", output)
+                self.assertIn("Dry Run Test Post", output)
+                self.assertIn("2024-06-15", output)
+                self.assertIn("Content Type: post", output)
+
+                # Should show dry run message
+                self.assertIn("[DRY RUN] No changes will be made.", output)
+
+                # Should show preview
+                self.assertIn("--- Preview of converted content ---", output)
+                self.assertIn("title: Dry Run Test Post", output)
+
+    def test_publish_dry_run_shows_media_info(self):
+        """publish --dry-run shows media file information."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "media-note.md"
+            note_path.write_text("""---
+title: Media Test
+date: 2024-07-01
+publish: true
+---
+
+![[photo.jpg]]
+![[video.mp4]]
+""")
+
+            media_dir = Path(tmpdir) / "media"
+            media_dir.mkdir()
+            (media_dir / "photo.jpg").touch()
+            (media_dir / "video.mp4").touch()
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.yes = False
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            with patch('publish.resolve_media_path') as mock_resolve:
+                mock_resolve.side_effect = lambda ref: str(media_dir / ref)
+
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    cmd_publish(mock_args)
+                    output = mock_stdout.getvalue()
+
+                    self.assertIn("Media Files:  2 to upload", output)
+
+    def test_publish_dry_run_shows_gallery_info(self):
+        """publish --dry-run shows gallery information."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "gallery-note.md"
+            note_path.write_text("""---
+title: Gallery Test
+date: 2024-08-01
+tags:
+  - project
+publish: true
+---
+
+My project description.
+
+## Pictures
+
+![[img1.jpg]]
+![[img2.png]]
+![[video.mp4]]
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.yes = False
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_publish(mock_args)
+                output = mock_stdout.getvalue()
+
+                self.assertIn("Gallery:      YES (3 images)", output)
+
+    def test_publish_dry_run_shows_associations_info(self):
+        """publish --dry-run shows associations information."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "assoc-note.md"
+            note_path.write_text("""---
+title: Associations Test
+date: 2024-09-01
+publish: true
+---
+
+Content here.
+
+## Associations
+
+[[Related Post]]
+[[Another Post|See also]]
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.yes = False
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_publish(mock_args)
+                output = mock_stdout.getvalue()
+
+                self.assertIn("Associations: REMOVE (2 links)", output)
+
+    def test_publish_with_yes_flag_skips_confirmation(self):
+        """publish -y skips confirmation prompts."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "yes-flag-test.md"
+            note_path.write_text("""---
+title: Yes Flag Test
+date: 2024-10-01
+publish: true
+---
+
+Test content.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_publish(mock_args)
+                output = mock_stdout.getvalue()
+
+                # Should complete without prompts
+                self.assertIn("PUBLISH COMPLETE", output)
+                self.assertNotIn("Proceed with publishing?", output)
+
+            # File should be written
+            expected_path = Path(tmpdir) / "content/english/post/2024-10-01-yes-flag-test.md"
+            self.assertTrue(expected_path.exists())
+
+    def test_publish_writes_to_correct_content_type_directory(self):
+        """publish writes to the correct directory based on content type."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Test project content type
+            note_path = Path(tmpdir) / "project-note.md"
+            note_path.write_text("""---
+title: My Woodworking Project
+date: 2024-11-01
+tags:
+  - woodworking
+  - project
+publish: true
+---
+
+Project description.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_publish(mock_args)
+                output = mock_stdout.getvalue()
+
+                self.assertIn("Content Type: project", output)
+                self.assertIn("PUBLISH COMPLETE", output)
+
+            # File should be in projects directory
+            expected_path = Path(tmpdir) / "content/english/projects/2024-11-01-my-woodworking-project.md"
+            self.assertTrue(expected_path.exists())
+
+    def test_publish_warns_for_non_publishable_note(self):
+        """publish warns when note doesn't have publish: true."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "not-publishable.md"
+            note_path.write_text("""---
+title: Not Marked for Publish
+date: 2024-12-01
+---
+
+This note is not marked for publishing.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True  # Use dry-run to avoid prompts
+            mock_args.yes = False
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_publish(mock_args)
+                output = mock_stdout.getvalue()
+
+                self.assertIn("Warning: Note is not marked with 'publish: true'", output)
+
+    def test_publish_aborts_on_confirmation_decline(self):
+        """publish aborts when user declines confirmation."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "decline-test.md"
+            note_path.write_text("""---
+title: Decline Test
+date: 2024-01-15
+publish: true
+---
+
+Content here.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.yes = False
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            with patch('builtins.input', return_value='n'):
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    with self.assertRaises(SystemExit) as context:
+                        cmd_publish(mock_args)
+                    self.assertEqual(context.exception.code, 0)
+                    self.assertIn("Aborted.", mock_stdout.getvalue())
+
+    def test_publish_proceeds_on_confirmation_accept(self):
+        """publish proceeds when user accepts confirmation."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "accept-test.md"
+            note_path.write_text("""---
+title: Accept Test
+date: 2024-02-20
+publish: true
+---
+
+Content here.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.yes = False
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            with patch('builtins.input', return_value='y'):
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    cmd_publish(mock_args)
+                    output = mock_stdout.getvalue()
+
+                    self.assertIn("PUBLISH COMPLETE", output)
+
+            # File should be written
+            expected_path = Path(tmpdir) / "content/english/post/2024-02-20-accept-test.md"
+            self.assertTrue(expected_path.exists())
+
+    def test_publish_with_skip_upload_flag(self):
+        """publish --skip-upload skips media upload."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "skip-upload.md"
+            note_path.write_text("""---
+title: Skip Upload Test
+date: 2024-03-10
+publish: true
+---
+
+![[photo.jpg]]
+""")
+
+            media_dir = Path(tmpdir) / "media"
+            media_dir.mkdir()
+            (media_dir / "photo.jpg").touch()
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            with patch('publish.resolve_media_path') as mock_resolve:
+                mock_resolve.return_value = str(media_dir / "photo.jpg")
+
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    cmd_publish(mock_args)
+                    output = mock_stdout.getvalue()
+
+                    self.assertIn("Media Upload: SKIPPED", output)
+                    self.assertIn("PUBLISH COMPLETE", output)
+
+    def test_publish_with_no_gallery_flag(self):
+        """publish --no-gallery skips gallery generation."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "no-gallery.md"
+            note_path.write_text("""---
+title: No Gallery Test
+date: 2024-04-05
+publish: true
+---
+
+Content.
+
+## Pictures
+
+![[img.jpg]]
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.yes = False
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = True
+            mock_args.keep_associations = False
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_publish(mock_args)
+                output = mock_stdout.getvalue()
+
+                self.assertIn("Gallery:      SKIPPED (1 images)", output)
+
+    def test_publish_with_keep_associations_flag(self):
+        """publish --keep-associations converts associations to Hugo links."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "keep-assoc.md"
+            note_path.write_text("""---
+title: Keep Associations Test
+date: 2024-05-15
+publish: true
+---
+
+Content.
+
+## Associations
+
+[[Link One]]
+[[Link Two|Display Text]]
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.yes = False
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = True
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_publish(mock_args)
+                output = mock_stdout.getvalue()
+
+                self.assertIn("Associations: CONVERT (2 links -> Related)", output)
+
+
+class TestCmdPublishIntegration(unittest.TestCase):
+    """Integration tests for cmd_publish with full pipeline."""
+
+    def test_full_publish_pipeline(self):
+        """Full publish correctly processes all Obsidian syntax."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "full-integration.md"
+            note_path.write_text("""---
+title: Full Integration Publish Test
+date: 2024-09-15
+tags:
+  - integration
+  - testing
+author: Test Author
+publish: true
+---
+
+# Introduction
+
+This post has various Obsidian syntax to convert.
+
+## Links and Media
+
+Here's a [[Wiki Link]] and an [[aliased|Different Text]] link.
+
+![[screenshot.png]]
+
+## More Content
+
+Regular markdown **works** fine.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_publish(mock_args)
+                output = mock_stdout.getvalue()
+
+                self.assertIn("PUBLISH SUMMARY", output)
+                self.assertIn("PUBLISH COMPLETE", output)
+
+            # Read the generated file
+            expected_path = Path(tmpdir) / "content/english/post/2024-09-15-full-integration-publish-test.md"
+            self.assertTrue(expected_path.exists())
+
+            content = expected_path.read_text()
+
+            # Check frontmatter
+            self.assertIn('title: Full Integration Publish Test', content)
+            self.assertIn('author: Test Author', content)
+            self.assertIn('tags: [integration, testing]', content)
+
+            # publish field should be removed
+            self.assertNotIn('publish:', content)
+
+            # Check wikilinks converted
+            self.assertIn('[Wiki Link](/post/wiki-link/)', content)
+            self.assertIn('[Different Text](/post/aliased/)', content)
+
+            # Check images converted
+            self.assertIn('![screenshot]({{<s3cdn>}}/screenshot.png)', content)
+
+    def test_publish_photography_content_type(self):
+        """Publish correctly routes photography content type."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "photo-trip.md"
+            note_path.write_text("""---
+title: Summer Photography Trip
+date: 2024-07-20
+tags:
+  - photography
+  - travel
+publish: true
+---
+
+Photos from my summer trip.
+
+## Pictures
+
+![[photo1.jpg]]
+![[photo2.jpg]]
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_publish(mock_args)
+                output = mock_stdout.getvalue()
+
+                self.assertIn("Content Type: photography", output)
+
+            # File should be in photography directory
+            expected_path = Path(tmpdir) / "content/english/photography/2024-07-20-summer-photography-trip.md"
+            self.assertTrue(expected_path.exists())
+
+    def test_publish_with_minio_upload(self):
+        """Publish correctly uploads media to MinIO."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "upload-test.md"
+            note_path.write_text("""---
+title: MinIO Upload Test
+date: 2024-08-10
+publish: true
+---
+
+![[photo.jpg]]
+""")
+
+            media_dir = Path(tmpdir) / "media"
+            media_dir.mkdir()
+            (media_dir / "photo.jpg").touch()
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = False  # Attempt upload
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            mock_url_map = {"photo.jpg": "https://minio.test/bucket/assets/photo.jpg"}
+
+            with patch('publish.resolve_media_path') as mock_resolve:
+                mock_resolve.return_value = str(media_dir / "photo.jpg")
+
+                with patch('publish.upload_media_to_minio', return_value=mock_url_map) as mock_upload:
+                    with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                        cmd_publish(mock_args)
+                        output = mock_stdout.getvalue()
+
+                        self.assertIn("Uploading 1 media file(s) to MinIO", output)
+                        self.assertIn("Upload complete: 1 uploaded", output)
+                        mock_upload.assert_called_once()
+
+            # Check file uses the MinIO URL
+            expected_path = Path(tmpdir) / "content/english/post/2024-08-10-minio-upload-test.md"
+            content = expected_path.read_text()
+            self.assertIn("https://minio.test/bucket/assets/photo.jpg", content)
+
+    def test_publish_handles_minio_error_gracefully(self):
+        """Publish handles MinIO errors gracefully when -y flag is set."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "error-test.md"
+            note_path.write_text("""---
+title: Error Test
+date: 2024-09-05
+publish: true
+---
+
+![[photo.jpg]]
+""")
+
+            media_dir = Path(tmpdir) / "media"
+            media_dir.mkdir()
+            (media_dir / "photo.jpg").touch()
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.yes = True  # Skip confirmation for error recovery
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = False
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            with patch('publish.resolve_media_path') as mock_resolve:
+                mock_resolve.return_value = str(media_dir / "photo.jpg")
+
+                with patch('publish.upload_media_to_minio', side_effect=ImportError("minio not installed")):
+                    with patch('sys.stdout', new_callable=StringIO):
+                        with patch('sys.stderr', new_callable=StringIO) as mock_stderr:
+                            cmd_publish(mock_args)
+
+                            self.assertIn("Warning: MinIO upload skipped", mock_stderr.getvalue())
+
+            # File should still be written (with s3cdn fallback)
+            expected_path = Path(tmpdir) / "content/english/post/2024-09-05-error-test.md"
+            self.assertTrue(expected_path.exists())
+
+            content = expected_path.read_text()
+            self.assertIn("{{<s3cdn>}}", content)
 
 
 if __name__ == '__main__':

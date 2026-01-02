@@ -100,7 +100,21 @@ This phase adds intelligent content routing so notes are published to the approp
     - Provides progress callback with `has_thumbnail` flag
   - Added 24 new tests in `TestUploadGalleryMediaBatch` class covering all scenarios
 
-- [ ] Add a `publish` subcommand (the main command users will run) that combines scan + convert + upload for a single note, with confirmation prompts for non-dry-run mode
+- [x] Add a `publish` subcommand (the main command users will run) that combines scan + convert + upload for a single note, with confirmation prompts for non-dry-run mode
+  - Implemented `confirm_prompt()` helper function for user confirmation with sensible defaults
+  - Implemented `cmd_publish()` function that combines the full publishing pipeline:
+    - Parses and validates the note (warns if not marked with `publish: true`)
+    - Determines content type from frontmatter/tags and routes to appropriate Hugo section
+    - Extracts and resolves media references
+    - Displays detailed summary of what will be published
+    - In `--dry-run` mode: shows preview without making changes
+    - In normal mode: prompts for confirmation before proceeding (skipped with `-y`/`--yes`)
+    - Uploads media to MinIO (unless `--skip-upload`)
+    - Converts Obsidian syntax to Hugo format
+    - Writes the Hugo post to the correct content directory
+    - Displays final completion summary
+  - Added `publish` subcommand to CLI with arguments: `--dry-run`, `-y`/`--yes`, `--hugo-root`, `--skip-upload`, `--no-gallery`, `--keep-associations`
+  - Added 35 new tests covering all functionality including dry-run, confirmation, flags, content routing, and MinIO integration
 
 - [ ] Implement `--all` flag for the `publish` subcommand that processes all notes with `publish: true` that haven't been published yet (tracking published state in a local JSON file)
 

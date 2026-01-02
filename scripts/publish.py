@@ -62,10 +62,14 @@ from gallery_generator import (
     convert_associations_to_hugo_links,
     extract_wikilinks_from_associations,
 )
-from content_router import determine_content_type
+from content_router import determine_content_type, get_hugo_section_path
+from hugo_writer import write_hugo_post_routed
 
 # Default Hugo content output directory (relative to blog root)
 DEFAULT_OUTPUT_DIR = "content/english/post"
+
+# Default Hugo root directory (for write_hugo_post_routed)
+DEFAULT_HUGO_ROOT = Path(__file__).parent.parent.resolve()
 
 
 def get_target_path(frontmatter, body, output_dir=DEFAULT_OUTPUT_DIR):
@@ -658,6 +662,248 @@ def cmd_convert(args):
                 print(f"Associations removed: {assoc_link_count} links")
 
 
+def confirm_prompt(message: str, default: bool = False) -> bool:
+    """
+    Display a confirmation prompt and return the user's response.
+
+    Args:
+        message: The confirmation message to display
+        default: Default response if user just presses Enter (True=yes, False=no)
+
+    Returns:
+        True if user confirms, False otherwise
+    """
+    if default:
+        prompt = f"{message} [Y/n]: "
+    else:
+        prompt = f"{message} [y/N]: "
+
+    try:
+        response = input(prompt).strip().lower()
+    except EOFError:
+        # Non-interactive mode, use default
+        return default
+
+    if not response:
+        return default
+
+    return response in ('y', 'yes')
+
+
+def cmd_publish(args):
+    """
+    Publish a single Obsidian note to the Hugo blog.
+
+    This is the main command users will run. It combines:
+    1. Scanning for the note and validating it's publishable
+    2. Extracting and uploading media to MinIO
+    3. Converting Obsidian syntax to Hugo format
+    4. Writing the Hugo post to the appropriate content directory
+
+    In non-dry-run mode, prompts for confirmation before making changes.
+    """
+    note_path = Path(args.path)
+
+    if not note_path.exists():
+        print(f"Error: Note not found: {note_path}", file=sys.stderr)
+        sys.exit(1)
+
+    # Get flags from args
+    dry_run = getattr(args, 'dry_run', False)
+    skip_upload = getattr(args, 'skip_upload', False)
+    generate_gallery = not getattr(args, 'no_gallery', False)
+    keep_associations = getattr(args, 'keep_associations', False)
+    yes_flag = getattr(args, 'yes', False)
+    hugo_root = Path(args.hugo_root) if hasattr(args, 'hugo_root') and args.hugo_root else DEFAULT_HUGO_ROOT
+
+    # Step 1: Parse the note and validate it's publishable
+    try:
+        from obsidian_parser import parse_obsidian_note
+        frontmatter, body = parse_obsidian_note(note_path)
+    except Exception as e:
+        print(f"Error parsing note: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    # Check if note is marked for publishing
+    is_publishable = frontmatter.get('publish', False)
+    if not is_publishable:
+        print(f"Warning: Note is not marked with 'publish: true' in frontmatter.")
+        if not dry_run and not yes_flag:
+            if not confirm_prompt("Publish anyway?", default=False):
+                print("Aborted.")
+                sys.exit(0)
+
+    # Step 2: Determine content type and target path
+    content_type = determine_content_type(frontmatter)
+    section_path = get_hugo_section_path(content_type)
+
+    # Transform frontmatter to get title/date for slug
+    hugo_frontmatter = transform_to_hugo(frontmatter, body)
+    slug = generate_slug(hugo_frontmatter.get('title', ''), hugo_frontmatter.get('date'))
+    target_path = hugo_root / section_path / f"{slug}.md"
+
+    # Step 3: Extract media references
+    media_items, missing_count = extract_and_resolve_media(note_path)
+
+    # Check for Pictures section
+    note_content = note_path.read_text()
+    has_gallery = has_pictures_section(note_content)
+    gallery_media_count = len(extract_media_from_pictures_section(note_content)) if has_gallery else 0
+
+    # Check for Associations section
+    has_assoc = has_associations_section(note_content)
+    assoc_link_count = len(extract_wikilinks_from_associations(note_content)) if has_assoc else 0
+
+    # Print summary
+    print()
+    print("=" * 60)
+    print("PUBLISH SUMMARY")
+    print("=" * 60)
+    print(f"Source:       {note_path}")
+    print(f"Title:        {hugo_frontmatter.get('title', 'Untitled')}")
+    print(f"Date:         {hugo_frontmatter.get('date', 'N/A')}")
+    print(f"Content Type: {content_type}")
+    print(f"Target:       {target_path}")
+    print()
+
+    if media_items:
+        print(f"Media Files:  {len(media_items)} to upload")
+        if missing_count > 0:
+            print(f"              {missing_count} missing (will be skipped)")
+    else:
+        print("Media Files:  None")
+
+    if has_gallery:
+        if generate_gallery:
+            print(f"Gallery:      YES ({gallery_media_count} images)")
+        else:
+            print(f"Gallery:      SKIPPED ({gallery_media_count} images)")
+
+    if has_assoc:
+        if keep_associations:
+            print(f"Associations: CONVERT ({assoc_link_count} links -> Related)")
+        else:
+            print(f"Associations: REMOVE ({assoc_link_count} links)")
+
+    if skip_upload:
+        print("Media Upload: SKIPPED")
+
+    print()
+    print("=" * 60)
+
+    # In dry-run mode, show preview and exit
+    if dry_run:
+        print("[DRY RUN] No changes will be made.")
+        print()
+
+        # Run the conversion to show preview
+        try:
+            _, converted_body, _ = convert_note(
+                note_path,
+                DEFAULT_OUTPUT_DIR,  # Use default for preview
+                media_url_map=None,  # No URLs in dry-run
+                generate_gallery=generate_gallery,
+                keep_associations=keep_associations
+            )
+        except Exception as e:
+            print(f"Error during conversion preview: {e}", file=sys.stderr)
+            sys.exit(1)
+
+        print("--- Preview of converted content ---")
+        print()
+        from hugo_writer import preview_hugo_post
+        preview = preview_hugo_post(hugo_frontmatter, converted_body)
+        # Limit preview length
+        preview_lines = preview.split('\n')
+        if len(preview_lines) > 50:
+            print('\n'.join(preview_lines[:50]))
+            print(f"\n... (truncated, {len(preview_lines) - 50} more lines)")
+        else:
+            print(preview)
+        return
+
+    # Non-dry-run mode: Confirm before proceeding
+    if not yes_flag:
+        if not confirm_prompt("Proceed with publishing?", default=True):
+            print("Aborted.")
+            sys.exit(0)
+        print()
+
+    # Step 4: Upload media to MinIO
+    media_url_map = None
+    if media_items and not skip_upload:
+        try:
+            print(f"Uploading {len(media_items)} media file(s) to MinIO...")
+            media_url_map = upload_media_to_minio(media_items)
+
+            # Report upload results
+            successful = sum(1 for v in media_url_map.values() if v is not None)
+            failed = len(media_url_map) - successful
+            print(f"Upload complete: {successful} uploaded, {failed} failed")
+            if failed > 0:
+                print(f"Warning: {failed} file(s) failed to upload", file=sys.stderr)
+        except ImportError as e:
+            print(f"Warning: MinIO upload skipped - {e}", file=sys.stderr)
+        except Exception as e:
+            print(f"Warning: MinIO upload failed - {e}", file=sys.stderr)
+            if not yes_flag:
+                if not confirm_prompt("Continue without media upload?", default=False):
+                    print("Aborted.")
+                    sys.exit(1)
+
+    # Step 5: Convert the note
+    print("Converting note...")
+    try:
+        hugo_fm, converted_body, _ = convert_note(
+            note_path,
+            str(hugo_root / section_path),  # Full path for routing
+            media_url_map=media_url_map,
+            generate_gallery=generate_gallery,
+            keep_associations=keep_associations
+        )
+    except Exception as e:
+        print(f"Error converting note: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    # Step 6: Write the Hugo post
+    print(f"Writing Hugo post...")
+    try:
+        written_path = write_hugo_post_routed(
+            hugo_fm,
+            converted_body,
+            f"{slug}.md",
+            hugo_root=hugo_root,
+            content_type=content_type
+        )
+        print(f"Written to: {written_path}")
+    except Exception as e:
+        print(f"Error writing Hugo post: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    # Final summary
+    print()
+    print("=" * 60)
+    print("PUBLISH COMPLETE")
+    print("=" * 60)
+    print(f"Source: {note_path.name}")
+    print(f"Target: {written_path}")
+
+    if media_url_map:
+        uploaded = sum(1 for v in media_url_map.values() if v is not None)
+        print(f"Media:  {uploaded} file(s) uploaded")
+
+    if has_gallery and generate_gallery:
+        print(f"Gallery: {gallery_media_count} image(s)")
+
+    if has_assoc:
+        if keep_associations:
+            print(f"Related: {assoc_link_count} link(s) converted")
+        else:
+            print(f"Associations: removed")
+
+    print()
+
+
 def main():
     """Main entry point for the CLI."""
     parser = argparse.ArgumentParser(
@@ -666,6 +912,15 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+    python publish.py publish ~/Notes/Blog/my-post.md
+        Publish a single note (with confirmation prompts)
+
+    python publish.py publish ~/Notes/Blog/my-post.md --dry-run
+        Preview what would be published without making changes
+
+    python publish.py publish ~/Notes/Blog/my-post.md -y
+        Publish without confirmation prompts
+
     python publish.py scan
         Scan the Obsidian vault for notes with publish: true
 
@@ -673,10 +928,7 @@ Examples:
         Show all publishable notes and their target paths
 
     python publish.py convert ~/Notes/Blog/my-post.md
-        Convert a specific note to Hugo format
-
-    python publish.py convert ~/Notes/Blog/my-post.md --dry-run
-        Preview the conversion without writing files
+        Convert a specific note to Hugo format (low-level)
         """
     )
 
@@ -686,6 +938,46 @@ Examples:
         required=True,
         help="Available commands"
     )
+
+    # publish subcommand (main command)
+    publish_parser = subparsers.add_parser(
+        "publish",
+        help="Publish a single Obsidian note to the Hugo blog (main command)"
+    )
+    publish_parser.add_argument(
+        "path",
+        help="Path to the Obsidian note to publish"
+    )
+    publish_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview the publish without making any changes"
+    )
+    publish_parser.add_argument(
+        "-y", "--yes",
+        action="store_true",
+        help="Skip confirmation prompts (non-interactive mode)"
+    )
+    publish_parser.add_argument(
+        "--hugo-root",
+        help=f"Path to Hugo site root (default: {DEFAULT_HUGO_ROOT})"
+    )
+    publish_parser.add_argument(
+        "--skip-upload",
+        action="store_true",
+        help="Skip media upload to MinIO"
+    )
+    publish_parser.add_argument(
+        "--no-gallery",
+        action="store_true",
+        help="Skip gallery generation even if a Pictures section exists"
+    )
+    publish_parser.add_argument(
+        "--keep-associations",
+        action="store_true",
+        help="Convert Associations section to Hugo links (default: remove)"
+    )
+    publish_parser.set_defaults(func=cmd_publish)
 
     # scan subcommand
     scan_parser = subparsers.add_parser(
