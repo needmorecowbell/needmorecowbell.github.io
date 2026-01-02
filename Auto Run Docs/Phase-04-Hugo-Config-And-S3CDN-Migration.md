@@ -102,4 +102,14 @@ This phase updates the Hugo configuration and s3cdn shortcode to work with your 
   - Confirmed `scripts/.env.example` is tracked in git (verified with `git ls-files`)
   - Both conditions are satisfied
 
-- [ ] Test the full pipeline by running `make dev` and verifying the site loads with the development S3CDN configuration
+- [x] Test the full pipeline by running `make dev` and verifying the site loads with the development S3CDN configuration
+  - Verified Hugo config shows correct S3CDN values for each environment:
+    - Development: `s3cdn = 'http://localhost:9000/blog-assets'`
+    - Production: `s3cdn = 'https://s3cdn.617a.net/amblog/assets'`
+  - Ran `make dev` and confirmed Hugo server started successfully (114 pages built)
+  - Verified site loads at http://localhost:1313/
+  - Confirmed development S3CDN URLs appear in rendered pages:
+    - Photography: `http://localhost:9000/blog-assets/img/gallery/travel/nova_scotia/`
+    - Gallery: `http://localhost:9000/blog-assets/img/gallery/`
+    - Projects: `http://localhost:9000/blog-assets/projects/dogwood_bonsai/`
+  - Full pipeline working correctly with environment-based configuration switching
