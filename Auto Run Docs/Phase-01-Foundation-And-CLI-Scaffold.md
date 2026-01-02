@@ -124,6 +124,10 @@ This phase establishes the development environment and builds a working CLI tool
   - Provides module overview table and test running instructions
   - Lists default configuration values (vault path, output directory, skipped dirs)
 
-- [ ] Test the CLI by running `python scripts/publish.py scan` to verify it finds notes in the vault (create a test note in `~/Notes/Blog/` with `publish: true` if none exist with that frontmatter)
+- [x] Test the CLI by running `python scripts/publish.py scan` to verify it finds notes in the vault (create a test note in `~/Notes/Blog/` with `publish: true` if none exist with that frontmatter)
+  - Tested on 2026-01-02 - Created test note at `~/Notes/Blog/test-publish-note.md` with `publish: true`
+  - Verified `scan` command: Successfully found 1 publishable note with formatted table output
+  - Verified `list` command: Correctly displays target paths (e.g., `content/english/post/2026-01-02-test-note-for-publishing.md`)
+  - Verified `convert --dry-run`: Full pipeline working - wikilinks, images, and frontmatter all transformed correctly
 
 - [ ] Run `hugo server -D` to verify the blog still builds and serves correctly on the develop branch
