@@ -1,0 +1,21 @@
+# Development environment parameters
+# Override production values for local/staging testing
+#
+# Usage: Run Hugo with the development environment:
+#   hugo server -e development
+#   hugo -e development
+#
+# This configuration uses a local MinIO instance for media files
+# during development. Make sure your MinIO server is running and
+# accessible at the configured URL.
+
+# S3CDN URL for development - points to local MinIO instance
+# Update this to match your local MinIO setup:
+#   - Default MinIO: http://localhost:9000/bucket-name
+#   - Docker MinIO: http://minio:9000/bucket-name
+#   - Staging: https://minio.staging.example.com/blog-assets
+S3CDN = "http://localhost:9000/blog-assets"
+
+# Media upload path for the publish script
+# This matches the bucket configured in scripts/.env
+mediaBasePath = "blog-assets"
