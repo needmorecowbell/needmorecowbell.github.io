@@ -103,7 +103,12 @@ This phase establishes the development environment and builds a working CLI tool
   - Added 15 comprehensive tests (5 for get_target_path, 4 for print_list_table, 5 for cmd_list, 1 integration test)
   - Total tests in scripts/ now 288 (previously 273)
 
-- [ ] Implement the `convert` subcommand that takes a note path as argument, runs the full conversion pipeline (parse -> transform frontmatter -> convert syntax), and writes the result to `content/english/post/` with a `--dry-run` flag that prints output instead of writing
+- [x] Implement the `convert` subcommand that takes a note path as argument, runs the full conversion pipeline (parse -> transform frontmatter -> convert syntax), and writes the result to `content/english/post/` with a `--dry-run` flag that prints output instead of writing
+  - Implemented `convert_note()` helper function that runs the full pipeline: parse → transform frontmatter → convert syntax (wikilinks, images, media) → generate target path
+  - Implemented `cmd_convert()` command handler with `--dry-run` and `--output` arguments
+  - `--dry-run` shows preview of converted content without writing files
+  - `--output` allows specifying custom output directory (default: content/english/post)
+  - Added 26 comprehensive unit and integration tests (total tests in scripts/ now 299, previously 288)
 
 - [ ] Create `scripts/requirements.txt` with dependencies: `pyyaml` for frontmatter parsing and `rich` for beautiful CLI output formatting
 

@@ -15,8 +15,10 @@ import argparse
 import sys
 from pathlib import Path
 
-from obsidian_parser import find_publishable_notes
+from obsidian_parser import find_publishable_notes, parse_obsidian_note
 from frontmatter_transformer import generate_slug, transform_to_hugo
+from syntax_converter import convert_wikilinks, convert_embedded_images, convert_embedded_media
+from hugo_writer import write_hugo_post, preview_hugo_post
 
 # Default Hugo content output directory (relative to blog root)
 DEFAULT_OUTPUT_DIR = "content/english/post"
@@ -206,6 +208,45 @@ def cmd_list(args):
         sys.exit(1)
 
 
+def convert_note(note_path: Path, output_dir: str = DEFAULT_OUTPUT_DIR) -> tuple:
+    """
+    Run the full conversion pipeline on an Obsidian note.
+
+    Pipeline steps:
+    1. Parse the Obsidian note (extract frontmatter and body)
+    2. Transform frontmatter to Hugo format
+    3. Convert Obsidian syntax (wikilinks, images, media) to Hugo format
+    4. Generate the target output path
+
+    Args:
+        note_path: Path to the Obsidian note file
+        output_dir: Base output directory for Hugo posts
+
+    Returns:
+        Tuple of (hugo_frontmatter, converted_body, target_path)
+
+    Raises:
+        FileNotFoundError: If the note doesn't exist
+    """
+    # Step 1: Parse the Obsidian note
+    frontmatter, body = parse_obsidian_note(note_path)
+
+    # Step 2: Transform frontmatter to Hugo format
+    hugo_frontmatter = transform_to_hugo(frontmatter, body)
+
+    # Step 3: Convert Obsidian syntax to Hugo format
+    # Order matters: wikilinks first, then images, then media
+    converted_body = convert_wikilinks(body)
+    converted_body = convert_embedded_images(converted_body)
+    converted_body = convert_embedded_media(converted_body)
+
+    # Step 4: Generate the target output path
+    slug = generate_slug(hugo_frontmatter.get('title', ''), hugo_frontmatter.get('date'))
+    target_path = Path(output_dir) / f"{slug}.md"
+
+    return hugo_frontmatter, converted_body, target_path
+
+
 def cmd_convert(args):
     """Convert a single Obsidian note to Hugo format."""
     note_path = Path(args.path)
@@ -214,12 +255,28 @@ def cmd_convert(args):
         print(f"Error: Note not found: {note_path}", file=sys.stderr)
         sys.exit(1)
 
+    # Get output directory from args or use default
+    output_dir = args.output if hasattr(args, 'output') and args.output else DEFAULT_OUTPUT_DIR
+
+    try:
+        hugo_frontmatter, converted_body, target_path = convert_note(note_path, output_dir)
+    except Exception as e:
+        print(f"Error converting note: {e}", file=sys.stderr)
+        sys.exit(1)
+
     if args.dry_run:
         print(f"[DRY RUN] Would convert: {note_path}")
-        print("(Implementation pending: full conversion pipeline)")
+        print(f"[DRY RUN] Target path: {target_path}")
+        print()
+        print("--- Preview of converted content ---")
+        print()
+        preview = preview_hugo_post(hugo_frontmatter, converted_body)
+        print(preview)
     else:
-        print(f"Converting: {note_path}")
-        print("(Implementation pending: full conversion pipeline)")
+        # Write the Hugo post
+        written_path = write_hugo_post(hugo_frontmatter, converted_body, target_path)
+        print(f"Converted: {note_path}")
+        print(f"Written to: {written_path}")
 
 
 def main():
@@ -290,6 +347,10 @@ Examples:
         "--dry-run",
         action="store_true",
         help="Preview the conversion without writing files"
+    )
+    convert_parser.add_argument(
+        "--output",
+        help="Hugo output directory (default: content/english/post)"
     )
     convert_parser.set_defaults(func=cmd_convert)
 

@@ -20,8 +20,10 @@ from publish import (
     print_scan_table,
     print_list_table,
     get_target_path,
+    convert_note,
     cmd_scan,
     cmd_list,
+    cmd_convert,
     DEFAULT_OUTPUT_DIR
 )
 
@@ -508,6 +510,328 @@ This is a test note for integration testing.
 
                 # Should show count of 1
                 self.assertIn("Found 1 publishable note(s).", output)
+
+
+class TestConvertNote(unittest.TestCase):
+    """Tests for convert_note function."""
+
+    def test_basic_conversion(self):
+        """convert_note processes a basic note correctly."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test-note.md"
+            note_path.write_text("""---
+title: My Test Post
+date: 2024-03-15
+tags:
+  - python
+  - testing
+publish: true
+---
+
+This is the content of my test post.
+
+Here's a link to [[Another Page]].
+""")
+
+            hugo_fm, body, target = convert_note(note_path)
+
+            # Check frontmatter transformation
+            self.assertEqual(hugo_fm['title'], 'My Test Post')
+            self.assertEqual(hugo_fm['date'], '2024-03-15')
+            self.assertEqual(hugo_fm['tags'], ['python', 'testing'])
+            self.assertFalse(hugo_fm['draft'])
+            self.assertNotIn('publish', hugo_fm)
+
+            # Check wikilink conversion
+            self.assertIn('[Another Page](/post/another-page/)', body)
+            self.assertNotIn('[[Another Page]]', body)
+
+            # Check target path
+            self.assertEqual(target, Path('content/english/post/2024-03-15-my-test-post.md'))
+
+    def test_converts_embedded_images(self):
+        """convert_note converts embedded image syntax."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "image-note.md"
+            note_path.write_text("""---
+title: Post with Image
+date: 2024-04-20
+publish: true
+---
+
+Here's an embedded image: ![[my-photo.jpg]]
+""")
+
+            hugo_fm, body, target = convert_note(note_path)
+
+            # Check image conversion
+            self.assertIn('![my photo]({{<s3cdn>}}/my-photo.jpg)', body)
+            self.assertNotIn('![[my-photo.jpg]]', body)
+
+    def test_converts_embedded_media(self):
+        """convert_note converts embedded video/audio syntax."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "media-note.md"
+            note_path.write_text("""---
+title: Post with Media
+date: 2024-05-10
+publish: true
+---
+
+Check out this video: ![[demo.mp4]]
+
+And this audio: ![[podcast.mp3]]
+""")
+
+            hugo_fm, body, target = convert_note(note_path)
+
+            # Check video conversion
+            self.assertIn('<video controls><source src="{{<s3cdn>}}/demo.mp4" type="video/mp4"></video>', body)
+            self.assertNotIn('![[demo.mp4]]', body)
+
+            # Check audio conversion
+            self.assertIn('<audio controls><source src="{{<s3cdn>}}/podcast.mp3" type="audio/mpeg"></audio>', body)
+            self.assertNotIn('![[podcast.mp3]]', body)
+
+    def test_custom_output_dir(self):
+        """convert_note respects custom output directory."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "project.md"
+            note_path.write_text("""---
+title: My Project
+date: 2024-01-01
+publish: true
+---
+
+Project details here.
+""")
+
+            hugo_fm, body, target = convert_note(note_path, 'content/english/projects')
+
+            self.assertEqual(target, Path('content/english/projects/2024-01-01-my-project.md'))
+
+    def test_extracts_title_from_h1(self):
+        """convert_note extracts title from H1 when not in frontmatter."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "no-title.md"
+            note_path.write_text("""---
+date: 2024-02-28
+publish: true
+---
+
+# Extracted Title Here
+
+Body content follows.
+""")
+
+            hugo_fm, body, target = convert_note(note_path)
+
+            self.assertEqual(hugo_fm['title'], 'Extracted Title Here')
+            self.assertEqual(target, Path('content/english/post/2024-02-28-extracted-title-here.md'))
+
+    def test_file_not_found_error(self):
+        """convert_note raises FileNotFoundError for missing files."""
+        with self.assertRaises(FileNotFoundError):
+            convert_note(Path('/nonexistent/path/note.md'))
+
+
+class TestCmdConvert(unittest.TestCase):
+    """Tests for cmd_convert function."""
+
+    def test_convert_file_not_found(self):
+        """convert command exits with error for missing file."""
+        mock_args = MagicMock()
+        mock_args.path = '/nonexistent/note.md'
+        mock_args.dry_run = False
+        mock_args.output = None
+
+        with patch('sys.stderr', new_callable=StringIO) as mock_stderr:
+            with self.assertRaises(SystemExit) as context:
+                cmd_convert(mock_args)
+            self.assertEqual(context.exception.code, 1)
+            self.assertIn("Note not found", mock_stderr.getvalue())
+
+    def test_dry_run_prints_preview(self):
+        """convert --dry-run prints preview without writing."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test.md"
+            note_path.write_text("""---
+title: Dry Run Test
+date: 2024-06-01
+publish: true
+---
+
+This is test content.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.output = None
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_convert(mock_args)
+                output = mock_stdout.getvalue()
+
+                # Should show dry run messages
+                self.assertIn('[DRY RUN]', output)
+                self.assertIn('Would convert:', output)
+                self.assertIn('Target path:', output)
+
+                # Should show preview
+                self.assertIn('--- Preview of converted content ---', output)
+                self.assertIn('title: Dry Run Test', output)
+                self.assertIn('date: 2024-06-01', output)
+                self.assertIn('This is test content.', output)
+
+    def test_convert_writes_file(self):
+        """convert command writes file to correct location."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create source note
+            note_path = Path(tmpdir) / "source-note.md"
+            note_path.write_text("""---
+title: Write Test Post
+date: 2024-07-15
+tags:
+  - testing
+publish: true
+---
+
+Content with [[wikilink]] and ![[image.png]].
+""")
+
+            # Set output directory in temp folder
+            output_dir = Path(tmpdir) / "output"
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.output = str(output_dir)
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_convert(mock_args)
+                output = mock_stdout.getvalue()
+
+                # Should show conversion messages
+                self.assertIn('Converted:', output)
+                self.assertIn('Written to:', output)
+
+            # Check file was written
+            expected_path = output_dir / "2024-07-15-write-test-post.md"
+            self.assertTrue(expected_path.exists())
+
+            # Check file content
+            content = expected_path.read_text()
+            self.assertIn('title: Write Test Post', content)
+            self.assertIn('date: 2024-07-15', content)
+            self.assertIn('[wikilink](/post/wikilink/)', content)
+            self.assertIn('![image]({{<s3cdn>}}/image.png)', content)
+
+    def test_convert_with_custom_output_dir(self):
+        """convert command respects --output argument."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test.md"
+            note_path.write_text("""---
+title: Custom Output
+date: 2024-08-01
+publish: true
+---
+
+Content here.
+""")
+
+            custom_output = Path(tmpdir) / "custom" / "path"
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.output = str(custom_output)
+
+            with patch('sys.stdout', new_callable=StringIO):
+                cmd_convert(mock_args)
+
+            expected_path = custom_output / "2024-08-01-custom-output.md"
+            self.assertTrue(expected_path.exists())
+
+
+class TestCmdConvertIntegration(unittest.TestCase):
+    """Integration tests for cmd_convert with full pipeline."""
+
+    def test_full_conversion_pipeline(self):
+        """Full conversion correctly transforms all Obsidian syntax."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "full-test.md"
+            note_path.write_text("""---
+title: Complete Integration Test
+date: 2024-09-15
+tags:
+  - integration
+  - testing
+  - obsidian
+author: Test Author
+draft: false
+publish: true
+---
+
+# Introduction
+
+This post has various Obsidian syntax to convert.
+
+## Links and Media
+
+Here's a [[Wiki Link]] and an [[aliased|Different Text]] link.
+
+![[screenshot.png]]
+
+![[demo-video.mp4]]
+
+![[podcast-episode.mp3]]
+
+## More Content
+
+Regular markdown **works** fine.
+""")
+
+            output_dir = Path(tmpdir) / "hugo_output"
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.output = str(output_dir)
+
+            with patch('sys.stdout', new_callable=StringIO):
+                cmd_convert(mock_args)
+
+            # Read the generated file
+            expected_path = output_dir / "2024-09-15-complete-integration-test.md"
+            self.assertTrue(expected_path.exists())
+
+            content = expected_path.read_text()
+
+            # Check frontmatter
+            self.assertIn('title: Complete Integration Test', content)
+            self.assertIn('author: Test Author', content)
+            self.assertIn('draft: false', content)
+            self.assertIn('tags: [integration, testing, obsidian]', content)
+
+            # publish field should be removed
+            self.assertNotIn('publish:', content)
+
+            # Check wikilinks converted
+            self.assertIn('[Wiki Link](/post/wiki-link/)', content)
+            self.assertIn('[Different Text](/post/aliased/)', content)
+
+            # Check images converted
+            self.assertIn('![screenshot]({{<s3cdn>}}/screenshot.png)', content)
+
+            # Check video converted
+            self.assertIn('<video controls><source src="{{<s3cdn>}}/demo-video.mp4" type="video/mp4"></video>', content)
+
+            # Check audio converted
+            self.assertIn('<audio controls><source src="{{<s3cdn>}}/podcast-episode.mp3" type="audio/mpeg"></audio>', content)
+
+            # Regular markdown preserved
+            self.assertIn('**works**', content)
 
 
 if __name__ == '__main__':
