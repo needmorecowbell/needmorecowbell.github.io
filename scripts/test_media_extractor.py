@@ -13,13 +13,19 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from PIL import Image
+
 from media_extractor import (
     find_media_references,
     resolve_media_path,
+    generate_thumbnail,
+    get_thumbnail_path,
     IMAGE_EXTENSIONS,
     VIDEO_EXTENSIONS,
     AUDIO_EXTENSIONS,
     DEFAULT_MEDIA_BASE,
+    DEFAULT_THUMBNAIL_WIDTH,
+    THUMBNAIL_SUPPORTED_EXTENSIONS,
 )
 
 
@@ -314,6 +320,286 @@ class TestResolveMediaPath(unittest.TestCase):
         """Should validate by default (validate=True)."""
         result = resolve_media_path("nonexistent.jpg", media_base=self.media_base)
         self.assertIsNone(result)
+
+
+class TestGenerateThumbnail(unittest.TestCase):
+    """Tests for the generate_thumbnail function."""
+
+    def setUp(self):
+        """Create a temporary directory with test images."""
+        self.temp_dir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        """Clean up temporary directory."""
+        import shutil
+        shutil.rmtree(self.temp_dir)
+
+    def _create_test_image(self, filename: str, width: int = 800, height: int = 600, mode: str = 'RGB') -> str:
+        """Helper to create a test image with specified dimensions."""
+        path = Path(self.temp_dir) / filename
+        path.parent.mkdir(parents=True, exist_ok=True)
+        img = Image.new(mode, (width, height), color='blue')
+        img.save(path)
+        return str(path)
+
+    def test_generates_thumbnail_with_default_width(self):
+        """Should generate a 400px wide thumbnail by default."""
+        source = self._create_test_image('test.jpg', 800, 600)
+        result = generate_thumbnail(source)
+
+        self.assertIsNotNone(result)
+        self.assertTrue(Path(result).exists())
+
+        with Image.open(result) as thumb:
+            self.assertEqual(thumb.width, 400)
+            # Height should maintain aspect ratio: 400 * (600/800) = 300
+            self.assertEqual(thumb.height, 300)
+
+    def test_generates_thumbnail_with_custom_width(self):
+        """Should generate thumbnail with specified width."""
+        source = self._create_test_image('test.jpg', 1000, 500)
+        result = generate_thumbnail(source, width=200)
+
+        self.assertIsNotNone(result)
+        with Image.open(result) as thumb:
+            self.assertEqual(thumb.width, 200)
+            # Height should maintain aspect ratio: 200 * (500/1000) = 100
+            self.assertEqual(thumb.height, 100)
+
+    def test_maintains_aspect_ratio(self):
+        """Should maintain original aspect ratio in thumbnail."""
+        source = self._create_test_image('test.jpg', 1600, 900)  # 16:9 ratio
+        result = generate_thumbnail(source, width=400)
+
+        self.assertIsNotNone(result)
+        with Image.open(result) as thumb:
+            self.assertEqual(thumb.width, 400)
+            self.assertEqual(thumb.height, 225)  # 400 * (9/16) = 225
+
+    def test_default_output_path_has_thumb_suffix(self):
+        """Should add _thumb suffix when no output path specified."""
+        source = self._create_test_image('photo.jpg', 800, 600)
+        result = generate_thumbnail(source)
+
+        expected = str(Path(self.temp_dir) / 'photo_thumb.jpg')
+        self.assertEqual(result, expected)
+
+    def test_custom_output_path(self):
+        """Should use specified output path."""
+        source = self._create_test_image('source.jpg', 800, 600)
+        output = str(Path(self.temp_dir) / 'thumbnails' / 'custom.jpg')
+        result = generate_thumbnail(source, output_path=output)
+
+        self.assertEqual(result, output)
+        self.assertTrue(Path(output).exists())
+
+    def test_creates_output_directory_if_missing(self):
+        """Should create output directory structure if it doesn't exist."""
+        source = self._create_test_image('source.jpg', 800, 600)
+        output = str(Path(self.temp_dir) / 'nested' / 'dirs' / 'thumb.jpg')
+        result = generate_thumbnail(source, output_path=output)
+
+        self.assertEqual(result, output)
+        self.assertTrue(Path(output).exists())
+
+    def test_returns_none_for_nonexistent_file(self):
+        """Should return None when source file doesn't exist."""
+        result = generate_thumbnail('/nonexistent/path/image.jpg')
+        self.assertIsNone(result)
+
+    def test_returns_none_for_directory(self):
+        """Should return None when source is a directory."""
+        dir_path = Path(self.temp_dir) / 'subdir'
+        dir_path.mkdir()
+        result = generate_thumbnail(str(dir_path))
+        self.assertIsNone(result)
+
+    def test_returns_none_for_unsupported_format(self):
+        """Should return None for unsupported image formats like SVG."""
+        svg_path = Path(self.temp_dir) / 'image.svg'
+        svg_path.write_text('<svg></svg>')
+        result = generate_thumbnail(str(svg_path))
+        self.assertIsNone(result)
+
+    def test_returns_none_for_image_smaller_than_target(self):
+        """Should return None if image is already smaller than target width."""
+        source = self._create_test_image('small.jpg', 300, 200)
+        result = generate_thumbnail(source, width=400)
+        self.assertIsNone(result)
+
+    def test_returns_none_for_image_equal_to_target(self):
+        """Should return None if image width equals target width."""
+        source = self._create_test_image('exact.jpg', 400, 300)
+        result = generate_thumbnail(source, width=400)
+        self.assertIsNone(result)
+
+    def test_handles_png_format(self):
+        """Should correctly generate PNG thumbnails."""
+        source = self._create_test_image('test.png', 800, 600)
+        result = generate_thumbnail(source)
+
+        self.assertIsNotNone(result)
+        self.assertTrue(result.endswith('.png'))
+        with Image.open(result) as thumb:
+            self.assertEqual(thumb.width, 400)
+
+    def test_handles_webp_format(self):
+        """Should correctly generate WebP thumbnails."""
+        source = self._create_test_image('test.webp', 800, 600)
+        result = generate_thumbnail(source)
+
+        self.assertIsNotNone(result)
+        self.assertTrue(result.endswith('.webp'))
+        with Image.open(result) as thumb:
+            self.assertEqual(thumb.width, 400)
+
+    def test_handles_gif_format(self):
+        """Should correctly generate GIF thumbnails."""
+        source = self._create_test_image('test.gif', 800, 600)
+        result = generate_thumbnail(source)
+
+        self.assertIsNotNone(result)
+        self.assertTrue(result.endswith('.gif'))
+        with Image.open(result) as thumb:
+            self.assertEqual(thumb.width, 400)
+
+    def test_handles_rgba_to_jpeg_conversion(self):
+        """Should convert RGBA images to RGB when saving as JPEG."""
+        # Create an RGBA PNG first, then rename to JPG to test conversion logic
+        png_path = Path(self.temp_dir) / 'rgba_source.png'
+        img = Image.new('RGBA', (800, 600), color=(0, 0, 255, 128))
+        img.save(png_path)
+
+        # Now create a copy as JPG manually (not using Pillow which can't save RGBA as JPG)
+        # Instead, let's test with a palette image which triggers the same code path
+        palette_path = Path(self.temp_dir) / 'palette.jpg'
+        palette_img = Image.new('P', (800, 600))
+        palette_img = palette_img.convert('RGB')  # Convert to RGB for JPEG save
+        palette_img.save(palette_path)
+
+        # The real test: create an RGBA PNG, generate thumbnail to JPG output
+        output_jpg = str(Path(self.temp_dir) / 'output.jpg')
+        result = generate_thumbnail(str(png_path), output_path=output_jpg)
+
+        self.assertIsNotNone(result)
+        with Image.open(result) as thumb:
+            self.assertEqual(thumb.mode, 'RGB')
+
+    def test_preserves_transparency_in_png(self):
+        """Should preserve RGBA mode in PNG thumbnails."""
+        source = self._create_test_image('transparent.png', 800, 600, mode='RGBA')
+        result = generate_thumbnail(source)
+
+        self.assertIsNotNone(result)
+        with Image.open(result) as thumb:
+            self.assertEqual(thumb.mode, 'RGBA')
+
+    def test_quality_parameter(self):
+        """Should accept quality parameter for JPEG compression."""
+        source = self._create_test_image('test.jpg', 800, 600)
+        result_low = generate_thumbnail(source, quality=20,
+                                        output_path=str(Path(self.temp_dir) / 'low.jpg'))
+        result_high = generate_thumbnail(source, quality=95,
+                                         output_path=str(Path(self.temp_dir) / 'high.jpg'))
+
+        self.assertIsNotNone(result_low)
+        self.assertIsNotNone(result_high)
+        # Higher quality should generally produce larger file
+        low_size = Path(result_low).stat().st_size
+        high_size = Path(result_high).stat().st_size
+        self.assertLess(low_size, high_size)
+
+    def test_all_supported_extensions(self):
+        """Should support all extensions in THUMBNAIL_SUPPORTED_EXTENSIONS."""
+        for ext in THUMBNAIL_SUPPORTED_EXTENSIONS:
+            with self.subTest(ext=ext):
+                source = self._create_test_image(f'test.{ext}', 800, 600)
+                result = generate_thumbnail(source)
+                self.assertIsNotNone(result, f"Failed to generate thumbnail for .{ext}")
+
+    def test_logs_warning_for_missing_file(self):
+        """Should log warning when source file doesn't exist."""
+        with self.assertLogs('media_extractor', level='WARNING') as cm:
+            result = generate_thumbnail('/nonexistent/image.jpg')
+
+        self.assertIsNone(result)
+        self.assertTrue(any("does not exist" in msg for msg in cm.output))
+
+    def test_logs_warning_for_unsupported_format(self):
+        """Should log warning for unsupported image formats."""
+        svg_path = Path(self.temp_dir) / 'image.svg'
+        svg_path.write_text('<svg></svg>')
+
+        with self.assertLogs('media_extractor', level='WARNING') as cm:
+            result = generate_thumbnail(str(svg_path))
+
+        self.assertIsNone(result)
+        self.assertTrue(any("Unsupported" in msg for msg in cm.output))
+
+    def test_logs_info_when_skipping_small_image(self):
+        """Should log info when skipping image smaller than target."""
+        source = self._create_test_image('small.jpg', 300, 200)
+
+        with self.assertLogs('media_extractor', level='INFO') as cm:
+            result = generate_thumbnail(source)
+
+        self.assertIsNone(result)
+        self.assertTrue(any("already smaller" in msg for msg in cm.output))
+
+    def test_logs_info_on_success(self):
+        """Should log info message when thumbnail is generated successfully."""
+        source = self._create_test_image('test.jpg', 800, 600)
+
+        with self.assertLogs('media_extractor', level='INFO') as cm:
+            result = generate_thumbnail(source)
+
+        self.assertIsNotNone(result)
+        self.assertTrue(any("Generated thumbnail" in msg for msg in cm.output))
+
+    def test_default_thumbnail_width_is_400(self):
+        """Should have default thumbnail width of 400 pixels."""
+        self.assertEqual(DEFAULT_THUMBNAIL_WIDTH, 400)
+
+    def test_handles_corrupted_image_gracefully(self):
+        """Should return None and log error for corrupted images."""
+        corrupted_path = Path(self.temp_dir) / 'corrupted.jpg'
+        corrupted_path.write_bytes(b'not an image')
+
+        with self.assertLogs('media_extractor', level='ERROR') as cm:
+            result = generate_thumbnail(str(corrupted_path))
+
+        self.assertIsNone(result)
+        self.assertTrue(any("Failed to generate" in msg for msg in cm.output))
+
+
+class TestGetThumbnailPath(unittest.TestCase):
+    """Tests for the get_thumbnail_path utility function."""
+
+    def test_simple_filename(self):
+        """Should add _thumb suffix before extension."""
+        result = get_thumbnail_path('image.jpg')
+        self.assertEqual(result, 'image_thumb.jpg')
+
+    def test_path_with_directory(self):
+        """Should preserve directory structure."""
+        result = get_thumbnail_path('/path/to/image.jpg')
+        self.assertEqual(result, '/path/to/image_thumb.jpg')
+
+    def test_custom_suffix(self):
+        """Should use custom suffix when provided."""
+        result = get_thumbnail_path('image.jpg', thumbnail_suffix='_small')
+        self.assertEqual(result, 'image_small.jpg')
+
+    def test_preserves_extension(self):
+        """Should preserve the original file extension."""
+        self.assertEqual(get_thumbnail_path('photo.png'), 'photo_thumb.png')
+        self.assertEqual(get_thumbnail_path('pic.webp'), 'pic_thumb.webp')
+        self.assertEqual(get_thumbnail_path('img.gif'), 'img_thumb.gif')
+
+    def test_complex_filename(self):
+        """Should handle filenames with multiple dots."""
+        result = get_thumbnail_path('photo.backup.2024.jpg')
+        self.assertEqual(result, 'photo.backup.2024_thumb.jpg')
 
 
 if __name__ == '__main__':

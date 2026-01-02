@@ -73,9 +73,19 @@ This phase adds intelligent content routing so notes are published to the approp
   - Created 44 new tests in `test_gallery_generator.py` covering all Associations functions
   - Added 9 new tests in `test_publish_cli.py` covering convert_note() and cmd_convert() integration with Associations
 
-- [ ] Create thumbnail generation for gallery images using Pillow: add `generate_thumbnail()` function to `scripts/media_extractor.py` that creates a 400px-wide thumbnail version of each gallery image
+- [x] Create thumbnail generation for gallery images using Pillow: add `generate_thumbnail()` function to `scripts/media_extractor.py` that creates a 400px-wide thumbnail version of each gallery image
+  - Implemented `generate_thumbnail()` function with 400px default width and aspect ratio preservation
+  - Uses LANCZOS resampling for high-quality downsampling
+  - Handles RGBA to RGB conversion for JPEG output (using white background for transparency)
+  - Supports configurable quality parameter for lossy formats (JPEG, WebP)
+  - Added `get_thumbnail_path()` helper function for path generation
+  - Added `DEFAULT_THUMBNAIL_WIDTH` (400px) and `THUMBNAIL_SUPPORTED_EXTENSIONS` constants
+  - Returns None gracefully for: missing files, unsupported formats, images smaller than target width, or processing errors
+  - Created 29 new tests in `TestGenerateThumbnail` class covering all edge cases
+  - Created 5 tests in `TestGetThumbnailPath` class for the utility function
 
-- [ ] Add `Pillow` to `scripts/requirements.txt` for image processing
+- [x] Add `Pillow` to `scripts/requirements.txt` for image processing
+  - Added `Pillow>=10.0.0` with descriptive comment
 
 - [ ] Update MinIO uploader to upload both full-size images and thumbnails for gallery content, organizing them in `assets/` and `assets/thumbnails/` paths
 
