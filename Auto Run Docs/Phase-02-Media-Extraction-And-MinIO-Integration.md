@@ -68,7 +68,10 @@ This phase adds media handling to the publish pipeline. The CLI will extract all
   - Re-raises other S3 errors (permissions, network issues) for proper error handling
   - 5 unit tests added to `test_minio_uploader.py` (total project tests: 400)
 
-- [ ] Create `scripts/.env.example` file documenting the required environment variables for MinIO configuration
+- [x] Create `scripts/.env.example` file documenting the required environment variables for MinIO configuration
+  - Documents all 5 environment variables: `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET`, `MINIO_SECURE`
+  - Includes examples for self-hosted MinIO and S3-compatible endpoints
+  - Added `.env` entries to `.gitignore` to prevent accidental credential commits
 
 - [ ] Add `python-dotenv` to `scripts/requirements.txt` and update `publish.py` to load environment variables from `scripts/.env` if it exists
 
