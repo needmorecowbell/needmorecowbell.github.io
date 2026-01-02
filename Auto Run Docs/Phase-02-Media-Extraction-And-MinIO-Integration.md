@@ -108,6 +108,9 @@ This phase adds media handling to the publish pipeline. The CLI will extract all
   - Added `show_progress` parameter to `upload_media_to_minio()` to disable progress bars when needed
   - 4 new unit tests added to `test_minio_uploader.py` (total project tests: 426)
 
-- [ ] Handle common image formats (jpg, jpeg, png, gif, webp) and video formats (mp4, mov, webm) in the media extractor
+- [x] Handle common image formats (jpg, jpeg, png, gif, webp) and video formats (mp4, mov, webm) in the media extractor
+  - Already implemented in first task: IMAGE_EXTENSIONS and VIDEO_EXTENSIONS sets in `media_extractor.py` include all requested formats
+  - Tests `test_all_image_extensions()` and `test_all_video_extensions()` verify full format support
+  - All 32 media extractor tests pass
 
 - [ ] Update `scripts/README.md` with MinIO setup instructions and the new media-related commands
