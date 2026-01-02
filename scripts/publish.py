@@ -9,6 +9,7 @@ Usage:
     python publish.py scan          # Find all publishable notes
     python publish.py list          # Show where notes will be published
     python publish.py media PATH    # List media references in a note
+    python publish.py validate PATH # Validate a note before publishing
     python publish.py convert PATH  # Convert a specific note
 """
 
@@ -70,6 +71,15 @@ from publish_tracker import (
     record_published,
     get_unpublished_notes,
     load_publish_state,
+)
+from validators import (
+    validate_frontmatter,
+    validate_media_references,
+    validate_internal_links,
+    is_valid,
+    has_warnings,
+    format_issues,
+    ValidationSeverity,
 )
 
 # Default Hugo content output directory (relative to blog root)
@@ -590,6 +600,110 @@ def cmd_media(args):
     print()
     total = len(media_items) + missing_count
     print(f"Summary: {total} reference(s), {len(media_items)} resolved, {missing_count} missing")
+
+
+def cmd_validate(args):
+    """
+    Validate an Obsidian note before publishing.
+
+    Runs all validators on a note and displays a formatted report:
+    - Frontmatter validation (required fields, types)
+    - Media reference validation (embedded files exist)
+    - Internal link validation (wikilinks resolve to existing notes)
+
+    Exit codes:
+    - 0: All validations passed (no errors or warnings)
+    - 1: Validation errors found (note cannot be published as-is)
+    - 2: Validation warnings found (note can be published but has issues)
+    """
+    note_path = Path(args.path)
+
+    if not note_path.exists():
+        print(f"Error: Note not found: {note_path}", file=sys.stderr)
+        sys.exit(1)
+
+    # Parse the note to get frontmatter and body
+    try:
+        from obsidian_parser import parse_obsidian_note
+        frontmatter, body = parse_obsidian_note(note_path)
+    except Exception as e:
+        print(f"Error parsing note: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    # Get optional paths from args
+    vault_path = Path(args.vault) if hasattr(args, 'vault') and args.vault else None
+    hugo_root = Path(args.hugo_root) if hasattr(args, 'hugo_root') and args.hugo_root else DEFAULT_HUGO_ROOT
+
+    # Print header
+    print()
+    print("=" * 60)
+    print(f"VALIDATION REPORT")
+    print("=" * 60)
+    print(f"Note: {note_path}")
+    print(f"Title: {frontmatter.get('title', 'Untitled')}")
+    print()
+
+    # Collect all issues
+    all_issues = []
+
+    # Run frontmatter validation
+    print("Validating frontmatter...")
+    fm_issues = validate_frontmatter(frontmatter)
+    all_issues.extend(fm_issues)
+    if fm_issues:
+        error_count = sum(1 for i in fm_issues if i.severity == ValidationSeverity.ERROR)
+        warn_count = sum(1 for i in fm_issues if i.severity == ValidationSeverity.WARNING)
+        print(f"  Found {error_count} error(s), {warn_count} warning(s)")
+    else:
+        print("  OK")
+
+    # Run media reference validation
+    print("Validating media references...")
+    media_issues = validate_media_references(body)
+    all_issues.extend(media_issues)
+    if media_issues:
+        print(f"  Found {len(media_issues)} missing media file(s)")
+    else:
+        print("  OK")
+
+    # Run internal link validation
+    print("Validating internal links...")
+    link_issues = validate_internal_links(body, vault_path=vault_path, hugo_root=hugo_root)
+    all_issues.extend(link_issues)
+    if link_issues:
+        print(f"  Found {len(link_issues)} broken link(s)")
+    else:
+        print("  OK")
+
+    # Print detailed report if there are issues
+    print()
+    if all_issues:
+        print("-" * 60)
+        print("ISSUES FOUND")
+        print("-" * 60)
+        print(format_issues(all_issues))
+        print()
+
+    # Print summary and set exit code
+    print("=" * 60)
+    error_count = sum(1 for i in all_issues if i.severity == ValidationSeverity.ERROR)
+    warn_count = sum(1 for i in all_issues if i.severity == ValidationSeverity.WARNING)
+
+    if error_count > 0:
+        print(f"VALIDATION FAILED: {error_count} error(s), {warn_count} warning(s)")
+        print("=" * 60)
+        print()
+        sys.exit(1)
+    elif warn_count > 0:
+        print(f"VALIDATION PASSED WITH WARNINGS: {warn_count} warning(s)")
+        print("=" * 60)
+        print()
+        sys.exit(2)
+    else:
+        print("VALIDATION PASSED: No issues found")
+        print("=" * 60)
+        print()
+        sys.exit(0)
 
 
 def cmd_convert(args):
@@ -1306,6 +1420,25 @@ Examples:
         help="Path to the Obsidian note to analyze"
     )
     media_parser.set_defaults(func=cmd_media)
+
+    # validate subcommand
+    validate_parser = subparsers.add_parser(
+        "validate",
+        help="Validate a note before publishing (check frontmatter, media, links)"
+    )
+    validate_parser.add_argument(
+        "path",
+        help="Path to the Obsidian note to validate"
+    )
+    validate_parser.add_argument(
+        "--vault",
+        help="Path to the Obsidian vault for link validation (default: ~/Notes)"
+    )
+    validate_parser.add_argument(
+        "--hugo-root",
+        help=f"Path to Hugo site root for link validation (default: {DEFAULT_HUGO_ROOT})"
+    )
+    validate_parser.set_defaults(func=cmd_validate)
 
     # convert subcommand
     convert_parser = subparsers.add_parser(

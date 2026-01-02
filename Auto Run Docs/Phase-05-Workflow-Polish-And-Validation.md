@@ -24,7 +24,12 @@ This phase adds validation, error handling, and quality-of-life improvements to 
   - Returns ERROR-level `ValidationIssue` for each broken link with descriptive message
   - Added 43 tests covering: wikilink extraction, vault search, Hugo search, link validation, edge cases (empty content, non-existent paths, aliased links, media exclusion)
 
-- [ ] Create a `validate` subcommand in `publish.py` that runs all validators on a note and displays a formatted report of any issues
+- [x] Create a `validate` subcommand in `publish.py` that runs all validators on a note and displays a formatted report of any issues
+  - Added `cmd_validate()` function that parses a note and runs all three validators (frontmatter, media, internal links)
+  - Displays formatted validation report with note path, title, and results from each validator
+  - Exit codes: 0 (all passed), 1 (errors found), 2 (warnings only)
+  - Added CLI arguments: `--vault` and `--hugo-root` for customizing validation paths
+  - Added 8 comprehensive tests covering all exit codes, error conditions, and output formatting
 
 - [ ] Add `--strict` flag to the `publish` subcommand that fails if any validation warnings are present (default is to only fail on errors)
 

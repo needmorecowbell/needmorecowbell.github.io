@@ -27,6 +27,7 @@ from publish import (
     cmd_list,
     cmd_media,
     cmd_convert,
+    cmd_validate,
     cmd_publish,
     cmd_publish_dispatch,
     cmd_publish_all,
@@ -676,6 +677,216 @@ publish: true
 
                     self.assertIn("2021/06/vacation/beach.jpg", output)
                     self.assertIn("/home/user/Media/2021/06/vacation/beach.jpg", output)
+
+
+class TestCmdValidate(unittest.TestCase):
+    """Tests for cmd_validate function."""
+
+    def test_validate_file_not_found(self):
+        """validate command exits with error for missing file."""
+        mock_args = MagicMock()
+        mock_args.path = '/nonexistent/note.md'
+        mock_args.vault = None
+        mock_args.hugo_root = None
+
+        with patch('sys.stderr', new_callable=StringIO) as mock_stderr:
+            with self.assertRaises(SystemExit) as context:
+                cmd_validate(mock_args)
+            self.assertEqual(context.exception.code, 1)
+            self.assertIn("Note not found", mock_stderr.getvalue())
+
+    def test_validate_valid_note_exits_zero(self):
+        """validate command exits with 0 for valid note."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "valid-note.md"
+            note_path.write_text("""---
+title: Valid Note
+date: 2024-01-15
+tags:
+  - python
+publish: true
+---
+
+Just plain text content, no media or links.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.vault = tmpdir
+            mock_args.hugo_root = tmpdir
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                with self.assertRaises(SystemExit) as context:
+                    cmd_validate(mock_args)
+                self.assertEqual(context.exception.code, 0)
+                output = mock_stdout.getvalue()
+                self.assertIn("VALIDATION REPORT", output)
+                self.assertIn("VALIDATION PASSED: No issues found", output)
+
+    def test_validate_missing_required_fields_exits_one(self):
+        """validate command exits with 1 for note missing required fields."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "invalid-note.md"
+            note_path.write_text("""---
+publish: true
+---
+
+Missing title, date, and tags.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.vault = tmpdir
+            mock_args.hugo_root = tmpdir
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                with self.assertRaises(SystemExit) as context:
+                    cmd_validate(mock_args)
+                self.assertEqual(context.exception.code, 1)
+                output = mock_stdout.getvalue()
+                self.assertIn("VALIDATION FAILED", output)
+                self.assertIn("3 error(s)", output)
+
+    def test_validate_warnings_only_exits_two(self):
+        """validate command exits with 2 for warnings only (no errors)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "warning-note.md"
+            note_path.write_text("""---
+title: ""
+date: 2024-01-15
+tags:
+  - python
+publish: true
+---
+
+Note with empty title (warning, not error).
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.vault = tmpdir
+            mock_args.hugo_root = tmpdir
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                with self.assertRaises(SystemExit) as context:
+                    cmd_validate(mock_args)
+                self.assertEqual(context.exception.code, 2)
+                output = mock_stdout.getvalue()
+                self.assertIn("VALIDATION PASSED WITH WARNINGS", output)
+
+    def test_validate_shows_missing_media(self):
+        """validate command reports missing media files."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "media-note.md"
+            note_path.write_text("""---
+title: Media Note
+date: 2024-01-15
+tags:
+  - test
+publish: true
+---
+
+Here's an image: ![[nonexistent.jpg]]
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.vault = tmpdir
+            mock_args.hugo_root = tmpdir
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                with self.assertRaises(SystemExit) as context:
+                    cmd_validate(mock_args)
+                self.assertEqual(context.exception.code, 1)
+                output = mock_stdout.getvalue()
+                self.assertIn("Found 1 missing media file(s)", output)
+                self.assertIn("nonexistent.jpg", output)
+
+    def test_validate_shows_broken_links(self):
+        """validate command reports broken internal links."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "link-note.md"
+            note_path.write_text("""---
+title: Link Note
+date: 2024-01-15
+tags:
+  - test
+publish: true
+---
+
+See also: [[Nonexistent Page]]
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.vault = tmpdir
+            mock_args.hugo_root = tmpdir
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                with self.assertRaises(SystemExit) as context:
+                    cmd_validate(mock_args)
+                self.assertEqual(context.exception.code, 1)
+                output = mock_stdout.getvalue()
+                self.assertIn("Found 1 broken link(s)", output)
+                self.assertIn("Nonexistent Page", output)
+
+    def test_validate_all_checks_run(self):
+        """validate command runs all three validators."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "full-note.md"
+            note_path.write_text("""---
+title: Full Note
+date: 2024-01-15
+tags:
+  - test
+publish: true
+---
+
+This note is valid with no media or links.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.vault = tmpdir
+            mock_args.hugo_root = tmpdir
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                with self.assertRaises(SystemExit) as context:
+                    cmd_validate(mock_args)
+                self.assertEqual(context.exception.code, 0)
+                output = mock_stdout.getvalue()
+                # All three validators should have run
+                self.assertIn("Validating frontmatter...", output)
+                self.assertIn("Validating media references...", output)
+                self.assertIn("Validating internal links...", output)
+
+    def test_validate_displays_note_info(self):
+        """validate command shows note path and title in header."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "info-note.md"
+            note_path.write_text("""---
+title: My Awesome Post
+date: 2024-01-15
+tags:
+  - test
+publish: true
+---
+
+Content here.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.vault = tmpdir
+            mock_args.hugo_root = tmpdir
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                with self.assertRaises(SystemExit) as context:
+                    cmd_validate(mock_args)
+                output = mock_stdout.getvalue()
+                self.assertIn("Note:", output)
+                self.assertIn("info-note.md", output)
+                self.assertIn("Title: My Awesome Post", output)
 
 
 class TestConvertNote(unittest.TestCase):
