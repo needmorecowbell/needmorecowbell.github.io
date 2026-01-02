@@ -15,6 +15,37 @@ import argparse
 import sys
 from pathlib import Path
 
+# Load environment variables from .env file if it exists
+# This must happen before any modules that read env vars are imported
+def load_dotenv():
+    """
+    Load environment variables from scripts/.env if it exists.
+
+    Uses python-dotenv to load variables from the .env file located
+    in the same directory as this script. This enables local development
+    without setting system environment variables.
+
+    Returns:
+        bool: True if .env file was loaded, False otherwise
+    """
+    try:
+        from dotenv import load_dotenv as dotenv_load
+    except ImportError:
+        # python-dotenv not installed, skip loading
+        return False
+
+    # Find the .env file relative to this script
+    script_dir = Path(__file__).parent.resolve()
+    env_path = script_dir / '.env'
+
+    if env_path.exists():
+        dotenv_load(env_path)
+        return True
+    return False
+
+# Load .env at module import time
+_dotenv_loaded = load_dotenv()
+
 from obsidian_parser import find_publishable_notes, parse_obsidian_note
 from frontmatter_transformer import generate_slug, transform_to_hugo
 from syntax_converter import convert_wikilinks, convert_embedded_images, convert_embedded_media

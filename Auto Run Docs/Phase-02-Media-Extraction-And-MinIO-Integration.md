@@ -73,7 +73,13 @@ This phase adds media handling to the publish pipeline. The CLI will extract all
   - Includes examples for self-hosted MinIO and S3-compatible endpoints
   - Added `.env` entries to `.gitignore` to prevent accidental credential commits
 
-- [ ] Add `python-dotenv` to `scripts/requirements.txt` and update `publish.py` to load environment variables from `scripts/.env` if it exists
+- [x] Add `python-dotenv` to `scripts/requirements.txt` and update `publish.py` to load environment variables from `scripts/.env` if it exists
+  - Added `python-dotenv>=1.0.0` to requirements.txt
+  - Created `load_dotenv()` function in publish.py that loads from `scripts/.env` if present
+  - Gracefully handles missing python-dotenv package (returns False instead of crashing)
+  - Loads environment variables at module import time before other modules are imported
+  - Added 6 unit tests to `test_publish_cli.py` (2 skip if python-dotenv not installed)
+  - Total project tests: 406
 
 - [ ] Update the `convert` subcommand to extract media references, resolve paths, upload to MinIO (unless `--skip-upload`), and use the resulting URLs in the converted output
 

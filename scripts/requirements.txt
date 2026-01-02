@@ -9,3 +9,6 @@ rich>=13.0
 
 # MinIO object storage client for media uploads
 minio>=7.2.0
+
+# Load environment variables from .env files
+python-dotenv>=1.0.0
