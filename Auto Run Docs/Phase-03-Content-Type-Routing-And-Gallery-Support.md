@@ -44,7 +44,12 @@ This phase adds intelligent content routing so notes are published to the approp
   - Updated `cmd_convert()` to display gallery info in both dry-run and actual conversion modes
   - Added 9 new tests in `test_publish_cli.py` covering gallery generation scenarios
 
-- [ ] Add `--no-gallery` flag to the `convert` subcommand to skip gallery generation even if a Pictures section exists
+- [x] Add `--no-gallery` flag to the `convert` subcommand to skip gallery generation even if a Pictures section exists
+  - Added `--no-gallery` argument to the convert subparser in `publish.py`
+  - Modified `cmd_convert()` to pass `generate_gallery` parameter (inverted from `--no-gallery`) to `convert_note()`
+  - Updated display logic for both dry-run and actual conversion modes to show "SKIPPED" when gallery is disabled
+  - Added 5 new tests in `TestCmdConvertNoGalleryFlag` covering flag behavior, dry-run mode, actual conversion, preservation of Pictures section, and no-effect scenarios
+  - Fixed 3 existing tests that needed explicit `no_gallery=False` to work with MagicMock objects
 
 - [ ] Update `frontmatter_transformer.py` to handle project-specific frontmatter fields like `description` and ensure proper date formatting for each content type
 

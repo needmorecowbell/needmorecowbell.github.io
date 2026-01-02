@@ -554,6 +554,9 @@ def cmd_convert(args):
     # Get skip_upload flag
     skip_upload = getattr(args, 'skip_upload', False)
 
+    # Get no_gallery flag (inverted to generate_gallery)
+    generate_gallery = not getattr(args, 'no_gallery', False)
+
     # Step 1: Extract and resolve media references
     media_items, missing_count = extract_and_resolve_media(note_path)
 
@@ -577,7 +580,8 @@ def cmd_convert(args):
     # Step 3: Convert the note (with media URLs if available)
     try:
         hugo_frontmatter, converted_body, target_path = convert_note(
-            note_path, output_dir, media_url_map=media_url_map
+            note_path, output_dir, media_url_map=media_url_map,
+            generate_gallery=generate_gallery
         )
     except Exception as e:
         print(f"Error converting note: {e}", file=sys.stderr)
@@ -598,7 +602,10 @@ def cmd_convert(args):
         if skip_upload:
             print(f"[DRY RUN] Media upload: SKIPPED")
         if has_gallery:
-            print(f"[DRY RUN] Gallery: YES ({gallery_media_count} images)")
+            if generate_gallery:
+                print(f"[DRY RUN] Gallery: YES ({gallery_media_count} images)")
+            else:
+                print(f"[DRY RUN] Gallery: SKIPPED ({gallery_media_count} images in Pictures section)")
         print()
         print("--- Preview of converted content ---")
         print()
@@ -610,7 +617,10 @@ def cmd_convert(args):
         print(f"Converted: {note_path}")
         print(f"Written to: {written_path}")
         if has_gallery:
-            print(f"Gallery generated: {gallery_media_count} images")
+            if generate_gallery:
+                print(f"Gallery generated: {gallery_media_count} images")
+            else:
+                print(f"Gallery skipped: {gallery_media_count} images in Pictures section")
 
 
 def main():
@@ -701,6 +711,11 @@ Examples:
         "--skip-upload",
         action="store_true",
         help="Skip media upload to MinIO (useful for testing media extraction)"
+    )
+    convert_parser.add_argument(
+        "--no-gallery",
+        action="store_true",
+        help="Skip gallery generation even if a Pictures section exists"
     )
     convert_parser.set_defaults(func=cmd_convert)
 

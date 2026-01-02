@@ -1224,6 +1224,7 @@ Content here.
             mock_args.dry_run = True
             mock_args.output = None
             mock_args.skip_upload = True
+            mock_args.no_gallery = False
 
             with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
                 cmd_convert(mock_args)
@@ -1259,6 +1260,7 @@ My project description.
             mock_args.dry_run = False
             mock_args.output = str(output_dir)
             mock_args.skip_upload = True
+            mock_args.no_gallery = False
 
             with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
                 cmd_convert(mock_args)
@@ -1302,12 +1304,195 @@ Just regular content.
             mock_args.dry_run = True
             mock_args.output = str(output_dir)
             mock_args.skip_upload = True
+            mock_args.no_gallery = False
 
             with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
                 cmd_convert(mock_args)
                 output = mock_stdout.getvalue()
 
                 # Should NOT show gallery info
+                self.assertNotIn('Gallery:', output)
+
+
+class TestCmdConvertNoGalleryFlag(unittest.TestCase):
+    """Tests for the --no-gallery flag in cmd_convert."""
+
+    def test_no_gallery_flag_accessible(self):
+        """no_gallery flag is accessible from args."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test.md"
+            note_path.write_text("""---
+title: No Gallery Flag Test
+date: 2024-06-01
+publish: true
+---
+
+Content with a Pictures section.
+
+## Pictures
+
+![[image1.jpg]]
+![[image2.jpg]]
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.output = None
+            mock_args.skip_upload = True
+            mock_args.no_gallery = True
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_convert(mock_args)
+                output = mock_stdout.getvalue()
+
+                # Should show gallery skipped message in dry run
+                self.assertIn('[DRY RUN] Gallery: SKIPPED (2 images in Pictures section)', output)
+
+    def test_no_gallery_false_by_default(self):
+        """no_gallery defaults to False when not specified."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test.md"
+            note_path.write_text("""---
+title: Default Gallery Test
+date: 2024-06-01
+publish: true
+---
+
+Content here.
+
+## Pictures
+
+![[photo.jpg]]
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.output = None
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_convert(mock_args)
+                output = mock_stdout.getvalue()
+
+                # Should show gallery YES message (not skipped)
+                self.assertIn('[DRY RUN] Gallery: YES (1 images)', output)
+                # Should NOT show gallery skipped message
+                self.assertNotIn('Gallery: SKIPPED', output)
+
+    def test_no_gallery_with_actual_conversion(self):
+        """--no-gallery works with actual file conversion (not just dry-run)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test.md"
+            note_path.write_text("""---
+title: Full Convert No Gallery Test
+date: 2024-06-01
+publish: true
+---
+
+Content with Pictures.
+
+## Pictures
+
+![[media.jpg]]
+![[media2.png]]
+""")
+
+            output_dir = Path(tmpdir) / "output"
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.output = str(output_dir)
+            mock_args.skip_upload = True
+            mock_args.no_gallery = True
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_convert(mock_args)
+                output = mock_stdout.getvalue()
+
+                # Should show gallery skipped message
+                self.assertIn('Gallery skipped: 2 images in Pictures section', output)
+
+            # File should exist
+            expected_path = output_dir / "2024-06-01-full-convert-no-gallery-test.md"
+            self.assertTrue(expected_path.exists())
+
+            # File should NOT contain nanogallery2 HTML
+            content = expected_path.read_text()
+            self.assertNotIn('data-nanogallery2', content)
+            self.assertNotIn('<div ID="gallery"', content)
+
+            # Pictures section should still be in the content (not removed when gallery skipped)
+            self.assertIn('## Pictures', content)
+
+    def test_no_gallery_preserves_pictures_section(self):
+        """--no-gallery leaves Pictures section in content instead of removing it."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "preserve-pictures.md"
+            note_path.write_text("""---
+title: Preserve Pictures Test
+date: 2024-07-01
+publish: true
+---
+
+Introduction paragraph.
+
+## Pictures
+
+![[pic1.jpg]]
+![[pic2.png]]
+""")
+
+            output_dir = Path(tmpdir) / "output"
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.output = str(output_dir)
+            mock_args.skip_upload = True
+            mock_args.no_gallery = True
+
+            with patch('sys.stdout', new_callable=StringIO):
+                cmd_convert(mock_args)
+
+            expected_path = output_dir / "2024-07-01-preserve-pictures-test.md"
+            content = expected_path.read_text()
+
+            # Pictures section header should be preserved
+            self.assertIn('## Pictures', content)
+            # Embedded images will be converted to markdown img syntax
+            # but the section structure remains
+
+    def test_no_gallery_no_effect_without_pictures_section(self):
+        """--no-gallery has no effect when there's no Pictures section."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "no-pictures.md"
+            note_path.write_text("""---
+title: No Pictures Section
+date: 2024-08-01
+publish: true
+---
+
+Just regular content, no Pictures section.
+
+![[inline_image.png]]
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.output = None
+            mock_args.skip_upload = True
+            mock_args.no_gallery = True
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_convert(mock_args)
+                output = mock_stdout.getvalue()
+
+                # Should not mention gallery at all (no Pictures section)
                 self.assertNotIn('Gallery:', output)
 
 
