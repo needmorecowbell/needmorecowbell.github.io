@@ -61,7 +61,17 @@ This phase adds intelligent content routing so notes are published to the approp
   - Project and photography content types normalize to simple `YYYY-MM-DD` format
   - Added 27 new tests covering content-type-specific fields, date formatting, and integration scenarios
 
-- [ ] Add support for the `## Associations` section in Obsidian notes by converting the wikilinks to internal Hugo links or removing them based on a `--keep-associations` flag
+- [x] Add support for the `## Associations` section in Obsidian notes by converting the wikilinks to internal Hugo links or removing them based on a `--keep-associations` flag
+  - Added `ASSOCIATIONS_SECTION_PATTERN` and `WIKILINK_PATTERN` regex patterns to `gallery_generator.py`
+  - Implemented `has_associations_section()`, `extract_associations_section()`, `get_associations_section_location()`, and `remove_associations_section()` functions mirroring the Pictures section pattern
+  - Added `extract_wikilinks_from_associations()` and `find_wikilinks_in_section()` to parse wikilinks with support for aliased links ([[Page|Text]])
+  - Implemented `convert_associations_to_hugo_links()` that converts wikilinks to Hugo internal links and renames the section header to "## Related"
+  - Added `_slugify_for_hugo()` helper function for URL-friendly slug generation
+  - Updated `convert_note()` in `publish.py` to handle Associations section: removes by default, or converts with `keep_associations=True`
+  - Added `--keep-associations` argument to the convert subparser in `publish.py`
+  - Updated `cmd_convert()` to display Associations handling info in both dry-run and actual conversion modes
+  - Created 44 new tests in `test_gallery_generator.py` covering all Associations functions
+  - Added 9 new tests in `test_publish_cli.py` covering convert_note() and cmd_convert() integration with Associations
 
 - [ ] Create thumbnail generation for gallery images using Pillow: add `generate_thumbnail()` function to `scripts/media_extractor.py` that creates a 400px-wide thumbnail version of each gallery image
 

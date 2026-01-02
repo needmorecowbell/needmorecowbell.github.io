@@ -2047,5 +2047,350 @@ class TestUploadMediaToMinio(unittest.TestCase):
                                 self.assertEqual(len(result), 2)
 
 
+class TestConvertNoteAssociationsHandling(unittest.TestCase):
+    """Tests for convert_note with Associations section handling."""
+
+    def test_removes_associations_by_default(self):
+        """convert_note removes Associations section by default."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "post-with-associations.md"
+            note_path.write_text("""---
+title: Post with Associations
+date: 2024-01-15
+tags:
+  - testing
+publish: true
+---
+
+This is my blog post content.
+
+## Associations
+
+[[Related Post]]
+[[Another Post|See this]]
+[[Third Post]]
+
+## Footer
+
+Some footer text.
+""")
+
+            hugo_fm, body, target = convert_note(note_path)
+
+            # Associations section should be removed
+            self.assertNotIn('## Associations', body)
+            self.assertNotIn('[[Related Post]]', body)
+            self.assertNotIn('[[Another Post|See this]]', body)
+
+            # Other content should be preserved
+            self.assertIn('This is my blog post content.', body)
+            self.assertIn('## Footer', body)
+            self.assertIn('Some footer text.', body)
+
+    def test_converts_associations_with_keep_flag(self):
+        """convert_note converts Associations when keep_associations=True."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "post-keep-associations.md"
+            note_path.write_text("""---
+title: Post Keep Associations
+date: 2024-02-20
+tags:
+  - testing
+publish: true
+---
+
+Content here.
+
+## Associations
+
+[[Related Post]]
+[[Another Post|See this]]
+""")
+
+            hugo_fm, body, target = convert_note(note_path, keep_associations=True)
+
+            # Section should be renamed to Related
+            self.assertIn('## Related', body)
+            self.assertNotIn('## Associations', body)
+
+            # Wikilinks should be converted to Hugo links
+            self.assertIn('[Related Post](/post/related-post/)', body)
+            self.assertIn('[See this](/post/another-post/)', body)
+            self.assertNotIn('[[Related Post]]', body)
+            self.assertNotIn('[[Another Post|See this]]', body)
+
+    def test_no_effect_without_associations_section(self):
+        """convert_note works fine when there's no Associations section."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "post-no-associations.md"
+            note_path.write_text("""---
+title: Post Without Associations
+date: 2024-03-10
+publish: true
+---
+
+Just regular content here.
+
+## Related
+
+Some manually added related content.
+""")
+
+            hugo_fm, body, target = convert_note(note_path, keep_associations=True)
+
+            # Content should be preserved as-is
+            self.assertIn('Just regular content here.', body)
+            self.assertIn('## Related', body)
+            self.assertIn('Some manually added related content.', body)
+
+    def test_handles_both_pictures_and_associations(self):
+        """convert_note correctly handles notes with both Pictures and Associations."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "project-with-both.md"
+            note_path.write_text("""---
+title: Project With Both Sections
+date: 2024-04-05
+tags:
+  - project
+  - woodworking
+publish: true
+---
+
+My awesome project.
+
+## Pictures
+
+![[photo1.jpg]]
+![[photo2.png]]
+
+## Associations
+
+[[Related Project]]
+[[Woodworking Basics|Basics Guide]]
+
+## Notes
+
+Final notes.
+""")
+
+            # Test with gallery and associations removed (default)
+            hugo_fm, body, target = convert_note(note_path)
+            self.assertIn('data-nanogallery2', body)  # Gallery generated
+            self.assertNotIn('## Pictures', body)
+            self.assertNotIn('## Associations', body)
+            self.assertIn('## Notes', body)
+
+            # Test with gallery generated and associations kept
+            hugo_fm2, body2, target2 = convert_note(note_path, keep_associations=True)
+            self.assertIn('data-nanogallery2', body2)
+            self.assertNotIn('## Pictures', body2)
+            self.assertIn('## Related', body2)
+            self.assertIn('[Related Project](/post/related-project/)', body2)
+            self.assertIn('## Notes', body2)
+
+
+class TestCmdConvertKeepAssociationsFlag(unittest.TestCase):
+    """Tests for the --keep-associations flag in cmd_convert."""
+
+    def test_keep_associations_flag_accessible(self):
+        """keep_associations flag is accessible from args."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test.md"
+            note_path.write_text("""---
+title: Keep Associations Test
+date: 2024-06-01
+publish: true
+---
+
+Content here.
+
+## Associations
+
+[[Link 1]]
+[[Link 2|Display]]
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.output = None
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = True
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_convert(mock_args)
+                output = mock_stdout.getvalue()
+
+                # Should show associations converted message
+                self.assertIn('[DRY RUN] Associations: CONVERTED (2 links -> Related section)', output)
+
+    def test_keep_associations_false_by_default(self):
+        """keep_associations defaults to False (associations are removed)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test.md"
+            note_path.write_text("""---
+title: Default Associations Test
+date: 2024-06-01
+publish: true
+---
+
+Content here.
+
+## Associations
+
+[[Link]]
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.output = None
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_convert(mock_args)
+                output = mock_stdout.getvalue()
+
+                # Should show associations removed message
+                self.assertIn('[DRY RUN] Associations: REMOVED (1 links)', output)
+                # Should NOT show converted message
+                self.assertNotIn('CONVERTED', output)
+
+    def test_keep_associations_with_actual_conversion(self):
+        """--keep-associations works with actual file conversion."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test.md"
+            note_path.write_text("""---
+title: Full Convert Keep Associations
+date: 2024-06-01
+publish: true
+---
+
+Content with associations.
+
+## Associations
+
+[[Related Page]]
+[[Another|See Also]]
+""")
+
+            output_dir = Path(tmpdir) / "output"
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.output = str(output_dir)
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = True
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_convert(mock_args)
+                output = mock_stdout.getvalue()
+
+                # Should show associations converted message
+                self.assertIn('Associations converted: 2 links -> Related section', output)
+
+            # Check file was written
+            expected_path = output_dir / "2024-06-01-full-convert-keep-associations.md"
+            self.assertTrue(expected_path.exists())
+
+            content = expected_path.read_text()
+
+            # Should contain converted links
+            self.assertIn('## Related', content)
+            self.assertIn('[Related Page](/post/related-page/)', content)
+            self.assertIn('[See Also](/post/another/)', content)
+
+            # Should NOT contain wikilinks
+            self.assertNotIn('[[Related Page]]', content)
+            self.assertNotIn('## Associations', content)
+
+    def test_associations_removed_with_actual_conversion(self):
+        """Associations are removed by default in actual file conversion."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test.md"
+            note_path.write_text("""---
+title: Full Convert Remove Associations
+date: 2024-07-01
+publish: true
+---
+
+Main content here.
+
+## Associations
+
+[[Link 1]]
+[[Link 2]]
+
+## Footer
+
+Footer content.
+""")
+
+            output_dir = Path(tmpdir) / "output"
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.output = str(output_dir)
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_convert(mock_args)
+                output = mock_stdout.getvalue()
+
+                # Should show associations removed message
+                self.assertIn('Associations removed: 2 links', output)
+
+            # Check file was written
+            expected_path = output_dir / "2024-07-01-full-convert-remove-associations.md"
+            self.assertTrue(expected_path.exists())
+
+            content = expected_path.read_text()
+
+            # Should NOT contain Associations section or wikilinks
+            self.assertNotIn('## Associations', content)
+            self.assertNotIn('[[Link 1]]', content)
+            self.assertNotIn('[[Link 2]]', content)
+
+            # Footer should still be there
+            self.assertIn('## Footer', content)
+            self.assertIn('Footer content.', content)
+
+    def test_no_effect_without_associations_section(self):
+        """--keep-associations has no effect when there's no Associations section."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "no-assoc.md"
+            note_path.write_text("""---
+title: No Associations Section
+date: 2024-08-01
+publish: true
+---
+
+Just regular content, no Associations section.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.output = None
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = True
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_convert(mock_args)
+                output = mock_stdout.getvalue()
+
+                # Should not mention Associations at all
+                self.assertNotIn('Associations:', output)
+
+
 if __name__ == '__main__':
     unittest.main()

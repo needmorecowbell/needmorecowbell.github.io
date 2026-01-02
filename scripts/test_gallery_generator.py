@@ -1121,5 +1121,519 @@ I built this bookshelf using reclaimed wood.
         self.assertIn('data-ngdesc="Final result"', result)
 
 
+# =============================================================================
+# Associations Section Tests
+# =============================================================================
+
+
+class TestHasAssociationsSection(unittest.TestCase):
+    """Tests for the has_associations_section function."""
+
+    def test_has_associations_section(self):
+        """Test detecting an Associations section."""
+        from gallery_generator import has_associations_section
+        content = """# My Post
+
+## Associations
+
+[[Related Post]]
+[[Another Post|See this]]
+"""
+        self.assertTrue(has_associations_section(content))
+
+    def test_no_associations_section(self):
+        """Test when there's no Associations section."""
+        from gallery_generator import has_associations_section
+        content = """# My Post
+
+## Description
+
+Some text here.
+"""
+        self.assertFalse(has_associations_section(content))
+
+    def test_singular_association(self):
+        """Test that 'Association' (singular) is recognized."""
+        from gallery_generator import has_associations_section
+        content = """## Association
+
+[[Related]]
+"""
+        self.assertTrue(has_associations_section(content))
+
+    def test_case_insensitive(self):
+        """Test case insensitivity."""
+        from gallery_generator import has_associations_section
+        self.assertTrue(has_associations_section("## ASSOCIATIONS\n[[Link]]"))
+        self.assertTrue(has_associations_section("## associations\n[[Link]]"))
+        self.assertTrue(has_associations_section("## Associations\n[[Link]]"))
+
+    def test_empty_content(self):
+        """Test with empty content."""
+        from gallery_generator import has_associations_section
+        self.assertFalse(has_associations_section(''))
+        self.assertFalse(has_associations_section(None))
+
+
+class TestExtractAssociationsSection(unittest.TestCase):
+    """Tests for the extract_associations_section function."""
+
+    def test_simple_associations_section(self):
+        """Test extracting a simple Associations section."""
+        from gallery_generator import extract_associations_section
+        content = """# My Post
+
+## Description
+
+Some text.
+
+## Associations
+
+[[Related Post]]
+[[Another Post|See this]]
+
+## Notes
+
+More text.
+"""
+        result = extract_associations_section(content)
+        self.assertIn('[[Related Post]]', result)
+        self.assertIn('[[Another Post|See this]]', result)
+        self.assertNotIn('## Notes', result)
+        self.assertNotIn('Some text', result)
+
+    def test_associations_at_end(self):
+        """Test extracting Associations section at end of document."""
+        from gallery_generator import extract_associations_section
+        content = """# My Post
+
+## Description
+
+Text.
+
+## Associations
+
+[[Link 1]]
+[[Link 2]]
+"""
+        result = extract_associations_section(content)
+        self.assertIn('[[Link 1]]', result)
+        self.assertIn('[[Link 2]]', result)
+
+    def test_no_associations_section(self):
+        """Test when there's no Associations section."""
+        from gallery_generator import extract_associations_section
+        content = """# My Post
+
+## Description
+
+Text.
+"""
+        result = extract_associations_section(content)
+        self.assertIsNone(result)
+
+    def test_empty_associations_section(self):
+        """Test extracting empty Associations section."""
+        from gallery_generator import extract_associations_section
+        content = """## Associations
+
+## Next Section
+"""
+        result = extract_associations_section(content)
+        self.assertIsNone(result)
+
+
+class TestRemoveAssociationsSection(unittest.TestCase):
+    """Tests for the remove_associations_section function."""
+
+    def test_remove_middle_section(self):
+        """Test removing Associations section from middle of document."""
+        from gallery_generator import remove_associations_section
+        content = """# Title
+
+## Description
+
+Some text.
+
+## Associations
+
+[[Link 1]]
+[[Link 2]]
+
+## Notes
+
+More text.
+"""
+        result = remove_associations_section(content)
+        self.assertIn('## Description', result)
+        self.assertIn('## Notes', result)
+        self.assertNotIn('## Associations', result)
+        self.assertNotIn('[[Link 1]]', result)
+
+    def test_remove_end_section(self):
+        """Test removing Associations section at end."""
+        from gallery_generator import remove_associations_section
+        content = """# Title
+
+## Description
+
+Text.
+
+## Associations
+
+[[Link]]
+"""
+        result = remove_associations_section(content)
+        self.assertIn('## Description', result)
+        self.assertNotIn('## Associations', result)
+        self.assertNotIn('[[Link]]', result)
+
+    def test_no_associations_section(self):
+        """Test when there's no Associations section to remove."""
+        from gallery_generator import remove_associations_section
+        content = """# Title
+
+## Description
+
+Text.
+"""
+        result = remove_associations_section(content)
+        self.assertEqual(result, content)
+
+
+class TestExtractWikilinksFromAssociations(unittest.TestCase):
+    """Tests for the extract_wikilinks_from_associations function."""
+
+    def test_simple_wikilinks(self):
+        """Test extracting simple wikilinks."""
+        from gallery_generator import extract_wikilinks_from_associations
+        content = """## Associations
+
+[[First Link]]
+[[Second Link]]
+"""
+        result = extract_wikilinks_from_associations(content)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0], ('First Link', None))
+        self.assertEqual(result[1], ('Second Link', None))
+
+    def test_aliased_wikilinks(self):
+        """Test extracting aliased wikilinks."""
+        from gallery_generator import extract_wikilinks_from_associations
+        content = """## Associations
+
+[[Page Name|Display Text]]
+[[Another Page|Different Text]]
+"""
+        result = extract_wikilinks_from_associations(content)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0], ('Page Name', 'Display Text'))
+        self.assertEqual(result[1], ('Another Page', 'Different Text'))
+
+    def test_mixed_wikilinks(self):
+        """Test extracting a mix of simple and aliased wikilinks."""
+        from gallery_generator import extract_wikilinks_from_associations
+        content = """## Associations
+
+[[Simple Link]]
+[[Complex Link|With Alias]]
+[[Another Simple]]
+"""
+        result = extract_wikilinks_from_associations(content)
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result[0], ('Simple Link', None))
+        self.assertEqual(result[1], ('Complex Link', 'With Alias'))
+        self.assertEqual(result[2], ('Another Simple', None))
+
+    def test_no_associations_section(self):
+        """Test when there's no Associations section."""
+        from gallery_generator import extract_wikilinks_from_associations
+        content = """## Description
+
+Some text with [[A Link]].
+"""
+        result = extract_wikilinks_from_associations(content)
+        self.assertEqual(result, [])
+
+
+class TestFindWikilinksInSection(unittest.TestCase):
+    """Tests for the find_wikilinks_in_section function."""
+
+    def test_find_simple_wikilinks(self):
+        """Test finding simple wikilinks."""
+        from gallery_generator import find_wikilinks_in_section
+        section = """
+[[Link One]]
+[[Link Two]]
+[[Link Three]]
+"""
+        result = find_wikilinks_in_section(section)
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result[0][0], 'Link One')
+        self.assertEqual(result[1][0], 'Link Two')
+        self.assertEqual(result[2][0], 'Link Three')
+
+    def test_find_aliased_wikilinks(self):
+        """Test finding aliased wikilinks."""
+        from gallery_generator import find_wikilinks_in_section
+        section = "[[Page|Display]]"
+        result = find_wikilinks_in_section(section)
+        self.assertEqual(result, [('Page', 'Display')])
+
+    def test_inline_wikilinks(self):
+        """Test finding wikilinks inline with text."""
+        from gallery_generator import find_wikilinks_in_section
+        section = "See [[Related Page]] and [[Another|Also this]] for more."
+        result = find_wikilinks_in_section(section)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0], ('Related Page', None))
+        self.assertEqual(result[1], ('Another', 'Also this'))
+
+    def test_empty_section(self):
+        """Test with empty section."""
+        from gallery_generator import find_wikilinks_in_section
+        self.assertEqual(find_wikilinks_in_section(''), [])
+        self.assertEqual(find_wikilinks_in_section(None), [])
+
+
+class TestConvertAssociationsToHugoLinks(unittest.TestCase):
+    """Tests for the convert_associations_to_hugo_links function."""
+
+    def test_simple_conversion(self):
+        """Test converting simple wikilinks to Hugo links."""
+        from gallery_generator import convert_associations_to_hugo_links
+        content = """# My Post
+
+## Associations
+
+[[Related Post]]
+[[Another Post]]
+"""
+        result = convert_associations_to_hugo_links(content)
+        self.assertIn('[Related Post](/post/related-post/)', result)
+        self.assertIn('[Another Post](/post/another-post/)', result)
+        # Header should be renamed to Related
+        self.assertIn('## Related', result)
+        self.assertNotIn('## Associations', result)
+
+    def test_aliased_links_conversion(self):
+        """Test converting aliased wikilinks."""
+        from gallery_generator import convert_associations_to_hugo_links
+        content = """## Associations
+
+[[Page Name|Click Here]]
+"""
+        result = convert_associations_to_hugo_links(content)
+        self.assertIn('[Click Here](/post/page-name/)', result)
+        self.assertNotIn('[[Page Name|Click Here]]', result)
+
+    def test_custom_base_path(self):
+        """Test conversion with custom base path."""
+        from gallery_generator import convert_associations_to_hugo_links
+        content = """## Associations
+
+[[My Project]]
+"""
+        result = convert_associations_to_hugo_links(content, base_path='/projects/')
+        self.assertIn('[My Project](/projects/my-project/)', result)
+
+    def test_preserves_other_content(self):
+        """Test that other content is preserved."""
+        from gallery_generator import convert_associations_to_hugo_links
+        content = """# Title
+
+## Description
+
+Some important text here.
+
+## Associations
+
+[[Related]]
+
+## Notes
+
+Final notes.
+"""
+        result = convert_associations_to_hugo_links(content)
+        self.assertIn('# Title', result)
+        self.assertIn('## Description', result)
+        self.assertIn('Some important text here.', result)
+        self.assertIn('## Notes', result)
+        self.assertIn('Final notes.', result)
+        self.assertIn('## Related', result)
+        self.assertIn('[Related](/post/related/)', result)
+
+    def test_no_associations_section(self):
+        """Test that content without Associations is unchanged."""
+        from gallery_generator import convert_associations_to_hugo_links
+        content = """# Title
+
+## Description
+
+Text.
+"""
+        result = convert_associations_to_hugo_links(content)
+        self.assertEqual(result, content)
+
+    def test_slug_generation(self):
+        """Test that slugs are properly generated."""
+        from gallery_generator import convert_associations_to_hugo_links
+        content = """## Associations
+
+[[My Fancy Page Name!]]
+[[Page With   Multiple   Spaces]]
+[[Page-With-Hyphens]]
+"""
+        result = convert_associations_to_hugo_links(content)
+        self.assertIn('/post/my-fancy-page-name/', result)
+        self.assertIn('/post/page-with-multiple-spaces/', result)
+        self.assertIn('/post/page-with-hyphens/', result)
+
+
+class TestSlugifyForHugo(unittest.TestCase):
+    """Tests for the _slugify_for_hugo function."""
+
+    def test_basic_slug(self):
+        """Test basic slug generation."""
+        from gallery_generator import _slugify_for_hugo
+        self.assertEqual(_slugify_for_hugo('My Page'), 'my-page')
+
+    def test_removes_special_characters(self):
+        """Test that special characters are removed."""
+        from gallery_generator import _slugify_for_hugo
+        self.assertEqual(_slugify_for_hugo('Hello, World!'), 'hello-world')
+        self.assertEqual(_slugify_for_hugo("It's a test"), 'its-a-test')
+
+    def test_handles_multiple_spaces(self):
+        """Test handling of multiple spaces."""
+        from gallery_generator import _slugify_for_hugo
+        self.assertEqual(_slugify_for_hugo('Too   Many   Spaces'), 'too-many-spaces')
+
+    def test_preserves_underscores(self):
+        """Test that underscores are preserved."""
+        from gallery_generator import _slugify_for_hugo
+        self.assertEqual(_slugify_for_hugo('my_page_name'), 'my_page_name')
+
+    def test_strips_leading_trailing_hyphens(self):
+        """Test stripping of leading/trailing hyphens."""
+        from gallery_generator import _slugify_for_hugo
+        self.assertEqual(_slugify_for_hugo('--test--'), 'test')
+        self.assertEqual(_slugify_for_hugo('!@#test!@#'), 'test')
+
+
+class TestAssociationsIntegration(unittest.TestCase):
+    """Integration tests for Associations section handling."""
+
+    def test_complete_note_with_associations(self):
+        """Test processing a complete note with Associations section."""
+        from gallery_generator import (
+            has_associations_section,
+            extract_wikilinks_from_associations,
+            remove_associations_section,
+            convert_associations_to_hugo_links,
+        )
+
+        content = """---
+title: My Blog Post
+tags: [coding, python]
+publish: true
+---
+
+# My Blog Post
+
+This is a great post about Python programming.
+
+## Code Example
+
+```python
+print("Hello, world!")
+```
+
+## Associations
+
+[[Python Tutorials]]
+[[Getting Started with Programming|Programming Guide]]
+[[My Other Post]]
+
+## References
+
+Some references here.
+"""
+        # Test detection
+        self.assertTrue(has_associations_section(content))
+
+        # Test extraction
+        links = extract_wikilinks_from_associations(content)
+        self.assertEqual(len(links), 3)
+        self.assertEqual(links[0], ('Python Tutorials', None))
+        self.assertEqual(links[1], ('Getting Started with Programming', 'Programming Guide'))
+        self.assertEqual(links[2], ('My Other Post', None))
+
+        # Test removal
+        removed = remove_associations_section(content)
+        self.assertNotIn('## Associations', removed)
+        self.assertNotIn('[[Python Tutorials]]', removed)
+        self.assertIn('## Code Example', removed)
+        self.assertIn('## References', removed)
+
+        # Test conversion
+        converted = convert_associations_to_hugo_links(content)
+        self.assertIn('## Related', converted)
+        self.assertIn('[Python Tutorials](/post/python-tutorials/)', converted)
+        self.assertIn('[Programming Guide](/post/getting-started-with-programming/)', converted)
+        self.assertIn('[My Other Post](/post/my-other-post/)', converted)
+        self.assertIn('## Code Example', converted)
+        self.assertIn('## References', converted)
+
+    def test_note_with_both_pictures_and_associations(self):
+        """Test note with both Pictures and Associations sections."""
+        from gallery_generator import (
+            has_pictures_section,
+            has_associations_section,
+            remove_pictures_section,
+            remove_associations_section,
+            convert_associations_to_hugo_links,
+        )
+
+        content = """# My Project
+
+## Description
+
+A project description.
+
+## Pictures
+
+![[image1.jpg]]
+![[image2.jpg]]
+
+## Associations
+
+[[Related Project]]
+[[Another Project|See also]]
+
+## Notes
+
+Some notes.
+"""
+        # Both sections should be detected
+        self.assertTrue(has_pictures_section(content))
+        self.assertTrue(has_associations_section(content))
+
+        # Remove both
+        result = remove_pictures_section(content)
+        result = remove_associations_section(result)
+        self.assertNotIn('## Pictures', result)
+        self.assertNotIn('## Associations', result)
+        self.assertIn('## Description', result)
+        self.assertIn('## Notes', result)
+
+        # Or convert associations and remove pictures
+        result2 = remove_pictures_section(content)
+        result2 = convert_associations_to_hugo_links(result2)
+        self.assertNotIn('## Pictures', result2)
+        self.assertIn('## Related', result2)
+        self.assertIn('[Related Project](/post/related-project/)', result2)
+
+
 if __name__ == '__main__':
     unittest.main()

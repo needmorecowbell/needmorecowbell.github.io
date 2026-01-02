@@ -57,6 +57,10 @@ from gallery_generator import (
     remove_pictures_section,
     generate_gallery_from_obsidian,
     extract_media_from_pictures_section,
+    has_associations_section,
+    remove_associations_section,
+    convert_associations_to_hugo_links,
+    extract_wikilinks_from_associations,
 )
 from content_router import determine_content_type
 
@@ -252,7 +256,8 @@ def convert_note(
     note_path: Path,
     output_dir: str = DEFAULT_OUTPUT_DIR,
     media_url_map: dict = None,
-    generate_gallery: bool = True
+    generate_gallery: bool = True,
+    keep_associations: bool = False
 ) -> tuple:
     """
     Run the full conversion pipeline on an Obsidian note.
@@ -261,9 +266,10 @@ def convert_note(
     1. Parse the Obsidian note (extract frontmatter and body)
     2. Transform frontmatter to Hugo format
     3. Detect Pictures section and generate gallery (if applicable)
-    4. Convert Obsidian syntax (wikilinks, images, media) to Hugo format
-    5. Append gallery HTML if generated
-    6. Generate the target output path
+    4. Handle Associations section (convert to Hugo links or remove)
+    5. Convert Obsidian syntax (wikilinks, images, media) to Hugo format
+    6. Append gallery HTML if generated
+    7. Generate the target output path
 
     Args:
         note_path: Path to the Obsidian note file
@@ -275,6 +281,10 @@ def convert_note(
         generate_gallery: Whether to generate a gallery from the Pictures section.
                          Set to False to skip gallery generation even if a Pictures
                          section exists. Defaults to True.
+        keep_associations: Whether to keep the Associations section. If True,
+                          wikilinks in the section are converted to Hugo links
+                          and the section header is renamed to "## Related".
+                          If False (default), the entire section is removed.
 
     Returns:
         Tuple of (hugo_frontmatter, converted_body, target_path)
@@ -308,18 +318,27 @@ def convert_note(
         # Remove the Pictures section from the body before further processing
         body = remove_pictures_section(body)
 
-    # Step 4: Convert Obsidian syntax to Hugo format
+    # Step 4: Handle Associations section
+    if has_associations_section(body):
+        if keep_associations:
+            # Convert wikilinks to Hugo links and rename header to "## Related"
+            body = convert_associations_to_hugo_links(body)
+        else:
+            # Remove the entire Associations section
+            body = remove_associations_section(body)
+
+    # Step 5: Convert Obsidian syntax to Hugo format
     # Order matters: wikilinks first, then images, then media
     converted_body = convert_wikilinks(body)
     converted_body = convert_embedded_images(converted_body, media_url_map=media_url_map)
     converted_body = convert_embedded_media(converted_body, media_url_map=media_url_map)
 
-    # Step 5: Append gallery HTML if generated
+    # Step 6: Append gallery HTML if generated
     if gallery_html:
         # Add gallery at the end of the content with some spacing
         converted_body = converted_body.rstrip() + '\n\n' + gallery_html + '\n'
 
-    # Step 6: Generate the target output path
+    # Step 7: Generate the target output path
     slug = generate_slug(hugo_frontmatter.get('title', ''), hugo_frontmatter.get('date'))
     target_path = Path(output_dir) / f"{slug}.md"
 
@@ -557,6 +576,9 @@ def cmd_convert(args):
     # Get no_gallery flag (inverted to generate_gallery)
     generate_gallery = not getattr(args, 'no_gallery', False)
 
+    # Get keep_associations flag
+    keep_associations = getattr(args, 'keep_associations', False)
+
     # Step 1: Extract and resolve media references
     media_items, missing_count = extract_and_resolve_media(note_path)
 
@@ -581,16 +603,19 @@ def cmd_convert(args):
     try:
         hugo_frontmatter, converted_body, target_path = convert_note(
             note_path, output_dir, media_url_map=media_url_map,
-            generate_gallery=generate_gallery
+            generate_gallery=generate_gallery,
+            keep_associations=keep_associations
         )
     except Exception as e:
         print(f"Error converting note: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # Check if note has a Pictures section for display purposes
+    # Check if note has a Pictures section and Associations section for display purposes
     note_content = note_path.read_text()
     has_gallery = has_pictures_section(note_content)
     gallery_media_count = len(extract_media_from_pictures_section(note_content)) if has_gallery else 0
+    has_assoc = has_associations_section(note_content)
+    assoc_link_count = len(extract_wikilinks_from_associations(note_content)) if has_assoc else 0
 
     if args.dry_run:
         print(f"[DRY RUN] Would convert: {note_path}")
@@ -606,6 +631,11 @@ def cmd_convert(args):
                 print(f"[DRY RUN] Gallery: YES ({gallery_media_count} images)")
             else:
                 print(f"[DRY RUN] Gallery: SKIPPED ({gallery_media_count} images in Pictures section)")
+        if has_assoc:
+            if keep_associations:
+                print(f"[DRY RUN] Associations: CONVERTED ({assoc_link_count} links -> Related section)")
+            else:
+                print(f"[DRY RUN] Associations: REMOVED ({assoc_link_count} links)")
         print()
         print("--- Preview of converted content ---")
         print()
@@ -621,6 +651,11 @@ def cmd_convert(args):
                 print(f"Gallery generated: {gallery_media_count} images")
             else:
                 print(f"Gallery skipped: {gallery_media_count} images in Pictures section")
+        if has_assoc:
+            if keep_associations:
+                print(f"Associations converted: {assoc_link_count} links -> Related section")
+            else:
+                print(f"Associations removed: {assoc_link_count} links")
 
 
 def main():
@@ -716,6 +751,11 @@ Examples:
         "--no-gallery",
         action="store_true",
         help="Skip gallery generation even if a Pictures section exists"
+    )
+    convert_parser.add_argument(
+        "--keep-associations",
+        action="store_true",
+        help="Convert Associations section to Hugo links (default: remove the section)"
     )
     convert_parser.set_defaults(func=cmd_convert)
 

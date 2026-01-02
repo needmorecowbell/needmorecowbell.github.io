@@ -19,10 +19,21 @@ PICTURES_SECTION_PATTERN = re.compile(
     re.IGNORECASE | re.MULTILINE
 )
 
-# Pattern to match any level 2 heading (to find the end of Pictures section)
+# Pattern to match the ## Associations section header (case-insensitive)
+ASSOCIATIONS_SECTION_PATTERN = re.compile(
+    r'^##\s+Associations?\s*$',
+    re.IGNORECASE | re.MULTILINE
+)
+
+# Pattern to match any level 2 heading (to find the end of sections)
 NEXT_SECTION_PATTERN = re.compile(
     r'^##\s+\S',
     re.MULTILINE
+)
+
+# Pattern to match wikilinks: [[Page Name]] or [[Page Name|Display Text]]
+WIKILINK_PATTERN = re.compile(
+    r'\[\[([^\]|]+)(?:\|([^\]]+))?\]\]'
 )
 
 
@@ -353,3 +364,249 @@ def generate_gallery_from_obsidian(
     base_url = f"{cdn_shortcode}/projects/{project_slug}/"
 
     return generate_nanogallery_html(filenames, base_url)
+
+
+# =============================================================================
+# Associations Section Functions
+# =============================================================================
+
+
+def has_associations_section(content: str) -> bool:
+    """
+    Check if the markdown content has an Associations section.
+
+    Args:
+        content: The full markdown content to check
+
+    Returns:
+        True if an Associations section exists, False otherwise
+    """
+    if not content:
+        return False
+    return ASSOCIATIONS_SECTION_PATTERN.search(content) is not None
+
+
+def extract_associations_section(content: str) -> Optional[str]:
+    """
+    Extract the ## Associations section from Obsidian markdown content.
+
+    Finds the "## Associations" or "## Association" header and extracts all content
+    until the next level-2 heading or end of document.
+
+    Args:
+        content: The full markdown content of the Obsidian note
+
+    Returns:
+        The content of the Associations section (excluding the header itself),
+        or None if no Associations section exists.
+    """
+    if not content:
+        return None
+
+    # Find the Associations section header
+    match = ASSOCIATIONS_SECTION_PATTERN.search(content)
+    if not match:
+        return None
+
+    # Start of section content is right after the header
+    section_start = match.end()
+
+    # Find the next level-2 heading after the Associations section
+    remaining_content = content[section_start:]
+    next_section_match = NEXT_SECTION_PATTERN.search(remaining_content)
+
+    if next_section_match:
+        # Extract content up to the next section
+        section_content = remaining_content[:next_section_match.start()]
+    else:
+        # No more sections, take everything to the end
+        section_content = remaining_content
+
+    # Strip leading/trailing whitespace but preserve internal structure
+    return section_content.strip() if section_content.strip() else None
+
+
+def get_associations_section_location(content: str) -> Optional[Tuple[int, int]]:
+    """
+    Get the start and end positions of the Associations section in the content.
+
+    Useful for removing or replacing the Associations section during conversion.
+
+    Args:
+        content: The full markdown content
+
+    Returns:
+        Tuple of (start_index, end_index) for the entire Associations section
+        including the header, or None if no Associations section exists.
+    """
+    if not content:
+        return None
+
+    match = ASSOCIATIONS_SECTION_PATTERN.search(content)
+    if not match:
+        return None
+
+    section_start = match.start()
+
+    # Find the next level-2 heading after the Associations section
+    remaining_content = content[match.end():]
+    next_section_match = NEXT_SECTION_PATTERN.search(remaining_content)
+
+    if next_section_match:
+        section_end = match.end() + next_section_match.start()
+    else:
+        section_end = len(content)
+
+    return (section_start, section_end)
+
+
+def remove_associations_section(content: str) -> str:
+    """
+    Remove the Associations section from markdown content.
+
+    Removes the entire "## Associations" section including header and all content
+    up to the next section or end of document.
+
+    Args:
+        content: The full markdown content
+
+    Returns:
+        The content with the Associations section removed.
+        Returns original content if no Associations section exists.
+    """
+    location = get_associations_section_location(content)
+    if not location:
+        return content
+
+    start, end = location
+    # Remove the section, preserving content before and after
+    before = content[:start].rstrip()
+    after = content[end:].lstrip()
+
+    if before and after:
+        return before + '\n\n' + after
+    elif before:
+        return before
+    else:
+        return after
+
+
+def extract_wikilinks_from_associations(content: str) -> List[Tuple[str, Optional[str]]]:
+    """
+    Extract all wikilinks from the Associations section of an Obsidian note.
+
+    Args:
+        content: The full markdown content of the Obsidian note
+
+    Returns:
+        List of tuples (page_name, display_text) for each wikilink found.
+        display_text is None if no alias was specified (i.e., [[Page]] vs [[Page|Text]]).
+        Returns empty list if no Associations section or no wikilinks found.
+    """
+    associations_section = extract_associations_section(content)
+    if not associations_section:
+        return []
+
+    return find_wikilinks_in_section(associations_section)
+
+
+def find_wikilinks_in_section(section_content: str) -> List[Tuple[str, Optional[str]]]:
+    """
+    Find all wikilinks in a section of markdown content.
+
+    Parses the content for wikilink syntax [[Page Name]] or [[Page Name|Display Text]].
+
+    Args:
+        section_content: The markdown content to parse
+
+    Returns:
+        List of tuples (page_name, display_text) for each wikilink found.
+        display_text is None if no alias was specified.
+    """
+    if not section_content:
+        return []
+
+    wikilinks = []
+    for match in WIKILINK_PATTERN.finditer(section_content):
+        page_name = match.group(1).strip()
+        display_text = match.group(2).strip() if match.group(2) else None
+        wikilinks.append((page_name, display_text))
+
+    return wikilinks
+
+
+def convert_associations_to_hugo_links(
+    content: str,
+    base_path: str = '/post/'
+) -> str:
+    """
+    Convert wikilinks in the Associations section to Hugo internal links.
+
+    Transforms [[Page Name]] to [Page Name](/post/page-name/) and
+    [[Page Name|Display Text]] to [Display Text](/post/page-name/).
+
+    The Associations section header is preserved but renamed to "## Related".
+
+    Args:
+        content: The full markdown content of the Obsidian note
+        base_path: The base URL path for links (default: '/post/')
+
+    Returns:
+        The content with the Associations section converted.
+        Returns original content if no Associations section exists.
+    """
+    if not has_associations_section(content):
+        return content
+
+    location = get_associations_section_location(content)
+    if not location:
+        return content
+
+    start, end = location
+    section_content = content[start:end]
+
+    # Convert wikilinks to Hugo links
+    def replace_wikilink(match: re.Match) -> str:
+        page_name = match.group(1).strip()
+        display_text = match.group(2)
+
+        if display_text:
+            display_text = display_text.strip()
+        else:
+            display_text = page_name
+
+        slug = _slugify_for_hugo(page_name)
+        url = f"{base_path.rstrip('/')}/{slug}/"
+
+        return f'[{display_text}]({url})'
+
+    converted_section = WIKILINK_PATTERN.sub(replace_wikilink, section_content)
+
+    # Replace "## Associations" or "## Association" header with "## Related"
+    converted_section = ASSOCIATIONS_SECTION_PATTERN.sub('## Related', converted_section)
+
+    # Reconstruct the content
+    return content[:start] + converted_section + content[end:]
+
+
+def _slugify_for_hugo(text: str) -> str:
+    """
+    Convert text to a URL-friendly slug for Hugo links.
+
+    Args:
+        text: The text to slugify (e.g., page title)
+
+    Returns:
+        A lowercase, hyphen-separated slug
+    """
+    # Convert to lowercase
+    slug = text.lower()
+    # Replace spaces with hyphens
+    slug = slug.replace(' ', '-')
+    # Remove any characters that aren't alphanumeric, hyphens, or underscores
+    slug = re.sub(r'[^a-z0-9\-_]', '', slug)
+    # Replace multiple consecutive hyphens with a single hyphen
+    slug = re.sub(r'-+', '-', slug)
+    # Strip leading/trailing hyphens
+    slug = slug.strip('-')
+    return slug
