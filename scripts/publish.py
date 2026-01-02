@@ -14,7 +14,12 @@ Usage:
 """
 
 import argparse
+import shutil
+import signal
+import subprocess
 import sys
+import tempfile
+import webbrowser
 from pathlib import Path
 
 # Load environment variables from .env file if it exists
@@ -852,6 +857,11 @@ def cmd_publish(args):
     4. Writing the Hugo post to the appropriate content directory
 
     In non-dry-run mode, prompts for confirmation before making changes.
+
+    Exit codes:
+    - 0: Success
+    - 1: General error or validation errors
+    - 2: Validation warnings (only with --strict flag)
     """
     note_path = Path(args.path)
 
@@ -865,6 +875,7 @@ def cmd_publish(args):
     generate_gallery = not getattr(args, 'no_gallery', False)
     keep_associations = getattr(args, 'keep_associations', False)
     yes_flag = getattr(args, 'yes', False)
+    strict_mode = getattr(args, 'strict', False)
     hugo_root = Path(args.hugo_root) if hasattr(args, 'hugo_root') and args.hugo_root else DEFAULT_HUGO_ROOT
     # Get environment flag (ensure we get None if not set, not a MagicMock)
     environment = getattr(args, 'environment', None)
@@ -887,6 +898,49 @@ def cmd_publish(args):
             if not confirm_prompt("Publish anyway?", default=False):
                 print("Aborted.")
                 sys.exit(0)
+
+    # Run validation (respects --strict flag)
+    vault_path = Path(args.vault) if hasattr(args, 'vault') and args.vault else None
+    all_issues = []
+
+    # Validate frontmatter
+    fm_issues = validate_frontmatter(frontmatter)
+    all_issues.extend(fm_issues)
+
+    # Validate media references
+    media_issues = validate_media_references(body)
+    all_issues.extend(media_issues)
+
+    # Validate internal links
+    link_issues = validate_internal_links(body, vault_path=vault_path, hugo_root=hugo_root)
+    all_issues.extend(link_issues)
+
+    # Check validation results
+    error_count = sum(1 for i in all_issues if i.severity == ValidationSeverity.ERROR)
+    warn_count = sum(1 for i in all_issues if i.severity == ValidationSeverity.WARNING)
+
+    if error_count > 0 or (strict_mode and warn_count > 0):
+        print()
+        print("=" * 60)
+        print("VALIDATION FAILED")
+        print("=" * 60)
+        print(format_issues(all_issues))
+        print()
+
+        if error_count > 0:
+            print(f"Found {error_count} error(s), {warn_count} warning(s).")
+            print("Cannot publish: validation errors must be fixed first.")
+            sys.exit(1)
+        else:
+            # strict_mode and warn_count > 0
+            print(f"Found {warn_count} warning(s).")
+            print("Cannot publish: --strict mode requires no warnings.")
+            sys.exit(2)
+
+    # Show warnings if any (but not blocking without --strict)
+    if warn_count > 0 and not strict_mode:
+        print()
+        print(f"Note: {warn_count} validation warning(s) found (use --strict to treat as errors)")
 
     # Step 2: Determine content type and target path
     content_type = determine_content_type(frontmatter)
@@ -1276,6 +1330,188 @@ def cmd_publish_all(args):
     print()
 
 
+def cmd_preview(args):
+    """
+    Preview a converted note in a local Hugo server.
+
+    This command converts an Obsidian note, writes it to a temporary
+    directory within the Hugo site structure, starts a Hugo server,
+    and opens the browser to preview the rendered post.
+
+    The server runs until the user presses Ctrl+C, after which the
+    temporary content is cleaned up.
+
+    Exit codes:
+    - 0: Success (server terminated normally)
+    - 1: Error (note not found, conversion failed, or Hugo server error)
+    """
+    note_path = Path(args.path)
+
+    if not note_path.exists():
+        print(f"Error: Note not found: {note_path}", file=sys.stderr)
+        sys.exit(1)
+
+    # Get flags from args
+    skip_upload = getattr(args, 'skip_upload', True)  # Default to skip in preview mode
+    generate_gallery = not getattr(args, 'no_gallery', False)
+    keep_associations = getattr(args, 'keep_associations', False)
+    hugo_root = Path(args.hugo_root) if hasattr(args, 'hugo_root') and args.hugo_root else DEFAULT_HUGO_ROOT
+    port = getattr(args, 'port', 1313)
+    no_browser = getattr(args, 'no_browser', False)
+    # Get environment flag
+    environment = getattr(args, 'environment', None)
+    if environment is not None and not isinstance(environment, str):
+        environment = None
+
+    # Step 1: Parse and convert the note
+    print(f"Converting note: {note_path.name}")
+
+    try:
+        from obsidian_parser import parse_obsidian_note
+        frontmatter, body = parse_obsidian_note(note_path)
+    except Exception as e:
+        print(f"Error parsing note: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    # Determine content type for proper routing
+    content_type = determine_content_type(frontmatter)
+    section_path = get_hugo_section_path(content_type)
+
+    # Transform frontmatter to get the slug
+    hugo_fm = transform_to_hugo(frontmatter, body)
+    slug = generate_slug(hugo_fm.get('title', ''), hugo_fm.get('date'))
+
+    # Extract and optionally upload media
+    media_items, missing_count = extract_and_resolve_media(note_path)
+    media_url_map = None
+
+    if media_items and not skip_upload:
+        try:
+            print(f"Uploading {len(media_items)} media file(s) to MinIO...")
+            media_url_map = upload_media_to_minio(media_items, show_progress=False)
+        except Exception as e:
+            print(f"Warning: Media upload failed - {e}", file=sys.stderr)
+
+    # Convert the note
+    try:
+        hugo_frontmatter, converted_body, _ = convert_note(
+            note_path,
+            str(hugo_root / section_path),
+            media_url_map=media_url_map,
+            generate_gallery=generate_gallery,
+            keep_associations=keep_associations,
+            environment=environment if environment else 'development'
+        )
+    except Exception as e:
+        print(f"Error converting note: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    # Step 2: Write to a temporary file in the Hugo content directory
+    # We use a unique prefix to avoid conflicts with real content
+    temp_filename = f"_preview_{slug}.md"
+    target_path = hugo_root / section_path / temp_filename
+
+    # Determine the URL for this content
+    # Hugo URL structure: /section/slug/
+    date_str = hugo_frontmatter.get('date', '')
+    if date_str and isinstance(date_str, str) and len(date_str) >= 10:
+        # For posts with dates, URL is usually /post/YYYY-MM-DD-slug/
+        url_path = f"/{content_type}/{slug}/"
+    else:
+        url_path = f"/{content_type}/{slug}/"
+
+    print(f"Writing preview to: {target_path}")
+
+    try:
+        from hugo_writer import write_hugo_post
+        written_path = write_hugo_post(hugo_frontmatter, converted_body, target_path)
+    except Exception as e:
+        print(f"Error writing preview file: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    # Step 3: Start Hugo server
+    hugo_cmd = [
+        'hugo', 'server',
+        '--source', str(hugo_root),
+        '--port', str(port),
+        '--buildDrafts',  # Include drafts
+        '--buildFuture',  # Include future posts
+        '--navigateToChanged',  # Navigate to changed content
+        '--disableFastRender',  # Ensure full rebuild
+    ]
+
+    preview_url = f"http://localhost:{port}{url_path}"
+
+    print()
+    print("=" * 60)
+    print("PREVIEW SERVER")
+    print("=" * 60)
+    print(f"Content Type: {content_type}")
+    print(f"Preview URL:  {preview_url}")
+    print(f"Hugo Root:    {hugo_root}")
+    print()
+    print("Press Ctrl+C to stop the server and clean up.")
+    print("=" * 60)
+    print()
+
+    hugo_process = None
+    try:
+        # Start Hugo server
+        hugo_process = subprocess.Popen(
+            hugo_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            cwd=str(hugo_root)
+        )
+
+        # Wait a moment for the server to start, then open browser
+        import time
+        time.sleep(2)
+
+        if not no_browser:
+            print(f"Opening browser to: {preview_url}")
+            webbrowser.open(preview_url)
+
+        # Stream Hugo server output
+        print()
+        print("Hugo server output:")
+        print("-" * 40)
+
+        if hugo_process.stdout:
+            for line in hugo_process.stdout:
+                print(line, end='')
+
+        # Wait for the process to complete
+        hugo_process.wait()
+
+    except KeyboardInterrupt:
+        print()
+        print()
+        print("Stopping server...")
+    except Exception as e:
+        print(f"Error running Hugo server: {e}", file=sys.stderr)
+    finally:
+        # Terminate Hugo server if still running
+        if hugo_process and hugo_process.poll() is None:
+            hugo_process.terminate()
+            try:
+                hugo_process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                hugo_process.kill()
+
+        # Clean up the temporary preview file
+        print(f"Cleaning up preview file: {written_path}")
+        try:
+            written_path.unlink()
+            print("Preview file removed.")
+        except Exception as e:
+            print(f"Warning: Could not remove preview file: {e}", file=sys.stderr)
+
+    print()
+    print("Preview session ended.")
+
+
 def main():
     """Main entry point for the CLI."""
     parser = argparse.ArgumentParser(
@@ -1319,6 +1555,12 @@ Examples:
 
     python publish.py convert ~/Notes/Blog/my-post.md -e development
         Convert using development environment S3CDN URLs
+
+    python publish.py preview ~/Notes/Blog/my-post.md
+        Preview a note in a local Hugo server
+
+    python publish.py preview ~/Notes/Blog/my-post.md --port 8080 --no-browser
+        Preview on a custom port without opening browser
         """
     )
 
@@ -1381,6 +1623,11 @@ Examples:
     publish_parser.add_argument(
         "-e", "--environment",
         help="Hugo environment (development/production). Uses environment-specific S3CDN URLs from Hugo config"
+    )
+    publish_parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Fail if any validation warnings are present (default: only fail on errors)"
     )
     publish_parser.set_defaults(func=cmd_publish_dispatch)
 
@@ -1478,6 +1725,59 @@ Examples:
         help="Hugo environment (development/production). Uses environment-specific S3CDN URLs from Hugo config"
     )
     convert_parser.set_defaults(func=cmd_convert)
+
+    # preview subcommand
+    preview_parser = subparsers.add_parser(
+        "preview",
+        help="Preview a converted note in a local Hugo server"
+    )
+    preview_parser.add_argument(
+        "path",
+        help="Path to the Obsidian note to preview"
+    )
+    preview_parser.add_argument(
+        "--hugo-root",
+        help=f"Path to Hugo site root (default: {DEFAULT_HUGO_ROOT})"
+    )
+    preview_parser.add_argument(
+        "--port",
+        type=int,
+        default=1313,
+        help="Port for Hugo server (default: 1313)"
+    )
+    preview_parser.add_argument(
+        "--no-browser",
+        action="store_true",
+        help="Don't open browser automatically"
+    )
+    preview_parser.add_argument(
+        "--skip-upload",
+        action="store_true",
+        default=True,
+        help="Skip media upload to MinIO (default: True for preview)"
+    )
+    preview_parser.add_argument(
+        "--upload",
+        action="store_false",
+        dest="skip_upload",
+        help="Upload media to MinIO before preview"
+    )
+    preview_parser.add_argument(
+        "--no-gallery",
+        action="store_true",
+        help="Skip gallery generation even if a Pictures section exists"
+    )
+    preview_parser.add_argument(
+        "--keep-associations",
+        action="store_true",
+        help="Convert Associations section to Hugo links (default: remove)"
+    )
+    preview_parser.add_argument(
+        "-e", "--environment",
+        default="development",
+        help="Hugo environment for S3CDN URLs (default: development)"
+    )
+    preview_parser.set_defaults(func=cmd_preview)
 
     # Parse arguments and run appropriate command
     args = parser.parse_args()

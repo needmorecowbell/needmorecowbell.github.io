@@ -31,6 +31,7 @@ from publish import (
     cmd_publish,
     cmd_publish_dispatch,
     cmd_publish_all,
+    cmd_preview,
     confirm_prompt,
     DEFAULT_OUTPUT_DIR,
     DEFAULT_HUGO_ROOT
@@ -3089,6 +3090,181 @@ Content.
 
                 self.assertIn("Associations: CONVERT (2 links -> Related)", output)
 
+    def test_publish_with_validation_errors_exits_one(self):
+        """publish command exits with 1 when validation errors are found."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "invalid-note.md"
+            note_path.write_text("""---
+publish: true
+---
+
+Missing title, date, and tags.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.strict = False
+            mock_args.vault = None
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                with self.assertRaises(SystemExit) as context:
+                    cmd_publish(mock_args)
+                self.assertEqual(context.exception.code, 1)
+                output = mock_stdout.getvalue()
+                self.assertIn("VALIDATION FAILED", output)
+                self.assertIn("validation errors must be fixed first", output)
+
+    def test_publish_with_warnings_passes_without_strict(self):
+        """publish command succeeds with warnings when --strict is not set."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "warning-note.md"
+            note_path.write_text("""---
+title: ""
+date: 2024-01-15
+tags:
+  - python
+publish: true
+---
+
+Note with empty title (warning, not error).
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.strict = False
+            mock_args.vault = tmpdir
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                # Should not raise SystemExit with non-zero code
+                cmd_publish(mock_args)
+                output = mock_stdout.getvalue()
+
+                # Should show warning info
+                self.assertIn("validation warning(s) found", output)
+                # Should proceed to show publish summary
+                self.assertIn("PUBLISH SUMMARY", output)
+                self.assertIn("[DRY RUN]", output)
+
+    def test_publish_with_strict_flag_fails_on_warnings(self):
+        """publish --strict exits with 2 when validation warnings are found."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "warning-note.md"
+            note_path.write_text("""---
+title: ""
+date: 2024-01-15
+tags:
+  - python
+publish: true
+---
+
+Note with empty title (warning, not error).
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.strict = True
+            mock_args.vault = tmpdir
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                with self.assertRaises(SystemExit) as context:
+                    cmd_publish(mock_args)
+                self.assertEqual(context.exception.code, 2)
+                output = mock_stdout.getvalue()
+                self.assertIn("VALIDATION FAILED", output)
+                self.assertIn("--strict mode requires no warnings", output)
+
+    def test_publish_with_strict_flag_passes_when_valid(self):
+        """publish --strict succeeds for valid note with no warnings."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "valid-note.md"
+            note_path.write_text("""---
+title: Valid Note
+date: 2024-01-15
+tags:
+  - python
+publish: true
+---
+
+This is a valid note with no issues.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.strict = True
+            mock_args.vault = tmpdir
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                # Should not raise SystemExit with non-zero code
+                cmd_publish(mock_args)
+                output = mock_stdout.getvalue()
+
+                # Should proceed to show publish summary
+                self.assertIn("PUBLISH SUMMARY", output)
+                self.assertIn("[DRY RUN]", output)
+                # Should not show any validation failure
+                self.assertNotIn("VALIDATION FAILED", output)
+
+    def test_publish_strict_with_errors_shows_both_errors_and_warnings(self):
+        """publish --strict shows both errors and warnings in failure output."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "multi-issue-note.md"
+            # Missing 'date' (error) and empty title (warning)
+            note_path.write_text("""---
+title: ""
+tags:
+  - python
+publish: true
+---
+
+Note with missing date (error) and empty title (warning).
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.strict = True
+            mock_args.vault = tmpdir
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                with self.assertRaises(SystemExit) as context:
+                    cmd_publish(mock_args)
+                # Errors take priority - exit code 1
+                self.assertEqual(context.exception.code, 1)
+                output = mock_stdout.getvalue()
+                self.assertIn("VALIDATION FAILED", output)
+                # Should mention both errors and warnings in summary
+                self.assertIn("error(s)", output)
+                self.assertIn("warning(s)", output)
+
 
 class TestCmdPublishIntegration(unittest.TestCase):
     """Integration tests for cmd_publish with full pipeline."""
@@ -3844,6 +4020,331 @@ Content here.
 
                     # Verify environment is shown in batch summary
                     self.assertIn('Environment:  development', output)
+
+
+class TestCmdPreview(unittest.TestCase):
+    """Tests for cmd_preview function."""
+
+    def test_preview_file_not_found(self):
+        """preview command exits with error for missing file."""
+        mock_args = MagicMock()
+        mock_args.path = '/nonexistent/note.md'
+
+        with patch('sys.stderr', new_callable=StringIO) as mock_stderr:
+            with self.assertRaises(SystemExit) as context:
+                cmd_preview(mock_args)
+            self.assertEqual(context.exception.code, 1)
+            self.assertIn("Note not found", mock_stderr.getvalue())
+
+    def test_preview_converts_note_and_writes_temp_file(self):
+        """preview command converts note and writes to temp location."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create Hugo content directory structure
+            content_dir = Path(tmpdir) / "content" / "english" / "post"
+            content_dir.mkdir(parents=True)
+
+            # Create a note to preview
+            note_path = Path(tmpdir) / "preview-test.md"
+            note_path.write_text("""---
+title: Preview Test Post
+date: 2024-06-15
+tags:
+  - testing
+publish: true
+---
+
+This is test content for preview.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.hugo_root = tmpdir
+            mock_args.port = 1313
+            mock_args.no_browser = True
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.environment = 'development'
+
+            # Mock subprocess.Popen to avoid actually starting Hugo server
+            mock_process = MagicMock()
+            mock_process.poll.return_value = 0
+            mock_process.stdout = iter([])  # Empty output
+
+            with patch('subprocess.Popen', return_value=mock_process) as mock_popen:
+                with patch('webbrowser.open') as mock_browser:
+                    with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                        # Simulate immediate termination
+                        mock_process.wait.side_effect = KeyboardInterrupt()
+
+                        cmd_preview(mock_args)
+
+                        output = mock_stdout.getvalue()
+                        # Check that preview info is displayed
+                        self.assertIn("PREVIEW SERVER", output)
+                        self.assertIn("Preview URL:", output)
+                        self.assertIn("post", output)
+
+                        # Verify browser was not opened (no_browser=True)
+                        mock_browser.assert_not_called()
+
+    def test_preview_opens_browser_by_default(self):
+        """preview command opens browser when no_browser is False."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create Hugo content directory structure
+            content_dir = Path(tmpdir) / "content" / "english" / "post"
+            content_dir.mkdir(parents=True)
+
+            note_path = Path(tmpdir) / "browser-test.md"
+            note_path.write_text("""---
+title: Browser Test
+date: 2024-06-15
+tags:
+  - test
+publish: true
+---
+
+Content.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.hugo_root = tmpdir
+            mock_args.port = 1313
+            mock_args.no_browser = False  # Browser should open
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.environment = 'development'
+
+            mock_process = MagicMock()
+            mock_process.poll.return_value = 0
+            mock_process.stdout = iter([])
+
+            with patch('subprocess.Popen', return_value=mock_process):
+                with patch('webbrowser.open') as mock_browser:
+                    with patch('sys.stdout', new_callable=StringIO):
+                        with patch('time.sleep'):  # Skip the delay
+                            mock_process.wait.side_effect = KeyboardInterrupt()
+                            cmd_preview(mock_args)
+
+                            # Verify browser was opened
+                            mock_browser.assert_called_once()
+                            call_arg = mock_browser.call_args[0][0]
+                            self.assertIn("http://localhost:1313", call_arg)
+
+    def test_preview_uses_custom_port(self):
+        """preview command uses custom port when specified."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            content_dir = Path(tmpdir) / "content" / "english" / "post"
+            content_dir.mkdir(parents=True)
+
+            note_path = Path(tmpdir) / "port-test.md"
+            note_path.write_text("""---
+title: Port Test
+date: 2024-06-15
+tags:
+  - test
+publish: true
+---
+
+Content.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.hugo_root = tmpdir
+            mock_args.port = 8080  # Custom port
+            mock_args.no_browser = True
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.environment = 'development'
+
+            mock_process = MagicMock()
+            mock_process.poll.return_value = 0
+            mock_process.stdout = iter([])
+
+            with patch('subprocess.Popen', return_value=mock_process) as mock_popen:
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    mock_process.wait.side_effect = KeyboardInterrupt()
+                    cmd_preview(mock_args)
+
+                    output = mock_stdout.getvalue()
+                    # Verify custom port in URL
+                    self.assertIn("http://localhost:8080", output)
+
+                    # Verify hugo server command includes custom port
+                    call_args = mock_popen.call_args[0][0]
+                    self.assertIn('--port', call_args)
+                    port_idx = call_args.index('--port')
+                    self.assertEqual(call_args[port_idx + 1], '8080')
+
+    def test_preview_cleans_up_temp_file(self):
+        """preview command cleans up temp file after server stops."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            content_dir = Path(tmpdir) / "content" / "english" / "post"
+            content_dir.mkdir(parents=True)
+
+            note_path = Path(tmpdir) / "cleanup-test.md"
+            note_path.write_text("""---
+title: Cleanup Test
+date: 2024-06-15
+tags:
+  - test
+publish: true
+---
+
+Content.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.hugo_root = tmpdir
+            mock_args.port = 1313
+            mock_args.no_browser = True
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.environment = 'development'
+
+            mock_process = MagicMock()
+            mock_process.poll.return_value = 0
+            mock_process.stdout = iter([])
+
+            with patch('subprocess.Popen', return_value=mock_process):
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    mock_process.wait.side_effect = KeyboardInterrupt()
+                    cmd_preview(mock_args)
+
+                    output = mock_stdout.getvalue()
+                    # Check cleanup message
+                    self.assertIn("Cleaning up preview file", output)
+                    self.assertIn("Preview file removed", output)
+
+            # Verify no preview files remain
+            preview_files = list(content_dir.glob("_preview_*.md"))
+            self.assertEqual(len(preview_files), 0)
+
+    def test_preview_handles_project_content_type(self):
+        """preview command correctly routes project content."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create projects content directory
+            projects_dir = Path(tmpdir) / "content" / "english" / "projects"
+            projects_dir.mkdir(parents=True)
+
+            note_path = Path(tmpdir) / "project-preview.md"
+            note_path.write_text("""---
+title: Test Project
+date: 2024-06-15
+tags:
+  - woodworking
+  - project
+publish: true
+---
+
+A project description.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.hugo_root = tmpdir
+            mock_args.port = 1313
+            mock_args.no_browser = True
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.environment = 'development'
+
+            mock_process = MagicMock()
+            mock_process.poll.return_value = 0
+            mock_process.stdout = iter([])
+
+            with patch('subprocess.Popen', return_value=mock_process):
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    mock_process.wait.side_effect = KeyboardInterrupt()
+                    cmd_preview(mock_args)
+
+                    output = mock_stdout.getvalue()
+                    # Check content type detection
+                    self.assertIn("Content Type: project", output)
+
+    def test_preview_starts_hugo_server_with_correct_flags(self):
+        """preview command starts Hugo server with buildDrafts and other flags."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            content_dir = Path(tmpdir) / "content" / "english" / "post"
+            content_dir.mkdir(parents=True)
+
+            note_path = Path(tmpdir) / "flags-test.md"
+            note_path.write_text("""---
+title: Flags Test
+date: 2024-06-15
+tags:
+  - test
+publish: true
+---
+
+Content.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.hugo_root = tmpdir
+            mock_args.port = 1313
+            mock_args.no_browser = True
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.environment = 'development'
+
+            mock_process = MagicMock()
+            mock_process.poll.return_value = 0
+            mock_process.stdout = iter([])
+
+            with patch('subprocess.Popen', return_value=mock_process) as mock_popen:
+                with patch('sys.stdout', new_callable=StringIO):
+                    mock_process.wait.side_effect = KeyboardInterrupt()
+                    cmd_preview(mock_args)
+
+                    # Verify hugo command
+                    call_args = mock_popen.call_args[0][0]
+                    self.assertIn('hugo', call_args)
+                    self.assertIn('server', call_args)
+                    self.assertIn('--buildDrafts', call_args)
+                    self.assertIn('--buildFuture', call_args)
+                    self.assertIn('--disableFastRender', call_args)
+
+    def test_preview_handles_parse_error(self):
+        """preview command handles note parse errors gracefully."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create invalid markdown file
+            note_path = Path(tmpdir) / "invalid.md"
+            note_path.write_text("not valid yaml frontmatter\n---")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.hugo_root = tmpdir
+            mock_args.port = 1313
+            mock_args.no_browser = True
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.environment = 'development'
+
+            # The parse might succeed with empty frontmatter or fail
+            # We're testing it doesn't crash ungracefully
+            with patch('sys.stdout', new_callable=StringIO):
+                with patch('sys.stderr', new_callable=StringIO):
+                    try:
+                        mock_process = MagicMock()
+                        mock_process.poll.return_value = 0
+                        mock_process.stdout = iter([])
+                        mock_process.wait.side_effect = KeyboardInterrupt()
+                        with patch('subprocess.Popen', return_value=mock_process):
+                            cmd_preview(mock_args)
+                    except SystemExit:
+                        # Expected for invalid notes
+                        pass
 
 
 if __name__ == '__main__':

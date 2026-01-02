@@ -37,7 +37,15 @@ This phase adds validation, error handling, and quality-of-life improvements to 
   - 4 comprehensive tests in `test_publish_cli.py` covering: warnings pass without strict, warnings fail with strict, valid passes with strict, errors+warnings show both
   - Help text: "Fail if any validation warnings are present (default: only fail on errors)"
 
-- [ ] Implement a `preview` subcommand that converts a note, writes it to a temporary directory, runs `hugo server` pointing to that temp content, and opens the browser to preview the single post
+- [x] Implement a `preview` subcommand that converts a note, writes it to a temporary directory, runs `hugo server` pointing to that temp content, and opens the browser to preview the single post
+  - Added `cmd_preview()` function in `publish.py` that handles the complete preview workflow
+  - Converts note using existing `convert_note()` pipeline with media extraction and syntax conversion
+  - Writes to a temporary file (`_preview_{slug}.md`) in the appropriate Hugo content directory
+  - Starts `hugo server` with flags: `--buildDrafts`, `--buildFuture`, `--navigateToChanged`, `--disableFastRender`
+  - Opens browser to the preview URL (can disable with `--no-browser`)
+  - Cleans up the temporary preview file on Ctrl+C or server exit
+  - CLI options: `--port`, `--no-browser`, `--skip-upload`/`--upload`, `--no-gallery`, `--keep-associations`, `-e/--environment`
+  - Added 8 comprehensive tests in `test_publish_cli.py` covering file handling, browser behavior, port customization, cleanup, content routing, Hugo flags, and error handling
 
 - [ ] Add colored output throughout the CLI using `rich`: green for success, yellow for warnings, red for errors
 
