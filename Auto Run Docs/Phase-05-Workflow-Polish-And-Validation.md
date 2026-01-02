@@ -1,0 +1,39 @@
+# Phase 5: Workflow Polish and Validation
+
+This phase adds validation, error handling, and quality-of-life improvements to make the publishing workflow robust and pleasant to use. It includes content validation, better error messages, and a preview feature so you can see exactly what will be published before committing.
+
+## Tasks
+
+- [x] Create `scripts/validators.py` module with a `validate_frontmatter()` function that checks for required fields (title, date, tags) and returns a list of validation errors
+  - Created `validators.py` with `ValidationIssue` dataclass, `ValidationSeverity` enum, and `validate_frontmatter()` function
+  - Checks for missing required fields (ERROR severity) and empty/malformed values (WARNING severity)
+  - Includes helper functions: `is_valid()`, `has_warnings()`, `format_issues()`
+  - Added comprehensive test suite in `test_validators.py` (44 tests, all passing)
+
+- [ ] Add `validate_media_references()` function to `scripts/validators.py` that checks all embedded media references resolve to existing files
+
+- [ ] Add `validate_internal_links()` function that checks wikilinks point to notes that either exist in the vault or have already been published to Hugo
+
+- [ ] Create a `validate` subcommand in `publish.py` that runs all validators on a note and displays a formatted report of any issues
+
+- [ ] Add `--strict` flag to the `publish` subcommand that fails if any validation warnings are present (default is to only fail on errors)
+
+- [ ] Implement a `preview` subcommand that converts a note, writes it to a temporary directory, runs `hugo server` pointing to that temp content, and opens the browser to preview the single post
+
+- [ ] Add colored output throughout the CLI using `rich`: green for success, yellow for warnings, red for errors
+
+- [ ] Create `scripts/exceptions.py` with custom exception classes: `PublishError`, `ValidationError`, `MediaNotFoundError`, `UploadError` for better error handling
+
+- [ ] Add try/catch blocks throughout the pipeline with user-friendly error messages that explain what went wrong and how to fix it
+
+- [ ] Implement `--verbose` flag for detailed logging of each step in the conversion and upload process
+
+- [ ] Add `--quiet` flag that suppresses all output except errors
+
+- [ ] Create a `status` subcommand that shows: count of publishable notes, count already published, MinIO connection status, and last publish date
+
+- [ ] Add confirmation prompts before destructive operations (uploading to MinIO, overwriting existing Hugo posts) with `--yes` flag to skip prompts
+
+- [ ] Implement `--force` flag for the `publish` subcommand to re-publish notes even if they've been published before (useful for updates)
+
+- [ ] Add post-publish validation that builds Hugo and checks for errors after writing new content
