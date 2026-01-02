@@ -49,7 +49,11 @@ This phase adds media handling to the publish pipeline. The CLI will extract all
   - Added `build_minio_url()` helper function for URL construction
   - 14 unit tests added: 4 for `build_minio_url()` + 10 for `upload_media_batch()` (total project tests: 375)
 
-- [ ] Add `--skip-upload` flag to the `convert` subcommand for testing the media extraction without requiring MinIO access
+- [x] Add `--skip-upload` flag to the `convert` subcommand for testing the media extraction without requiring MinIO access
+  - Added `--skip-upload` flag to convert subcommand argument parser
+  - Flag is stored via `getattr(args, 'skip_upload', False)` for safe access
+  - Dry-run output shows "Media upload: SKIPPED" when flag is active
+  - 3 new unit tests in `test_publish_cli.py` (total project tests: 378)
 
 - [ ] Update `syntax_converter.py` to accept the media URL mapping and use actual MinIO URLs instead of placeholder paths when converting embedded images/videos
 

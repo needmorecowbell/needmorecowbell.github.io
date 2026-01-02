@@ -754,6 +754,95 @@ Content here.
             self.assertTrue(expected_path.exists())
 
 
+class TestCmdConvertSkipUpload(unittest.TestCase):
+    """Tests for the --skip-upload flag in cmd_convert."""
+
+    def test_skip_upload_flag_accessible(self):
+        """skip_upload flag is accessible from args."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test.md"
+            note_path.write_text("""---
+title: Skip Upload Test
+date: 2024-06-01
+publish: true
+---
+
+Content with ![[image.png]].
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.output = None
+            mock_args.skip_upload = True
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_convert(mock_args)
+                output = mock_stdout.getvalue()
+
+                # Should show skip upload message in dry run
+                self.assertIn('[DRY RUN] Media upload: SKIPPED', output)
+
+    def test_skip_upload_false_by_default(self):
+        """skip_upload defaults to False when not specified."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test.md"
+            note_path.write_text("""---
+title: No Skip Test
+date: 2024-06-01
+publish: true
+---
+
+Content here.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = True
+            mock_args.output = None
+            mock_args.skip_upload = False
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_convert(mock_args)
+                output = mock_stdout.getvalue()
+
+                # Should NOT show skip upload message when skip_upload is False
+                self.assertNotIn('Media upload: SKIPPED', output)
+
+    def test_skip_upload_with_actual_conversion(self):
+        """skip_upload works with actual file conversion (not just dry-run)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "test.md"
+            note_path.write_text("""---
+title: Full Convert Skip Test
+date: 2024-06-01
+publish: true
+---
+
+Content with ![[media.mp4]].
+""")
+
+            output_dir = Path(tmpdir) / "output"
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.output = str(output_dir)
+            mock_args.skip_upload = True
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_convert(mock_args)
+                output = mock_stdout.getvalue()
+
+                # Should successfully convert without attempting upload
+                self.assertIn('Converted:', output)
+                self.assertIn('Written to:', output)
+
+            # File should exist
+            expected_path = output_dir / "2024-06-01-full-convert-skip-test.md"
+            self.assertTrue(expected_path.exists())
+
+
 class TestCmdConvertIntegration(unittest.TestCase):
     """Integration tests for cmd_convert with full pipeline."""
 

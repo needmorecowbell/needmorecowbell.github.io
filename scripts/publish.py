@@ -258,6 +258,9 @@ def cmd_convert(args):
     # Get output directory from args or use default
     output_dir = args.output if hasattr(args, 'output') and args.output else DEFAULT_OUTPUT_DIR
 
+    # Get skip_upload flag (will be used for media upload integration)
+    skip_upload = getattr(args, 'skip_upload', False)
+
     try:
         hugo_frontmatter, converted_body, target_path = convert_note(note_path, output_dir)
     except Exception as e:
@@ -267,6 +270,8 @@ def cmd_convert(args):
     if args.dry_run:
         print(f"[DRY RUN] Would convert: {note_path}")
         print(f"[DRY RUN] Target path: {target_path}")
+        if skip_upload:
+            print(f"[DRY RUN] Media upload: SKIPPED")
         print()
         print("--- Preview of converted content ---")
         print()
@@ -351,6 +356,11 @@ Examples:
     convert_parser.add_argument(
         "--output",
         help="Hugo output directory (default: content/english/post)"
+    )
+    convert_parser.add_argument(
+        "--skip-upload",
+        action="store_true",
+        help="Skip media upload to MinIO (useful for testing media extraction)"
     )
     convert_parser.set_defaults(func=cmd_convert)
 
