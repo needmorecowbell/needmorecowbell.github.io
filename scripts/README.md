@@ -9,6 +9,56 @@ cd scripts/
 pip install -r requirements.txt
 ```
 
+## MinIO Setup (Optional)
+
+The tool can automatically upload media files (images, videos, audio) to MinIO or any S3-compatible storage. This is optional—without MinIO configured, media embeds will use the `{{<s3cdn>}}` Hugo shortcode.
+
+### 1. Create Environment File
+
+Copy the example environment file and fill in your credentials:
+
+```bash
+cp scripts/.env.example scripts/.env
+```
+
+Edit `scripts/.env` with your MinIO configuration:
+
+```bash
+# MinIO Server Endpoint (without protocol)
+MINIO_ENDPOINT=minio.example.com:9000
+
+# Credentials
+MINIO_ACCESS_KEY=your-access-key-here
+MINIO_SECRET_KEY=your-secret-key-here
+
+# Bucket name (will be created if it doesn't exist)
+MINIO_BUCKET=blog-assets
+
+# Use HTTPS (true/false)
+MINIO_SECURE=true
+```
+
+### 2. Supported Storage Providers
+
+The tool works with any S3-compatible storage:
+
+| Provider | Example Endpoint |
+|----------|-----------------|
+| Self-hosted MinIO | `minio.example.com:9000` |
+| AWS S3 | `s3.amazonaws.com` |
+| DigitalOcean Spaces | `nyc3.digitaloceanspaces.com` |
+| Backblaze B2 | `s3.us-west-002.backblazeb2.com` |
+
+### 3. Media File Structure
+
+Media files are uploaded preserving their path structure:
+
+```
+Local: /home/user/Media/2021/06/photo.jpg
+MinIO: bucket/assets/2021/06/photo.jpg
+URL:   https://minio.example.com/bucket/assets/2021/06/photo.jpg
+```
+
 ## Quick Start
 
 ```bash
@@ -18,11 +68,17 @@ python scripts/publish.py scan
 # See where notes will be published
 python scripts/publish.py list
 
+# Preview media files that would be uploaded
+python scripts/publish.py media ~/Notes/Blog/my-post.md
+
 # Convert a specific note (preview first)
 python scripts/publish.py convert ~/Notes/Blog/my-post.md --dry-run
 
-# Convert and write the file
+# Convert and write the file (with media upload)
 python scripts/publish.py convert ~/Notes/Blog/my-post.md
+
+# Convert without uploading media (test mode)
+python scripts/publish.py convert ~/Notes/Blog/my-post.md --skip-upload
 ```
 
 ## Commands
@@ -68,25 +124,62 @@ my-first-post.md          My First Blog Post             2024-01-15   content/en
 Found 1 publishable note(s).
 ```
 
+### `media` - Preview Media References
+
+Lists all media files (images, videos, audio) referenced in a note without uploading them. Useful for checking what would be uploaded before running `convert`.
+
+```bash
+python scripts/publish.py media ~/Notes/Blog/my-post.md
+```
+
+**Output example:**
+```
+Media references in: my-post.md
+============================================================
+
+Resolved (3 file(s)):
+  2021/06/photo.jpg
+    -> /home/user/Media/2021/06/photo.jpg
+  2021/06/video.mp4
+    -> /home/user/Media/2021/06/video.mp4
+  2021/06/diagram.png
+    -> /home/user/Media/2021/06/diagram.png
+
+Missing (1 file(s)):
+  2021/06/deleted-image.jpg [NOT FOUND]
+
+Summary: 4 reference(s), 3 resolved, 1 missing
+```
+
 ### `convert` - Convert a Note
 
-Converts a single Obsidian note to Hugo format.
+Converts a single Obsidian note to Hugo format. When MinIO is configured, media files are automatically uploaded and their URLs are embedded in the converted output.
 
 ```bash
 # Preview conversion without writing
 python scripts/publish.py convert ~/Notes/Blog/my-post.md --dry-run
 
-# Convert and write to Hugo content directory
+# Convert and write to Hugo content directory (uploads media to MinIO)
 python scripts/publish.py convert ~/Notes/Blog/my-post.md
 
 # Specify custom output directory
 python scripts/publish.py convert ~/Notes/Blog/my-post.md --output content/english/blog
+
+# Skip media upload (useful for testing or when MinIO isn't configured)
+python scripts/publish.py convert ~/Notes/Blog/my-post.md --skip-upload
 ```
+
+**Options:**
+- `--dry-run`: Preview the conversion without writing files or uploading media
+- `--output DIR`: Custom Hugo output directory (default: `content/english/post`)
+- `--skip-upload`: Skip uploading media to MinIO (media embeds will use `{{<s3cdn>}}` shortcode)
 
 **With `--dry-run`:**
 ```
 [DRY RUN] Would convert: /home/user/Notes/Blog/my-post.md
 [DRY RUN] Target path: content/english/post/2024-01-15-my-post.md
+[DRY RUN] Media files found: 3
+[DRY RUN] Media files missing: 1
 
 --- Preview of converted content ---
 
@@ -101,6 +194,11 @@ tags:
 
 This is my blog post content...
 ```
+
+**Media Upload Behavior:**
+- Existing files in MinIO are skipped (no re-upload)
+- Progress bars show upload status when `rich` is installed
+- Failed uploads fall back to `{{<s3cdn>}}` shortcode
 
 ## How It Works
 
@@ -162,6 +260,8 @@ Example: A post titled "My First Blog Post" dated 2024-01-15 becomes:
 | `syntax_converter.py` | Convert wikilinks, image embeds, and media embeds |
 | `frontmatter_transformer.py` | Transform Obsidian frontmatter to Hugo format |
 | `hugo_writer.py` | Write formatted Hugo markdown files |
+| `media_extractor.py` | Extract and resolve media references from Obsidian syntax |
+| `minio_uploader.py` | Upload media files to MinIO/S3-compatible storage |
 
 ## Running Tests
 
@@ -175,6 +275,8 @@ python -m pytest test_syntax_converter.py -v
 python -m pytest test_frontmatter_transformer.py -v
 python -m pytest test_hugo_writer.py -v
 python -m pytest test_publish_cli.py -v
+python -m pytest test_media_extractor.py -v
+python -m pytest test_minio_uploader.py -v
 ```
 
 ## Default Paths
@@ -183,4 +285,6 @@ python -m pytest test_publish_cli.py -v
 |---------|---------------|
 | Obsidian vault | `~/Notes` |
 | Hugo output directory | `content/english/post` |
+| Media folder | `~/Notes/Media` |
+| MinIO asset prefix | `assets` |
 | Skipped directories | `People` |

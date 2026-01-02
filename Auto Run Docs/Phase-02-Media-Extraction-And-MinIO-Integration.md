@@ -113,4 +113,13 @@ This phase adds media handling to the publish pipeline. The CLI will extract all
   - Tests `test_all_image_extensions()` and `test_all_video_extensions()` verify full format support
   - All 32 media extractor tests pass
 
-- [ ] Update `scripts/README.md` with MinIO setup instructions and the new media-related commands
+- [x] Update `scripts/README.md` with MinIO setup instructions and the new media-related commands
+  - Added "MinIO Setup (Optional)" section with environment file setup instructions
+  - Added supported storage providers table (MinIO, AWS S3, DigitalOcean Spaces, Backblaze B2)
+  - Added media file structure explanation showing local-to-MinIO path mapping
+  - Added `media` command documentation with output examples
+  - Updated `convert` command documentation with `--skip-upload` flag and media upload behavior
+  - Updated Quick Start section with media and skip-upload examples
+  - Added `media_extractor.py` and `minio_uploader.py` to Module Overview table
+  - Added `test_media_extractor.py` and `test_minio_uploader.py` to Running Tests section
+  - Added Media folder and MinIO asset prefix to Default Paths table
