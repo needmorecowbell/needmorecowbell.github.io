@@ -16,7 +16,12 @@ This phase updates the Hugo configuration and s3cdn shortcode to work with your 
   - Added `mediaBasePath = "amblog/assets"` parameter for publish script integration
   - Cross-referenced config/development/params.toml and scripts/.env files
 
-- [ ] Enhance `layouts/shortcodes/s3cdn.html` to support optional path parameter: `{{</* s3cdn "path/to/file.jpg" */>}}` outputs the full URL, while `{{</* s3cdn */>}}` outputs just the base URL (maintaining backward compatibility)
+- [x] Enhance `layouts/shortcodes/s3cdn.html` to support optional path parameter: `{{</* s3cdn "path/to/file.jpg" */>}}` outputs the full URL, while `{{</* s3cdn */>}}` outputs just the base URL (maintaining backward compatibility)
+  - Updated shortcode to check for positional parameter `.Get 0`
+  - When path is provided: outputs `{baseURL}/{path}`
+  - When no path: outputs just `{baseURL}` (backward compatible with existing `{{<s3cdn>}}/path` usage)
+  - Uses Hugo whitespace trimming (`{{-` and `-}}`) for clean output
+  - Verified with Hugo build - existing gallery and photography pages render correctly
 
 - [ ] Create `layouts/shortcodes/video.html` shortcode for embedding videos with HTML5 video tag, accepting path, poster (thumbnail), and optional autoplay/loop/muted attributes
 

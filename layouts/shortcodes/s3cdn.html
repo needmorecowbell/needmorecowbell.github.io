@@ -1,1 +1,7 @@
-{{ .Page.Site.Params.S3CDN }}
+{{- $baseURL := .Page.Site.Params.S3CDN -}}
+{{- if .Get 0 -}}
+{{- $path := .Get 0 -}}
+{{- $baseURL }}/{{ $path -}}
+{{- else -}}
+{{- $baseURL -}}
+{{- end -}}
