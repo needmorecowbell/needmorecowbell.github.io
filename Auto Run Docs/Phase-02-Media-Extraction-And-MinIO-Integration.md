@@ -33,7 +33,13 @@ This phase adds media handling to the publish pipeline. The CLI will extract all
   - Added `minio>=7.2.0` to requirements.txt
   - 19 unit tests in `test_minio_uploader.py` (total project tests: 350)
 
-- [ ] Add `upload_file()` function to `scripts/minio_uploader.py` that uploads a single file to MinIO, preserving the relative path structure (e.g., `2021/06/image.jpg` becomes `assets/2021/06/image.jpg` in the bucket)
+- [x] Add `upload_file()` function to `scripts/minio_uploader.py` that uploads a single file to MinIO, preserving the relative path structure (e.g., `2021/06/image.jpg` becomes `assets/2021/06/image.jpg` in the bucket)
+  - Uploads local files to MinIO with configurable `asset_prefix` (defaults to "assets")
+  - Normalizes paths by stripping leading slashes from both relative_path and prefix
+  - Auto-detects content type using `mimetypes` module (falls back to `application/octet-stream`)
+  - Validates that local file exists and is a file (not directory)
+  - Returns the object name on success (e.g., `assets/2021/06/image.jpg`), None on S3Error
+  - 12 unit tests added to `test_minio_uploader.py` (total project tests: 362)
 
 - [ ] Add `upload_media_batch()` function that takes a list of resolved media paths and uploads them all, returning a mapping of original Obsidian references to their final MinIO URLs
 

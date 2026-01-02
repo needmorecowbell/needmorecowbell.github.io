@@ -11,7 +11,9 @@ Install with: pip install minio
 """
 
 import logging
+import mimetypes
 import os
+from pathlib import Path
 from typing import Optional, TYPE_CHECKING
 
 # Configure module logger
@@ -146,3 +148,84 @@ def ensure_bucket_exists(client, bucket_name: str) -> bool:
     except minio_module.error.S3Error as e:
         logger.error(f"Error ensuring bucket exists: {e}")
         return False
+
+
+# Default prefix for uploaded assets in MinIO bucket
+DEFAULT_ASSET_PREFIX = "assets"
+
+
+def upload_file(
+    client,
+    bucket_name: str,
+    local_path: str,
+    relative_path: str,
+    asset_prefix: str = DEFAULT_ASSET_PREFIX
+) -> Optional[str]:
+    """
+    Upload a single file to MinIO, preserving the relative path structure.
+
+    Uploads a local file to MinIO with a path structure that preserves the
+    original relative path. For example, a file at `/home/adam/Media/2021/06/image.jpg`
+    with relative_path `2021/06/image.jpg` becomes `assets/2021/06/image.jpg`
+    in the bucket.
+
+    Args:
+        client: Initialized Minio client
+        bucket_name: Name of the target bucket
+        local_path: Full local path to the file to upload
+        relative_path: The relative path to preserve in MinIO
+                      (e.g., '2021/06/image.jpg')
+        asset_prefix: Prefix for the object path in MinIO (default: 'assets')
+
+    Returns:
+        The object name in MinIO (e.g., 'assets/2021/06/image.jpg') on success,
+        None on failure
+
+    Raises:
+        FileNotFoundError: If the local file does not exist
+        ValueError: If local_path or relative_path is empty
+    """
+    if not local_path:
+        raise ValueError("local_path cannot be empty")
+    if not relative_path:
+        raise ValueError("relative_path cannot be empty")
+
+    local_file = Path(local_path)
+    if not local_file.exists():
+        raise FileNotFoundError(f"Local file not found: {local_path}")
+    if not local_file.is_file():
+        raise ValueError(f"Path is not a file: {local_path}")
+
+    # Normalize the relative path - remove leading slashes
+    normalized_relative = relative_path.lstrip('/')
+
+    # Build the object name: prefix/relative/path
+    if asset_prefix:
+        object_name = f"{asset_prefix.strip('/')}/{normalized_relative}"
+    else:
+        object_name = normalized_relative
+
+    # Detect content type
+    content_type, _ = mimetypes.guess_type(local_path)
+    if content_type is None:
+        content_type = "application/octet-stream"
+
+    minio_module = _get_minio_module()
+
+    try:
+        logger.debug(f"Uploading {local_path} to {bucket_name}/{object_name}")
+
+        # Use fput_object for file uploads
+        result = client.fput_object(
+            bucket_name,
+            object_name,
+            local_path,
+            content_type=content_type
+        )
+
+        logger.info(f"Uploaded {object_name} (etag: {result.etag})")
+        return object_name
+
+    except minio_module.error.S3Error as e:
+        logger.error(f"Failed to upload {local_path}: {e}")
+        return None

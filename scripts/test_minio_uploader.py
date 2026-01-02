@@ -10,16 +10,20 @@ import os
 import unittest
 from unittest.mock import MagicMock, patch, PropertyMock
 
+import tempfile
+
 from minio_uploader import (
     get_minio_client,
     get_bucket_name,
     ensure_bucket_exists,
+    upload_file,
     MinioConfigError,
     MINIO_ENDPOINT_VAR,
     MINIO_ACCESS_KEY_VAR,
     MINIO_SECRET_KEY_VAR,
     MINIO_BUCKET_VAR,
     MINIO_SECURE_VAR,
+    DEFAULT_ASSET_PREFIX,
     _get_minio_module,
 )
 
@@ -314,6 +318,258 @@ class TestGetMinioModule(unittest.TestCase):
         with self.assertRaises(ImportError) as ctx:
             _get_minio_module()
         self.assertIn("pip install minio", str(ctx.exception))
+
+
+class TestUploadFile(unittest.TestCase):
+    """Tests for upload_file() function."""
+
+    def test_upload_file_success(self):
+        """Successfully uploads a file and returns the object name."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+            f.write(b'fake image data')
+            temp_path = f.name
+
+        try:
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                result = upload_file(
+                    mock_client,
+                    "my-bucket",
+                    temp_path,
+                    "2021/06/image.jpg"
+                )
+
+            self.assertEqual(result, "assets/2021/06/image.jpg")
+            mock_client.fput_object.assert_called_once()
+            call_args = mock_client.fput_object.call_args
+            self.assertEqual(call_args[0][0], "my-bucket")
+            self.assertEqual(call_args[0][1], "assets/2021/06/image.jpg")
+            self.assertEqual(call_args[0][2], temp_path)
+            self.assertEqual(call_args[1]['content_type'], "image/jpeg")
+        finally:
+            os.unlink(temp_path)
+
+    def test_upload_file_with_custom_prefix(self):
+        """Uses custom asset prefix when provided."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
+            f.write(b'fake image data')
+            temp_path = f.name
+
+        try:
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                result = upload_file(
+                    mock_client,
+                    "my-bucket",
+                    temp_path,
+                    "2021/06/photo.png",
+                    asset_prefix="media"
+                )
+
+            self.assertEqual(result, "media/2021/06/photo.png")
+        finally:
+            os.unlink(temp_path)
+
+    def test_upload_file_with_empty_prefix(self):
+        """Uses no prefix when asset_prefix is empty."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        with tempfile.NamedTemporaryFile(suffix='.gif', delete=False) as f:
+            f.write(b'fake image data')
+            temp_path = f.name
+
+        try:
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                result = upload_file(
+                    mock_client,
+                    "my-bucket",
+                    temp_path,
+                    "2021/06/animation.gif",
+                    asset_prefix=""
+                )
+
+            self.assertEqual(result, "2021/06/animation.gif")
+        finally:
+            os.unlink(temp_path)
+
+    def test_upload_file_strips_leading_slashes(self):
+        """Strips leading slashes from relative path."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+            f.write(b'fake image data')
+            temp_path = f.name
+
+        try:
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                result = upload_file(
+                    mock_client,
+                    "my-bucket",
+                    temp_path,
+                    "/2021/06/image.jpg"
+                )
+
+            self.assertEqual(result, "assets/2021/06/image.jpg")
+        finally:
+            os.unlink(temp_path)
+
+    def test_upload_file_raises_on_empty_local_path(self):
+        """Raises ValueError when local_path is empty."""
+        mock_client = MagicMock()
+        with self.assertRaises(ValueError) as ctx:
+            upload_file(mock_client, "bucket", "", "2021/image.jpg")
+        self.assertIn("local_path cannot be empty", str(ctx.exception))
+
+    def test_upload_file_raises_on_empty_relative_path(self):
+        """Raises ValueError when relative_path is empty."""
+        mock_client = MagicMock()
+        with self.assertRaises(ValueError) as ctx:
+            upload_file(mock_client, "bucket", "/some/path.jpg", "")
+        self.assertIn("relative_path cannot be empty", str(ctx.exception))
+
+    def test_upload_file_raises_on_missing_file(self):
+        """Raises FileNotFoundError when local file doesn't exist."""
+        mock_client = MagicMock()
+        with self.assertRaises(FileNotFoundError) as ctx:
+            upload_file(
+                mock_client,
+                "bucket",
+                "/nonexistent/path/image.jpg",
+                "image.jpg"
+            )
+        self.assertIn("Local file not found", str(ctx.exception))
+
+    def test_upload_file_raises_on_directory(self):
+        """Raises ValueError when local_path is a directory."""
+        mock_client = MagicMock()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with self.assertRaises(ValueError) as ctx:
+                upload_file(mock_client, "bucket", temp_dir, "somepath")
+            self.assertIn("not a file", str(ctx.exception))
+
+    def test_upload_file_returns_none_on_s3_error(self):
+        """Returns None when S3Error occurs during upload."""
+        mock_client = MagicMock()
+        mock_s3_error = Exception("Access Denied")
+        mock_minio = MagicMock()
+        mock_minio.error.S3Error = type(mock_s3_error)
+        mock_client.fput_object.side_effect = mock_s3_error
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+            f.write(b'fake image data')
+            temp_path = f.name
+
+        try:
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                result = upload_file(
+                    mock_client,
+                    "my-bucket",
+                    temp_path,
+                    "2021/06/image.jpg"
+                )
+
+            self.assertIsNone(result)
+        finally:
+            os.unlink(temp_path)
+
+    def test_upload_file_detects_content_type(self):
+        """Correctly detects content type for various file types."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        test_cases = [
+            ('.png', 'image/png'),
+            ('.gif', 'image/gif'),
+            ('.mp4', 'video/mp4'),
+            ('.webm', 'video/webm'),
+        ]
+
+        for suffix, expected_type in test_cases:
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+                f.write(b'fake data')
+                temp_path = f.name
+
+            try:
+                mock_client.reset_mock()
+                with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                    upload_file(mock_client, "bucket", temp_path, f"file{suffix}")
+
+                call_kwargs = mock_client.fput_object.call_args[1]
+                self.assertEqual(
+                    call_kwargs['content_type'],
+                    expected_type,
+                    f"Wrong content type for {suffix}"
+                )
+            finally:
+                os.unlink(temp_path)
+
+    def test_upload_file_uses_default_content_type_for_unknown(self):
+        """Uses application/octet-stream for unknown file types."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        with tempfile.NamedTemporaryFile(suffix='.xyz123', delete=False) as f:
+            f.write(b'fake data')
+            temp_path = f.name
+
+        try:
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                upload_file(mock_client, "bucket", temp_path, "file.xyz123")
+
+            call_kwargs = mock_client.fput_object.call_args[1]
+            self.assertEqual(call_kwargs['content_type'], "application/octet-stream")
+        finally:
+            os.unlink(temp_path)
+
+    def test_upload_file_strips_slashes_from_prefix(self):
+        """Strips leading and trailing slashes from asset prefix."""
+        mock_client = MagicMock()
+        mock_result = MagicMock()
+        mock_result.etag = "abc123"
+        mock_client.fput_object.return_value = mock_result
+        mock_minio = MagicMock()
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+            f.write(b'fake image data')
+            temp_path = f.name
+
+        try:
+            with patch('minio_uploader._get_minio_module', return_value=mock_minio):
+                result = upload_file(
+                    mock_client,
+                    "my-bucket",
+                    temp_path,
+                    "2021/image.jpg",
+                    asset_prefix="/custom/prefix/"
+                )
+
+            self.assertEqual(result, "custom/prefix/2021/image.jpg")
+        finally:
+            os.unlink(temp_path)
 
 
 if __name__ == "__main__":
