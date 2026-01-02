@@ -31,7 +31,11 @@ This phase adds validation, error handling, and quality-of-life improvements to 
   - Added CLI arguments: `--vault` and `--hugo-root` for customizing validation paths
   - Added 8 comprehensive tests covering all exit codes, error conditions, and output formatting
 
-- [ ] Add `--strict` flag to the `publish` subcommand that fails if any validation warnings are present (default is to only fail on errors)
+- [x] Add `--strict` flag to the `publish` subcommand that fails if any validation warnings are present (default is to only fail on errors)
+  - Flag already implemented at `publish.py:1434-1438` with `action="store_true"`
+  - Logic at `publish.py:917-933` checks `strict_mode` and exits with code 2 if warnings found
+  - 4 comprehensive tests in `test_publish_cli.py` covering: warnings pass without strict, warnings fail with strict, valid passes with strict, errors+warnings show both
+  - Help text: "Fail if any validation warnings are present (default: only fail on errors)"
 
 - [ ] Implement a `preview` subcommand that converts a note, writes it to a temporary directory, runs `hugo server` pointing to that temp content, and opens the browser to preview the single post
 
