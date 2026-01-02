@@ -50,7 +50,13 @@ This phase establishes the development environment and builds a working CLI tool
   - Includes proper MIME type detection for all formats
   - Added 34 comprehensive unit tests (total now 93 tests passing in syntax_converter)
 
-- [ ] Create `scripts/frontmatter_transformer.py` module with a `transform_to_hugo()` function that converts Obsidian frontmatter to Hugo-compatible format (ensuring required fields: title, date, draft, tags)
+- [x] Create `scripts/frontmatter_transformer.py` module with a `transform_to_hugo()` function that converts Obsidian frontmatter to Hugo-compatible format (ensuring required fields: title, date, draft, tags)
+  - Created `frontmatter_transformer.py` with `transform_to_hugo()` function on 2026-01-02
+  - Ensures required Hugo fields: title, date (normalized to YYYY-MM-DD), draft (boolean), tags (list)
+  - Normalizes dates from various formats (datetime objects, ISO strings, quoted strings, slash-separated, etc.)
+  - Preserves optional Hugo fields: author, description, categories, series, subtitle, headerimg, aliases, weight, featured, toc
+  - Removes Obsidian-specific `publish` field from output
+  - Added comprehensive test suite in `test_frontmatter_transformer.py` (45 tests passing, 161 total tests in scripts/)
 
 - [ ] Add logic to `frontmatter_transformer.py` to extract the first H1 heading as the title if no title exists in frontmatter
 
