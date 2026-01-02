@@ -23,7 +23,15 @@ This phase updates the Hugo configuration and s3cdn shortcode to work with your 
   - Uses Hugo whitespace trimming (`{{-` and `-}}`) for clean output
   - Verified with Hugo build - existing gallery and photography pages render correctly
 
-- [ ] Create `layouts/shortcodes/video.html` shortcode for embedding videos with HTML5 video tag, accepting path, poster (thumbnail), and optional autoplay/loop/muted attributes
+- [x] Create `layouts/shortcodes/video.html` shortcode for embedding videos with HTML5 video tag, accepting path, poster (thumbnail), and optional autoplay/loop/muted attributes
+  - Created HTML5 video shortcode with support for both positional and named `path` parameter
+  - Supports `poster` for thumbnail images (auto-prefixed with S3CDN URL unless absolute)
+  - Supports `autoplay`, `loop`, `muted` boolean attributes (default: false)
+  - Supports `controls` (default: true) and `class` (default: "video-player") parameters
+  - Automatically prefixes relative paths with S3CDN base URL; absolute URLs pass through unchanged
+  - Includes `playsinline` attribute for mobile compatibility
+  - Usage examples: `{{</* video "path/to/video.mp4" */>}}` or `{{</* video path="video.mp4" poster="thumb.jpg" autoplay="true" */>}}`
+  - Verified with Hugo build - all test cases render correctly
 
 - [ ] Create `layouts/shortcodes/gallery.html` shortcode that wraps nanogallery2 initialization, accepting a gallery ID and thumbnail path prefix as parameters
 

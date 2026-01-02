@@ -1,0 +1,37 @@
+{{- $baseURL := .Page.Site.Params.S3CDN -}}
+{{- $path := .Get "path" | default (.Get 0) -}}
+{{- $poster := .Get "poster" -}}
+{{- $autoplay := .Get "autoplay" | default false -}}
+{{- $loop := .Get "loop" | default false -}}
+{{- $muted := .Get "muted" | default false -}}
+{{- $controls := .Get "controls" | default true -}}
+{{- $class := .Get "class" | default "video-player" -}}
+
+{{- if not $path -}}
+  {{- errorf "video shortcode requires a path parameter: %s" .Position -}}
+{{- end -}}
+
+{{- $videoURL := $path -}}
+{{- if not (hasPrefix $path "http") -}}
+  {{- $videoURL = printf "%s/%s" $baseURL $path -}}
+{{- end -}}
+
+{{- $posterURL := "" -}}
+{{- if $poster -}}
+  {{- if not (hasPrefix $poster "http") -}}
+    {{- $posterURL = printf "%s/%s" $baseURL $poster -}}
+  {{- else -}}
+    {{- $posterURL = $poster -}}
+  {{- end -}}
+{{- end -}}
+
+<video class="{{ $class }}"
+  {{- if $posterURL }} poster="{{ $posterURL }}"{{ end }}
+  {{- if $controls }} controls{{ end }}
+  {{- if $autoplay }} autoplay{{ end }}
+  {{- if $loop }} loop{{ end }}
+  {{- if $muted }} muted{{ end }}
+  playsinline>
+  <source src="{{ $videoURL }}" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
