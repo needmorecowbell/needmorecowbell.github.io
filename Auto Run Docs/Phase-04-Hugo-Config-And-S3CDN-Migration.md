@@ -47,7 +47,14 @@ This phase updates the Hugo configuration and s3cdn shortcode to work with your 
     - Development: `mediaBasePath = "blog-assets"` in `config/development/params.toml`
   - Verified both config files contain the parameter with appropriate values for each environment
 
-- [ ] Create `scripts/config_manager.py` module that reads Hugo config files and provides the current S3CDN base URL and media upload path to the publish scripts
+- [x] Create `scripts/config_manager.py` module that reads Hugo config files and provides the current S3CDN base URL and media upload path to the publish scripts
+  - Created `config_manager.py` with functions: `get_hugo_config()`, `get_s3cdn_url()`, `get_media_base_path()`, `get_base_url()`, `list_environments()`
+  - Supports environment switching: pass `environment='development'` or `environment='production'` (default)
+  - Loads base config from `config/_default/*.toml` and merges environment-specific overrides from `config/<env>/*.toml`
+  - Uses Python 3.11+ built-in `tomllib` for TOML parsing (no external dependencies)
+  - Includes CLI interface: `python config_manager.py --s3cdn`, `--media-path`, `--list-envs`, `--json`
+  - Created comprehensive test suite with 37 tests covering TOML loading, config merging, and real config integration
+  - All 855 project tests pass
 
 - [ ] Update `syntax_converter.py` to use `config_manager.py` for the S3CDN base URL instead of hardcoded values
 
