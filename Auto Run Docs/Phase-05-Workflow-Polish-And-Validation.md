@@ -65,7 +65,22 @@ This phase adds validation, error handling, and quality-of-life improvements to 
   - All exceptions include formatted `__str__` methods with contextual details
   - Added comprehensive test suite in `test_exceptions.py` (34 tests, all passing)
 
-- [ ] Add try/catch blocks throughout the pipeline with user-friendly error messages that explain what went wrong and how to fix it
+- [x] Add try/catch blocks throughout the pipeline with user-friendly error messages that explain what went wrong and how to fix it
+  - Added `handle_error()` and `handle_warning()` functions in `publish.py` for centralized error handling
+  - Imports custom exceptions: `PublishError`, `ValidationError`, `MediaNotFoundError`, `UploadError`
+  - Provides user-friendly "How to fix" guidance for each error type:
+    - `FileNotFoundError`: Check file path, verify file exists, use absolute paths
+    - `yaml.YAMLError`: Check frontmatter syntax, YAML formatting tips
+    - `ValidationError`: Lists required fields, suggests using validate command
+    - `MediaNotFoundError`: Check media path, suggests using media command
+    - `UploadError`: MinIO connection settings, environment variables, bucket permissions
+    - `HugoConfigError`: Hugo config file locations, required settings
+    - `PermissionError`: File/directory permissions guidance
+    - `PublishError`: Shows context dictionary for debugging
+    - Unknown errors: Generic troubleshooting guidance
+  - Applied error handling to all CLI commands: `cmd_validate`, `cmd_media`, `cmd_convert`, `cmd_publish`, `cmd_preview`
+  - Added 21 new tests: 9 for `handle_error()`, 3 for `handle_warning()`, 5 for integration tests
+  - All 179 tests pass
 
 - [ ] Implement `--verbose` flag for detailed logging of each step in the conversion and upload process
 

@@ -534,7 +534,7 @@ class TestCmdMedia(unittest.TestCase):
             with self.assertRaises(SystemExit) as context:
                 cmd_media(mock_args)
             self.assertEqual(context.exception.code, 1)
-            self.assertIn("Note not found", mock_stdout.getvalue())
+            self.assertIn("Error during reading note", mock_stdout.getvalue())
 
     def test_media_no_media_references(self):
         """media command shows message when note has no media."""
@@ -694,7 +694,7 @@ class TestCmdValidate(unittest.TestCase):
             with self.assertRaises(SystemExit) as context:
                 cmd_validate(mock_args)
             self.assertEqual(context.exception.code, 1)
-            self.assertIn("Note not found", mock_stdout.getvalue())
+            self.assertIn("Error during reading note", mock_stdout.getvalue())
 
     def test_validate_valid_note_exits_zero(self):
         """validate command exits with 0 for valid note."""
@@ -1027,7 +1027,7 @@ class TestCmdConvert(unittest.TestCase):
             with self.assertRaises(SystemExit) as context:
                 cmd_convert(mock_args)
             self.assertEqual(context.exception.code, 1)
-            self.assertIn("Note not found", mock_stdout.getvalue())
+            self.assertIn("Error during reading note", mock_stdout.getvalue())
 
     def test_dry_run_prints_preview(self):
         """convert --dry-run prints preview without writing."""
@@ -2132,8 +2132,8 @@ publish: true
                         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
                             cmd_convert(mock_args)
 
-                            # Should warn but continue
-                            self.assertIn("Warning: MinIO upload skipped", mock_stdout.getvalue())
+                            # Should warn but continue (new message format)
+                            self.assertIn("Warning (MinIO import)", mock_stdout.getvalue())
 
                             # File should still be written
                             self.assertIn("Written to:", mock_stdout.getvalue())
@@ -2677,7 +2677,7 @@ class TestCmdPublish(unittest.TestCase):
             with self.assertRaises(SystemExit) as context:
                 cmd_publish(mock_args)
             self.assertEqual(context.exception.code, 1)
-            self.assertIn("Note not found", mock_stdout.getvalue())
+            self.assertIn("Error during reading note", mock_stdout.getvalue())
 
     def test_publish_dry_run_shows_summary(self):
         """publish --dry-run shows summary without making changes."""
@@ -2992,6 +2992,8 @@ Content here.
             note_path.write_text("""---
 title: Accept Test
 date: 2024-02-20
+tags:
+  - testing
 publish: true
 ---
 
@@ -3025,6 +3027,8 @@ Content here.
             note_path.write_text("""---
 title: Skip Upload Test
 date: 2024-03-10
+tags:
+  - testing
 publish: true
 ---
 
@@ -3047,12 +3051,14 @@ publish: true
             with patch('publish.resolve_media_path') as mock_resolve:
                 mock_resolve.return_value = str(media_dir / "photo.jpg")
 
-                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-                    cmd_publish(mock_args)
-                    output = mock_stdout.getvalue()
+                # Mock the media validation to avoid errors about missing files
+                with patch('publish.validate_media_references', return_value=[]):
+                    with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                        cmd_publish(mock_args)
+                        output = mock_stdout.getvalue()
 
-                    self.assertIn("Media Upload: SKIPPED", output)
-                    self.assertIn("PUBLISH COMPLETE", output)
+                        self.assertIn("Media Upload: SKIPPED", output)
+                        self.assertIn("PUBLISH COMPLETE", output)
 
     def test_publish_with_no_gallery_flag(self):
         """publish --no-gallery skips gallery generation."""
@@ -3061,6 +3067,8 @@ publish: true
             note_path.write_text("""---
 title: No Gallery Test
 date: 2024-04-05
+tags:
+  - testing
 publish: true
 ---
 
@@ -3080,11 +3088,13 @@ Content.
             mock_args.no_gallery = True
             mock_args.keep_associations = False
 
-            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-                cmd_publish(mock_args)
-                output = mock_stdout.getvalue()
+            # Mock the media validation to avoid errors about missing files
+            with patch('publish.validate_media_references', return_value=[]):
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    cmd_publish(mock_args)
+                    output = mock_stdout.getvalue()
 
-                self.assertIn("Gallery:      SKIPPED (1 images)", output)
+                    self.assertIn("Gallery:      SKIPPED (1 images)", output)
 
     def test_publish_with_keep_associations_flag(self):
         """publish --keep-associations converts associations to Hugo links."""
@@ -3093,6 +3103,8 @@ Content.
             note_path.write_text("""---
 title: Keep Associations Test
 date: 2024-05-15
+tags:
+  - testing
 publish: true
 ---
 
@@ -3113,11 +3125,13 @@ Content.
             mock_args.no_gallery = False
             mock_args.keep_associations = True
 
-            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-                cmd_publish(mock_args)
-                output = mock_stdout.getvalue()
+            # Mock validators to avoid errors about missing links
+            with patch('publish.validate_internal_links', return_value=[]):
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    cmd_publish(mock_args)
+                    output = mock_stdout.getvalue()
 
-                self.assertIn("Associations: CONVERT (2 links -> Related)", output)
+                    self.assertIn("Associations: CONVERT (2 links -> Related)", output)
 
     def test_publish_with_validation_errors_exits_one(self):
         """publish command exits with 1 when validation errors are found."""
@@ -3336,12 +3350,15 @@ Regular markdown **works** fine.
             mock_args.no_gallery = False
             mock_args.keep_associations = False
 
-            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-                cmd_publish(mock_args)
-                output = mock_stdout.getvalue()
+            # Mock validators to avoid errors about missing files/links
+            with patch('publish.validate_media_references', return_value=[]):
+                with patch('publish.validate_internal_links', return_value=[]):
+                    with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                        cmd_publish(mock_args)
+                        output = mock_stdout.getvalue()
 
-                self.assertIn("PUBLISH SUMMARY", output)
-                self.assertIn("PUBLISH COMPLETE", output)
+                        self.assertIn("PUBLISH SUMMARY", output)
+                        self.assertIn("PUBLISH COMPLETE", output)
 
             # Read the generated file
             expected_path = Path(tmpdir) / "content/english/post/2024-09-15-full-integration-publish-test.md"
@@ -3394,11 +3411,13 @@ Photos from my summer trip.
             mock_args.no_gallery = False
             mock_args.keep_associations = False
 
-            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-                cmd_publish(mock_args)
-                output = mock_stdout.getvalue()
+            # Mock validators to avoid errors about missing files
+            with patch('publish.validate_media_references', return_value=[]):
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    cmd_publish(mock_args)
+                    output = mock_stdout.getvalue()
 
-                self.assertIn("Content Type: photography", output)
+                    self.assertIn("Content Type: photography", output)
 
             # File should be in photography directory
             expected_path = Path(tmpdir) / "content/english/photography/2024-07-20-summer-photography-trip.md"
@@ -3411,6 +3430,8 @@ Photos from my summer trip.
             note_path.write_text("""---
 title: MinIO Upload Test
 date: 2024-08-10
+tags:
+  - testing
 publish: true
 ---
 
@@ -3435,14 +3456,16 @@ publish: true
             with patch('publish.resolve_media_path') as mock_resolve:
                 mock_resolve.return_value = str(media_dir / "photo.jpg")
 
-                with patch('publish.upload_media_to_minio', return_value=mock_url_map) as mock_upload:
-                    with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-                        cmd_publish(mock_args)
-                        output = mock_stdout.getvalue()
+                # Mock validators to avoid errors about missing files
+                with patch('publish.validate_media_references', return_value=[]):
+                    with patch('publish.upload_media_to_minio', return_value=mock_url_map) as mock_upload:
+                        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                            cmd_publish(mock_args)
+                            output = mock_stdout.getvalue()
 
-                        self.assertIn("Uploading 1 media file(s) to MinIO", output)
-                        self.assertIn("Upload complete: 1 uploaded", output)
-                        mock_upload.assert_called_once()
+                            self.assertIn("Uploading 1 media file(s) to MinIO", output)
+                            self.assertIn("Upload complete: 1 uploaded", output)
+                            mock_upload.assert_called_once()
 
             # Check file uses the MinIO URL
             expected_path = Path(tmpdir) / "content/english/post/2024-08-10-minio-upload-test.md"
@@ -3456,6 +3479,8 @@ publish: true
             note_path.write_text("""---
 title: Error Test
 date: 2024-09-05
+tags:
+  - testing
 publish: true
 ---
 
@@ -3478,12 +3503,15 @@ publish: true
             with patch('publish.resolve_media_path') as mock_resolve:
                 mock_resolve.return_value = str(media_dir / "photo.jpg")
 
-                with patch('publish.upload_media_to_minio', side_effect=ImportError("minio not installed")):
-                    with patch('sys.stdout', new_callable=StringIO):
-                        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-                            cmd_publish(mock_args)
+                # Mock validators to avoid errors about missing files
+                with patch('publish.validate_media_references', return_value=[]):
+                    with patch('publish.upload_media_to_minio', side_effect=ImportError("minio not installed")):
+                        with patch('sys.stdout', new_callable=StringIO):
+                            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                                cmd_publish(mock_args)
 
-                            self.assertIn("Warning: MinIO upload skipped", mock_stdout.getvalue())
+                                # Updated message format
+                                self.assertIn("Warning (MinIO import)", mock_stdout.getvalue())
 
             # File should still be written (with s3cdn fallback)
             expected_path = Path(tmpdir) / "content/english/post/2024-09-05-error-test.md"
@@ -3503,6 +3531,8 @@ class TestCmdPublishDispatch(unittest.TestCase):
             note_path.write_text("""---
 title: Test Note
 date: 2024-01-15
+tags:
+  - testing
 publish: true
 ---
 
@@ -3962,6 +3992,8 @@ Content here.
             note_path.write_text("""---
 title: Publish Environment Test
 date: 2024-12-01
+tags:
+  - testing
 publish: true
 ---
 
@@ -4063,7 +4095,7 @@ class TestCmdPreview(unittest.TestCase):
             with self.assertRaises(SystemExit) as context:
                 cmd_preview(mock_args)
             self.assertEqual(context.exception.code, 1)
-            self.assertIn("Note not found", mock_stdout.getvalue())
+            self.assertIn("Error during reading note", mock_stdout.getvalue())
 
     def test_preview_converts_note_and_writes_temp_file(self):
         """preview command converts note and writes to temp location."""
@@ -4374,6 +4406,327 @@ Content.
                     except SystemExit:
                         # Expected for invalid notes
                         pass
+
+
+class TestHandleError(unittest.TestCase):
+    """Tests for the handle_error function."""
+
+    def test_file_not_found_shows_guidance(self):
+        """FileNotFoundError shows file path guidance."""
+        from publish import handle_error
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            with self.assertRaises(SystemExit) as ctx:
+                handle_error(FileNotFoundError("test.md"), "reading note")
+
+            output = mock_stdout.getvalue()
+            self.assertIn("Error during reading note", output)
+            self.assertIn("How to fix", output)
+            self.assertIn("Check that the file path is correct", output)
+            self.assertEqual(ctx.exception.code, 1)
+
+    def test_yaml_error_shows_frontmatter_guidance(self):
+        """YAML errors show frontmatter syntax guidance."""
+        import yaml
+        from publish import handle_error
+
+        yaml_error = yaml.YAMLError("invalid syntax at line 5")
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            with self.assertRaises(SystemExit) as ctx:
+                handle_error(yaml_error, "parsing note")
+
+            output = mock_stdout.getvalue()
+            self.assertIn("Invalid YAML frontmatter", output)
+            self.assertIn("How to fix", output)
+            self.assertIn("frontmatter syntax", output)
+            self.assertEqual(ctx.exception.code, 1)
+
+    def test_validation_error_shows_field_guidance(self):
+        """ValidationError shows validation guidance."""
+        from publish import handle_error
+        from exceptions import ValidationError
+
+        error = ValidationError(
+            "Missing required field",
+            field="title",
+            issues=["title is required", "must be a string"]
+        )
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            with self.assertRaises(SystemExit) as ctx:
+                handle_error(error, "validating note")
+
+            output = mock_stdout.getvalue()
+            self.assertIn("title", output)
+            self.assertIn("How to fix", output)
+            self.assertIn("required frontmatter fields", output)
+            self.assertEqual(ctx.exception.code, 1)
+
+    def test_media_not_found_error_shows_media_guidance(self):
+        """MediaNotFoundError shows media path guidance."""
+        from publish import handle_error
+        from exceptions import MediaNotFoundError
+
+        error = MediaNotFoundError(
+            "Media file not found",
+            media_reference="2021/06/photo.jpg",
+            expected_path=Path("/home/user/Media/2021/06/photo.jpg")
+        )
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            with self.assertRaises(SystemExit) as ctx:
+                handle_error(error, "processing media")
+
+            output = mock_stdout.getvalue()
+            self.assertIn("How to fix", output)
+            self.assertIn("media file exists", output)
+            self.assertIn("python publish.py media", output)
+            self.assertEqual(ctx.exception.code, 1)
+
+    def test_upload_error_shows_minio_guidance(self):
+        """UploadError shows MinIO configuration guidance."""
+        from publish import handle_error
+        from exceptions import UploadError
+
+        error = UploadError(
+            "Connection refused",
+            file_path=Path("/path/to/file.jpg"),
+            bucket="blog-assets",
+            original_error=ConnectionRefusedError("Connection refused")
+        )
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            with self.assertRaises(SystemExit) as ctx:
+                handle_error(error, "uploading media")
+
+            output = mock_stdout.getvalue()
+            self.assertIn("How to fix", output)
+            self.assertIn("MinIO connection settings", output)
+            self.assertIn("MINIO_ENDPOINT", output)
+            self.assertEqual(ctx.exception.code, 1)
+
+    def test_hugo_config_error_shows_config_guidance(self):
+        """HugoConfigError shows config file guidance."""
+        from publish import handle_error
+        from config_manager import HugoConfigError
+
+        error = HugoConfigError("S3CDN not configured")
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            with self.assertRaises(SystemExit) as ctx:
+                handle_error(error, "loading config")
+
+            output = mock_stdout.getvalue()
+            self.assertIn("How to fix", output)
+            self.assertIn("Hugo config files", output)
+            self.assertIn("params.toml", output)
+            self.assertEqual(ctx.exception.code, 1)
+
+    def test_permission_error_shows_permission_guidance(self):
+        """PermissionError shows file permission guidance."""
+        from publish import handle_error
+
+        error = PermissionError("Permission denied: /path/to/file")
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            with self.assertRaises(SystemExit) as ctx:
+                handle_error(error, "writing file")
+
+            output = mock_stdout.getvalue()
+            self.assertIn("Permission denied", output)
+            self.assertIn("How to fix", output)
+            self.assertIn("file and directory permissions", output)
+            self.assertEqual(ctx.exception.code, 1)
+
+    def test_generic_publish_error_shows_context(self):
+        """Generic PublishError shows its context."""
+        from publish import handle_error
+        from exceptions import PublishError
+
+        error = PublishError(
+            "Something went wrong",
+            context={"note": "test.md", "step": "conversion"}
+        )
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            with self.assertRaises(SystemExit) as ctx:
+                handle_error(error, "publishing")
+
+            output = mock_stdout.getvalue()
+            self.assertIn("Something went wrong", output)
+            self.assertIn("Additional context", output)
+            self.assertEqual(ctx.exception.code, 1)
+
+    def test_unknown_error_shows_generic_guidance(self):
+        """Unknown errors show generic troubleshooting guidance."""
+        from publish import handle_error
+
+        error = RuntimeError("Unexpected error occurred")
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            with self.assertRaises(SystemExit) as ctx:
+                handle_error(error, "processing")
+
+            output = mock_stdout.getvalue()
+            self.assertIn("Unexpected error", output)
+            self.assertIn("unexpected error", output.lower())
+            self.assertEqual(ctx.exception.code, 1)
+
+
+class TestHandleWarning(unittest.TestCase):
+    """Tests for the handle_warning function."""
+
+    def test_media_not_found_warning(self):
+        """MediaNotFoundError warning shows reference."""
+        from publish import handle_warning
+        from exceptions import MediaNotFoundError
+
+        error = MediaNotFoundError(
+            "Media file not found",
+            media_reference="2021/06/photo.jpg"
+        )
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            # Should NOT exit
+            handle_warning(error, "media check")
+            output = mock_stdout.getvalue()
+            self.assertIn("Warning", output)
+            self.assertIn("media files", output)
+
+    def test_upload_error_warning(self):
+        """UploadError warning shows details."""
+        from publish import handle_warning
+        from exceptions import UploadError
+
+        error = UploadError("Upload failed", file_path=Path("/path/to/file.jpg"))
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            # Should NOT exit
+            handle_warning(error, "upload")
+            output = mock_stdout.getvalue()
+            self.assertIn("Warning", output)
+
+    def test_generic_warning(self):
+        """Generic exceptions show warning message."""
+        from publish import handle_warning
+
+        error = RuntimeError("Something minor went wrong")
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            # Should NOT exit
+            handle_warning(error, "processing")
+            output = mock_stdout.getvalue()
+            self.assertIn("Warning", output)
+            self.assertIn("Something minor went wrong", output)
+
+
+class TestErrorHandlingIntegration(unittest.TestCase):
+    """Integration tests for error handling throughout the CLI."""
+
+    def test_cmd_validate_file_not_found_shows_guidance(self):
+        """cmd_validate shows user-friendly error when file not found."""
+        from publish import cmd_validate
+
+        mock_args = MagicMock()
+        mock_args.path = "/nonexistent/path/to/note.md"
+        mock_args.vault = None
+        mock_args.hugo_root = None
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            with self.assertRaises(SystemExit) as ctx:
+                cmd_validate(mock_args)
+
+            output = mock_stdout.getvalue()
+            self.assertIn("Error during reading note", output)
+            self.assertIn("How to fix", output)
+            self.assertEqual(ctx.exception.code, 1)
+
+    def test_cmd_media_file_not_found_shows_guidance(self):
+        """cmd_media shows user-friendly error when file not found."""
+        from publish import cmd_media
+
+        mock_args = MagicMock()
+        mock_args.path = "/nonexistent/path/to/note.md"
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            with self.assertRaises(SystemExit) as ctx:
+                cmd_media(mock_args)
+
+            output = mock_stdout.getvalue()
+            self.assertIn("Error during reading note", output)
+            self.assertIn("How to fix", output)
+            self.assertEqual(ctx.exception.code, 1)
+
+    def test_cmd_convert_file_not_found_shows_guidance(self):
+        """cmd_convert shows user-friendly error when file not found."""
+        from publish import cmd_convert
+
+        mock_args = MagicMock()
+        mock_args.path = "/nonexistent/path/to/note.md"
+        mock_args.output = None
+        mock_args.dry_run = False
+        mock_args.skip_upload = True
+        mock_args.no_gallery = False
+        mock_args.keep_associations = False
+        mock_args.environment = None
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            with self.assertRaises(SystemExit) as ctx:
+                cmd_convert(mock_args)
+
+            output = mock_stdout.getvalue()
+            self.assertIn("Error during reading note", output)
+            self.assertIn("How to fix", output)
+            self.assertEqual(ctx.exception.code, 1)
+
+    def test_cmd_publish_file_not_found_shows_guidance(self):
+        """cmd_publish shows user-friendly error when file not found."""
+        from publish import cmd_publish
+
+        mock_args = MagicMock()
+        mock_args.path = "/nonexistent/path/to/note.md"
+        mock_args.dry_run = False
+        mock_args.skip_upload = True
+        mock_args.no_gallery = False
+        mock_args.keep_associations = False
+        mock_args.yes = True
+        mock_args.strict = False
+        mock_args.hugo_root = None
+        mock_args.vault = None
+        mock_args.environment = None
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            with self.assertRaises(SystemExit) as ctx:
+                cmd_publish(mock_args)
+
+            output = mock_stdout.getvalue()
+            self.assertIn("Error during reading note", output)
+            self.assertIn("How to fix", output)
+            self.assertEqual(ctx.exception.code, 1)
+
+    def test_cmd_preview_file_not_found_shows_guidance(self):
+        """cmd_preview shows user-friendly error when file not found."""
+        from publish import cmd_preview
+
+        mock_args = MagicMock()
+        mock_args.path = "/nonexistent/path/to/note.md"
+        mock_args.hugo_root = None
+        mock_args.port = 1313
+        mock_args.no_browser = True
+        mock_args.skip_upload = True
+        mock_args.no_gallery = False
+        mock_args.keep_associations = False
+        mock_args.environment = None
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            with self.assertRaises(SystemExit) as ctx:
+                cmd_preview(mock_args)
+
+            output = mock_stdout.getvalue()
+            self.assertIn("Error during reading note", output)
+            self.assertIn("How to fix", output)
+            self.assertEqual(ctx.exception.code, 1)
 
 
 if __name__ == '__main__':

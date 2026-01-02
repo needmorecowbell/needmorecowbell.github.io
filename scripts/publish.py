@@ -86,6 +86,12 @@ from validators import (
     format_issues,
     ValidationSeverity,
 )
+from exceptions import (
+    PublishError,
+    ValidationError,
+    MediaNotFoundError,
+    UploadError,
+)
 from console import (
     console,
     error_console,
@@ -116,6 +122,139 @@ DEFAULT_OUTPUT_DIR = "content/english/post"
 
 # Default Hugo root directory (for write_hugo_post_routed)
 DEFAULT_HUGO_ROOT = Path(__file__).parent.parent.resolve()
+
+
+def handle_error(error: Exception, context: str = None) -> None:
+    """
+    Handle an error with user-friendly messaging and exit.
+
+    Provides helpful error messages that explain what went wrong
+    and suggest how to fix the issue.
+
+    Args:
+        error: The exception that was raised
+        context: Optional context about what operation was being performed
+    """
+    import yaml
+
+    # Build the error message with context if provided
+    context_prefix = f"Error during {context}: " if context else "Error: "
+
+    # Handle specific error types with targeted guidance
+    if isinstance(error, FileNotFoundError):
+        print_error(f"{context_prefix}File not found: {error}")
+        console.print()
+        console.print("[dim]How to fix:[/dim]")
+        console.print("  - Check that the file path is correct")
+        console.print("  - Ensure the file exists and is readable")
+        console.print("  - Use an absolute path if the relative path isn't working")
+        sys.exit(1)
+
+    elif isinstance(error, yaml.YAMLError):
+        print_error(f"{context_prefix}Invalid YAML frontmatter")
+        console.print()
+        console.print("[dim]How to fix:[/dim]")
+        console.print("  - Check your frontmatter syntax between the --- markers")
+        console.print("  - Ensure proper YAML formatting (indentation, colons, quotes)")
+        console.print("  - Common issues: missing colons, unquoted special characters")
+        console.print(f"  - YAML error details: {error}")
+        sys.exit(1)
+
+    elif isinstance(error, ValidationError):
+        print_error(f"{context_prefix}{error}")
+        if error.issues:
+            console.print()
+            console.print("[dim]Validation issues:[/dim]")
+            for issue in error.issues:
+                console.print(f"  - {issue}")
+        console.print()
+        console.print("[dim]How to fix:[/dim]")
+        console.print("  - Ensure all required frontmatter fields are present (title, date, tags)")
+        console.print("  - Run 'python publish.py validate <path>' for detailed validation")
+        sys.exit(1)
+
+    elif isinstance(error, MediaNotFoundError):
+        print_error(f"{context_prefix}{error}")
+        console.print()
+        console.print("[dim]How to fix:[/dim]")
+        console.print("  - Check that the media file exists at the expected path")
+        console.print("  - Verify the media reference in your note uses the correct path")
+        console.print("  - Ensure your Media folder is configured correctly")
+        console.print("  - Run 'python publish.py media <path>' to check all media references")
+        sys.exit(1)
+
+    elif isinstance(error, UploadError):
+        print_error(f"{context_prefix}{error}")
+        console.print()
+        console.print("[dim]How to fix:[/dim]")
+        console.print("  - Check MinIO connection settings in scripts/.env")
+        console.print("  - Verify MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY are set")
+        console.print("  - Ensure the MinIO server is running and accessible")
+        console.print("  - Check that the bucket exists and you have write permissions")
+        if error.original_error:
+            console.print(f"  - Underlying error: {error.original_error}")
+        sys.exit(1)
+
+    elif isinstance(error, HugoConfigError):
+        print_error(f"{context_prefix}{error}")
+        console.print()
+        console.print("[dim]How to fix:[/dim]")
+        console.print("  - Check your Hugo config files in the config/ directory")
+        console.print("  - Ensure config/_default/params.toml exists and is valid TOML")
+        console.print("  - For environment-specific settings, check config/<environment>/")
+        console.print("  - Required settings: S3CDN, mediaBasePath, baseURL")
+        sys.exit(1)
+
+    elif isinstance(error, PermissionError):
+        print_error(f"{context_prefix}Permission denied: {error}")
+        console.print()
+        console.print("[dim]How to fix:[/dim]")
+        console.print("  - Check file and directory permissions")
+        console.print("  - Ensure you have write access to the Hugo content directory")
+        console.print("  - Try running with appropriate permissions")
+        sys.exit(1)
+
+    elif isinstance(error, PublishError):
+        # Generic PublishError - use its message
+        print_error(f"{context_prefix}{error}")
+        if error.context:
+            console.print()
+            console.print("[dim]Additional context:[/dim]")
+            for key, value in error.context.items():
+                console.print(f"  - {key}: {value}")
+        sys.exit(1)
+
+    else:
+        # Generic error handling for unexpected errors
+        print_error(f"{context_prefix}{error}")
+        console.print()
+        console.print("[dim]This may be an unexpected error. Please check:[/dim]")
+        console.print("  - Your file paths and permissions")
+        console.print("  - Network connectivity for MinIO operations")
+        console.print("  - The error message above for specific details")
+        sys.exit(1)
+
+
+def handle_warning(error: Exception, context: str = None) -> None:
+    """
+    Handle a non-fatal warning with user-friendly messaging.
+
+    Similar to handle_error but doesn't exit - just prints a warning.
+
+    Args:
+        error: The exception that was raised
+        context: Optional context about what operation was being performed
+    """
+    context_prefix = f"Warning ({context}): " if context else "Warning: "
+
+    if isinstance(error, MediaNotFoundError):
+        print_warning(f"{context_prefix}Some media files could not be found")
+        console.print(f"  [dim]Reference: {error.media_reference}[/dim]")
+    elif isinstance(error, UploadError):
+        print_warning(f"{context_prefix}Media upload issue")
+        console.print(f"  [dim]{error}[/dim]")
+    else:
+        print_warning(f"{context_prefix}{error}")
 
 
 def get_target_path(frontmatter, body, output_dir=DEFAULT_OUTPUT_DIR):
@@ -592,12 +731,13 @@ def cmd_media(args):
     """List all media files referenced by a note without uploading."""
     note_path = Path(args.path)
 
-    if not note_path.exists():
-        print_error(f"Error: Note not found: {note_path}")
-        sys.exit(1)
-
     # Extract and resolve media references
-    media_items, missing_count = extract_and_resolve_media(note_path)
+    try:
+        media_items, missing_count = extract_and_resolve_media(note_path)
+    except FileNotFoundError as e:
+        handle_error(e, "reading note")
+    except PermissionError as e:
+        handle_error(e, "reading note")
 
     # Print header
     console.print(f"Media references in: [info]{note_path.name}[/info]")
@@ -650,17 +790,13 @@ def cmd_validate(args):
     """
     note_path = Path(args.path)
 
-    if not note_path.exists():
-        print_error(f"Error: Note not found: {note_path}")
-        sys.exit(1)
-
     # Parse the note to get frontmatter and body
     try:
-        from obsidian_parser import parse_obsidian_note
         frontmatter, body = parse_obsidian_note(note_path)
+    except FileNotFoundError as e:
+        handle_error(e, "reading note")
     except Exception as e:
-        print_error(f"Error parsing note: {e}")
-        sys.exit(1)
+        handle_error(e, "parsing note")
 
     # Get optional paths from args
     vault_path = Path(args.vault) if hasattr(args, 'vault') and args.vault else None
@@ -742,10 +878,6 @@ def cmd_convert(args):
     """Convert a single Obsidian note to Hugo format."""
     note_path = Path(args.path)
 
-    if not note_path.exists():
-        print_error(f"Error: Note not found: {note_path}")
-        sys.exit(1)
-
     # Get output directory from args or use default
     output_dir = args.output if hasattr(args, 'output') and args.output else DEFAULT_OUTPUT_DIR
 
@@ -764,7 +896,12 @@ def cmd_convert(args):
         environment = None
 
     # Step 1: Extract and resolve media references
-    media_items, missing_count = extract_and_resolve_media(note_path)
+    try:
+        media_items, missing_count = extract_and_resolve_media(note_path)
+    except FileNotFoundError as e:
+        handle_error(e, "reading note")
+    except PermissionError as e:
+        handle_error(e, "reading note")
 
     # Step 2: Upload media to MinIO (unless --skip-upload)
     media_url_map = None
@@ -779,9 +916,13 @@ def cmd_convert(args):
             if failed > 0:
                 print_warning(f"Warning: {failed} file(s) failed to upload")
         except ImportError as e:
-            print_warning(f"Warning: MinIO upload skipped - {e}")
+            handle_warning(e, "MinIO import")
+            console.print("  [dim]Media upload skipped - minio package not installed[/dim]")
+            console.print("  [dim]Install with: pip install minio[/dim]")
+        except UploadError as e:
+            handle_warning(e, "media upload")
         except Exception as e:
-            print_warning(f"Warning: MinIO upload failed - {e}")
+            handle_warning(e, "media upload")
 
     # Step 3: Convert the note (with media URLs if available)
     try:
@@ -791,9 +932,12 @@ def cmd_convert(args):
             keep_associations=keep_associations,
             environment=environment
         )
+    except FileNotFoundError as e:
+        handle_error(e, "converting note")
+    except HugoConfigError as e:
+        handle_error(e, "converting note")
     except Exception as e:
-        print_error(f"Error converting note: {e}")
-        sys.exit(1)
+        handle_error(e, "converting note")
 
     # Check if note has a Pictures section and Associations section for display purposes
     note_content = note_path.read_text()
@@ -892,10 +1036,6 @@ def cmd_publish(args):
     """
     note_path = Path(args.path)
 
-    if not note_path.exists():
-        print_error(f"Error: Note not found: {note_path}")
-        sys.exit(1)
-
     # Get flags from args
     dry_run = getattr(args, 'dry_run', False)
     skip_upload = getattr(args, 'skip_upload', False)
@@ -911,11 +1051,11 @@ def cmd_publish(args):
 
     # Step 1: Parse the note and validate it's publishable
     try:
-        from obsidian_parser import parse_obsidian_note
         frontmatter, body = parse_obsidian_note(note_path)
+    except FileNotFoundError as e:
+        handle_error(e, "reading note")
     except Exception as e:
-        print_error(f"Error parsing note: {e}")
-        sys.exit(1)
+        handle_error(e, "parsing note")
 
     # Check if note is marked for publishing
     is_publishable = frontmatter.get('publish', False)
@@ -1044,9 +1184,12 @@ def cmd_publish(args):
                 keep_associations=keep_associations,
                 environment=environment
             )
+        except FileNotFoundError as e:
+            handle_error(e, "conversion preview")
+        except HugoConfigError as e:
+            handle_error(e, "conversion preview")
         except Exception as e:
-            print_error(f"Error during conversion preview: {e}")
-            sys.exit(1)
+            handle_error(e, "conversion preview")
 
         console.print("[header]--- Preview of converted content ---[/header]")
         console.print()
@@ -1082,9 +1225,17 @@ def cmd_publish(args):
             if failed > 0:
                 print_warning(f"Warning: {failed} file(s) failed to upload")
         except ImportError as e:
-            print_warning(f"Warning: MinIO upload skipped - {e}")
+            handle_warning(e, "MinIO import")
+            console.print("  [dim]Media upload skipped - minio package not installed[/dim]")
+            console.print("  [dim]Install with: pip install minio[/dim]")
+        except UploadError as e:
+            handle_warning(e, "media upload")
+            if not yes_flag:
+                if not confirm_prompt("Continue without media upload?", default=False):
+                    console.print("[dim]Aborted.[/dim]")
+                    sys.exit(1)
         except Exception as e:
-            print_warning(f"Warning: MinIO upload failed - {e}")
+            handle_warning(e, "media upload")
             if not yes_flag:
                 if not confirm_prompt("Continue without media upload?", default=False):
                     console.print("[dim]Aborted.[/dim]")
@@ -1101,9 +1252,12 @@ def cmd_publish(args):
             keep_associations=keep_associations,
             environment=environment
         )
+    except FileNotFoundError as e:
+        handle_error(e, "converting note")
+    except HugoConfigError as e:
+        handle_error(e, "converting note")
     except Exception as e:
-        print_error(f"Error converting note: {e}")
-        sys.exit(1)
+        handle_error(e, "converting note")
 
     # Step 6: Write the Hugo post
     print_info("Writing Hugo post...")
@@ -1116,9 +1270,10 @@ def cmd_publish(args):
             content_type=content_type
         )
         console.print(f"Written to: [info]{written_path}[/info]")
+    except PermissionError as e:
+        handle_error(e, "writing Hugo post")
     except Exception as e:
-        print_error(f"Error writing Hugo post: {e}")
-        sys.exit(1)
+        handle_error(e, "writing Hugo post")
 
     # Step 7: Record the publish in tracking file
     try:
@@ -1379,10 +1534,6 @@ def cmd_preview(args):
     """
     note_path = Path(args.path)
 
-    if not note_path.exists():
-        print_error(f"Error: Note not found: {note_path}")
-        sys.exit(1)
-
     # Get flags from args
     skip_upload = getattr(args, 'skip_upload', True)  # Default to skip in preview mode
     generate_gallery = not getattr(args, 'no_gallery', False)
@@ -1399,11 +1550,11 @@ def cmd_preview(args):
     print_info(f"Converting note: {note_path.name}")
 
     try:
-        from obsidian_parser import parse_obsidian_note
         frontmatter, body = parse_obsidian_note(note_path)
+    except FileNotFoundError as e:
+        handle_error(e, "reading note")
     except Exception as e:
-        print_error(f"Error parsing note: {e}")
-        sys.exit(1)
+        handle_error(e, "parsing note")
 
     # Determine content type for proper routing
     content_type = determine_content_type(frontmatter)
@@ -1414,15 +1565,25 @@ def cmd_preview(args):
     slug = generate_slug(hugo_fm.get('title', ''), hugo_fm.get('date'))
 
     # Extract and optionally upload media
-    media_items, missing_count = extract_and_resolve_media(note_path)
+    try:
+        media_items, missing_count = extract_and_resolve_media(note_path)
+    except FileNotFoundError as e:
+        handle_error(e, "reading note for media extraction")
+    except Exception as e:
+        handle_error(e, "extracting media references")
+
     media_url_map = None
 
     if media_items and not skip_upload:
         try:
             print_info(f"Uploading {len(media_items)} media file(s) to MinIO...")
             media_url_map = upload_media_to_minio(media_items, show_progress=False)
+        except ImportError as e:
+            handle_warning(e, "MinIO import")
+        except UploadError as e:
+            handle_warning(e, "media upload")
         except Exception as e:
-            print_warning(f"Warning: Media upload failed - {e}")
+            handle_warning(e, "media upload")
 
     # Convert the note
     try:
@@ -1434,9 +1595,12 @@ def cmd_preview(args):
             keep_associations=keep_associations,
             environment=environment if environment else 'development'
         )
+    except FileNotFoundError as e:
+        handle_error(e, "converting note")
+    except HugoConfigError as e:
+        handle_error(e, "converting note")
     except Exception as e:
-        print_error(f"Error converting note: {e}")
-        sys.exit(1)
+        handle_error(e, "converting note")
 
     # Step 2: Write to a temporary file in the Hugo content directory
     # We use a unique prefix to avoid conflicts with real content
@@ -1457,9 +1621,10 @@ def cmd_preview(args):
     try:
         from hugo_writer import write_hugo_post
         written_path = write_hugo_post(hugo_frontmatter, converted_body, target_path)
+    except PermissionError as e:
+        handle_error(e, "writing preview file")
     except Exception as e:
-        print_error(f"Error writing preview file: {e}")
-        sys.exit(1)
+        handle_error(e, "writing preview file")
 
     # Step 3: Start Hugo server
     hugo_cmd = [
