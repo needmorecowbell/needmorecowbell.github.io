@@ -146,7 +146,18 @@ This phase adds a test suite to ensure the publishing pipeline works correctly, 
   - Only warnings are unused template warnings from the theme (informational, not errors)
   - Public directory generated correctly with all expected content directories
 
-- [ ] Create a pull request description template in `.github/PULL_REQUEST_TEMPLATE.md` documenting the new publishing workflow
+- [x] Create a pull request description template in `.github/PULL_REQUEST_TEMPLATE.md` documenting the new publishing workflow
+  - Created `.github/PULL_REQUEST_TEMPLATE.md` with comprehensive PR checklist and publishing workflow reference
+  - Template includes:
+    - PR summary and type of change checkboxes (bug fix, feature, breaking change, blog content, docs, refactoring)
+    - Pre-merge checklist (style, testing, docs, tests pass, Hugo build)
+    - Complete publishing workflow reference with quick start commands
+    - Obsidian note requirements and frontmatter structure
+    - Supported content types table (post, photography, project)
+    - Syntax conversion reference (wikilinks, media embeds)
+    - Special sections documentation (Pictures, Associations)
+    - Media upload instructions
+    - CLI commands reference table
 
 - [ ] Document the complete publishing workflow in `scripts/README.md` with step-by-step instructions from authoring in Obsidian to seeing the post live
 
