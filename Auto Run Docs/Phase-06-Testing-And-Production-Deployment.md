@@ -34,7 +34,14 @@ This phase adds a test suite to ensure the publishing pipeline works correctly, 
     - `TestTransformToHugo`: 15 tests for main transformation function (required fields, optional fields, content-type-specific behavior, publish removal)
     - `TestIntegration`: 4 tests for complete transformation workflows
 
-- [ ] Create `scripts/tests/test_media_extractor.py` with unit tests for media reference extraction and path resolution
+- [x] Create `scripts/tests/test_media_extractor.py` with unit tests for media reference extraction and path resolution
+  - Created comprehensive test suite with 84 tests covering:
+    - `TestFindMediaReferences`: 22 tests for media reference extraction (single/multiple images, videos, audio, mixed types, special chars, all extensions, realistic content)
+    - `TestResolveMediaPath`: 15 tests for path resolution (simple/nested paths, symlinks, validation, missing files, leading slashes)
+    - `TestGenerateThumbnail`: 28 tests for thumbnail generation (various formats, aspect ratios, quality, RGBA conversion, error handling, logging)
+    - `TestGetThumbnailPath`: 8 tests for thumbnail path utility (suffixes, extensions, relative paths)
+    - `TestExtensionSets`: 9 tests for extension set validation (lowercase, subsets, no overlaps)
+    - `TestIntegration`: 4 tests for complete media extraction workflows
 
 - [ ] Create `scripts/tests/fixtures/` directory with sample Obsidian notes in various formats for testing
 
