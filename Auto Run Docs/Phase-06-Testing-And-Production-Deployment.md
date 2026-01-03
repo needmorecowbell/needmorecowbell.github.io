@@ -22,7 +22,17 @@ This phase adds a test suite to ensure the publishing pipeline works correctly, 
     - `TestConvertEmbeddedMedia`: 16 tests for video/audio embedding (all format types with MIME types, CDN/S3CDN/URL map support)
     - `TestIntegration`: 3 tests for combined conversion workflows and operation ordering
 
-- [ ] Create `scripts/tests/test_frontmatter_transformer.py` with unit tests for Hugo frontmatter generation and slug creation
+- [x] Create `scripts/tests/test_frontmatter_transformer.py` with unit tests for Hugo frontmatter generation and slug creation
+  - Created comprehensive test suite with 97 tests covering:
+    - `TestGetOptionalFieldsForContentType`: 6 tests for content-type-specific optional fields (post, project, photography, fallback behavior, copy protection)
+    - `TestValidateContentType`: 9 tests for content type validation (valid types, case insensitivity, whitespace trimming, invalid/non-string handling)
+    - `TestGenerateSlug`: 17 tests for URL slug generation (case conversion, special chars, unicode normalization, hyphens, date prefix, edge cases)
+    - `TestExtractTitleFromBody`: 12 tests for H1 heading extraction (simple/complex headings, multiple headings, missing headings, edge cases)
+    - `TestNormalizeDate`: 14 tests for date normalization (datetime/date objects, various string formats, timezone handling, content-type-specific behavior)
+    - `TestNormalizeDraft`: 10 tests for draft flag normalization (boolean, string, integer inputs)
+    - `TestNormalizeTags`: 10 tests for tags normalization (lists, comma-separated strings, whitespace/empty handling)
+    - `TestTransformToHugo`: 15 tests for main transformation function (required fields, optional fields, content-type-specific behavior, publish removal)
+    - `TestIntegration`: 4 tests for complete transformation workflows
 
 - [ ] Create `scripts/tests/test_media_extractor.py` with unit tests for media reference extraction and path resolution
 
