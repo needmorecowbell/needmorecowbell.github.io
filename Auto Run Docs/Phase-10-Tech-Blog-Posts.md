@@ -12,7 +12,7 @@ This phase reviews and publishes tech-focused blog posts from the Notes/Blog fol
 | Coding Livestream 2: SSH Honeypot | `Blog/2018-11-13-coding-livestream-2-let-s-deploy-an-ssh-honeypot.md` | Review needed |
 | Coding Livestream 3: YARA | `Blog/2018-11-13-coding-livestream-3-let-s-learn-about-yara.md` | Review needed |
 | Coding Livestream 4: Computer Vision | `Blog/2018-11-13-coding-livestream-4-computer-vision-on-public-ip-cams.md` | Review needed |
-| Vigiles and Grafana Dashboards | `Blog/2022-04-06-vigiles-and-grafana-dashboards.md` | Review needed |
+| Vigiles and Grafana Dashboards | `Blog/2022-04-06-vigiles-and-grafana-dashboards.md` | Skipped - empty stub, no content |
 
 ## Tasks
 
@@ -43,11 +43,12 @@ This phase reviews and publishes tech-focused blog posts from the Notes/Blog fol
   - [x] Publish Livestream 4: Computer Vision
   - **Completed:** All 4 posts updated with: (1) Replaced raw HTML iframe embeds with Hugo `{{< youtube >}}` shortcodes, (2) Added context note indicating 2018 livestream series, (3) Added descriptive headers and topic bullet points for each post, (4) Added relevant links (Cowrie GitHub, YARA docs). Hugo build verified successful.
 
-- [ ] Review and publish Vigiles/Grafana post
+- [x] Review and publish Vigiles/Grafana post
   - Review content for accuracy
   - Check if Vigiles references are still valid
   - Update if needed
   - Publish via pipeline
+  - **Skipped:** Source file at `/home/adam/Notes/Blog/2022-04-06-vigiles-and-grafana-dashboards.md` contains only a title stub ("Elegant Security Monitoring Dashboards using Grafana and the Vigiles API Toolkit") with no actual content. The post appears to have been a draft idea that was never written. Cannot publish without content.
 
 ## Notes
 
