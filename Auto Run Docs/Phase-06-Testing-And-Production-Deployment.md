@@ -114,7 +114,17 @@ This phase adds a test suite to ensure the publishing pipeline works correctly, 
     - Updated to accept any HTTP (non-HTTPS) URL, since development environments typically use HTTP for local/LAN resources
     - The actual development config uses `http://10.0.0.20:9000/amblog/assets` which is a valid local network MinIO setup
 
-- [ ] Create a sample blog post in `~/Notes/Blog/` with `publish: true`, embedded images, wikilinks, and a Pictures section to serve as a complete test case
+- [x] Create a sample blog post in `~/Notes/Blog/` with `publish: true`, embedded images, wikilinks, and a Pictures section to serve as a complete test case
+  - Created `~/Notes/Blog/sample-publishing-pipeline-test.md` as a comprehensive test case
+  - Features included:
+    - `publish: true` with full frontmatter (title, date, content_type, tags, author, description, categories)
+    - 5 wikilink examples (simple, aliased, multiple, special characters)
+    - 3 embedded images in various paths (jpg, png, gif)
+    - 1 embedded video (mp4)
+    - 1 embedded audio (mp3)
+    - Pictures section with 5 gallery images
+    - Associations section with 3 linked pages
+  - Post serves as canonical test case for the full Obsidian-to-Hugo publishing pipeline
 
 - [ ] Run the full publish pipeline on the sample post in dry-run mode and verify the output
 
