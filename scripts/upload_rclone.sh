@@ -99,6 +99,10 @@ if [[ -f "$MEDIA_ROOT/2022/05/08/Snapchat-2002572156.jpg" ]]; then
 fi
 
 echo ""
+echo "=== DIY Tonneau Cover Project ==="
+upload_folder_renamed "$MEDIA_ROOT/2021/11/diy tonneau project" "projects/diy_tonneau_cover"
+
+echo ""
 echo "=== Truck Cap Build Project ==="
 mkdir -p /tmp/upload_truck_cap
 cp "$MEDIA_ROOT/2020/08/20-08-10 new truck cap swap.jpg" "/tmp/upload_truck_cap/truck_with_cap.jpg" 2>/dev/null || true
