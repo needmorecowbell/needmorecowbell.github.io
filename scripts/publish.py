@@ -265,6 +265,118 @@ def handle_warning(error: Exception, context: str = None) -> None:
         print_warning(f"{context_prefix}{error}")
 
 
+def run_hugo_build(hugo_root: Path, quiet: bool = False) -> tuple[bool, str]:
+    """
+    Run hugo build to validate that the site builds successfully.
+
+    This function runs 'hugo' (or 'hugo build') to check for build errors
+    after publishing new content. This catches issues like:
+    - Template errors
+    - Invalid frontmatter
+    - Missing shortcodes
+    - Broken internal links (if configured in Hugo)
+
+    Args:
+        hugo_root: Path to the Hugo site root directory
+        quiet: If True, suppress informational output
+
+    Returns:
+        Tuple of (success: bool, output: str) where:
+        - success is True if Hugo build succeeded (exit code 0)
+        - output contains stdout/stderr from the hugo command
+    """
+    # Find hugo executable
+    hugo_cmd = shutil.which('hugo')
+    if hugo_cmd is None:
+        return False, "Hugo executable not found. Please install Hugo and ensure it's in your PATH."
+
+    try:
+        # Run hugo build
+        result = subprocess.run(
+            [hugo_cmd, '--gc', '--minify'],
+            cwd=str(hugo_root),
+            capture_output=True,
+            text=True,
+            timeout=120  # 2 minute timeout
+        )
+
+        # Combine stdout and stderr for full output
+        output = ""
+        if result.stdout:
+            output += result.stdout
+        if result.stderr:
+            if output:
+                output += "\n"
+            output += result.stderr
+
+        # Check for success
+        if result.returncode == 0:
+            return True, output
+        else:
+            return False, output
+
+    except subprocess.TimeoutExpired:
+        return False, "Hugo build timed out after 120 seconds."
+    except Exception as e:
+        return False, f"Error running Hugo build: {e}"
+
+
+def validate_hugo_build(hugo_root: Path, quiet: bool = False) -> bool:
+    """
+    Validate that the Hugo site builds successfully after publishing.
+
+    Runs hugo build and reports any errors in a user-friendly format.
+    This is called after writing new content to catch build issues early.
+
+    Args:
+        hugo_root: Path to the Hugo site root directory
+        quiet: If True, suppress all non-error output
+
+    Returns:
+        True if the build succeeded, False if there were errors
+    """
+    if not quiet:
+        print_info("Validating Hugo build...")
+
+    success, output = run_hugo_build(hugo_root, quiet)
+
+    if success:
+        if not quiet:
+            print_success("Hugo build validation passed!")
+        return True
+    else:
+        print_error("Hugo build validation failed!")
+        console.print()
+        console.print("[dim]Hugo build output:[/dim]")
+        # Show relevant error lines from output
+        error_lines = []
+        for line in output.split('\n'):
+            # Skip empty lines
+            if not line.strip():
+                continue
+            # Highlight error lines
+            lower_line = line.lower()
+            if 'error' in lower_line or 'fatal' in lower_line:
+                error_lines.append(f"[error]{line}[/error]")
+            elif 'warning' in lower_line:
+                error_lines.append(f"[warning]{line}[/warning]")
+            else:
+                error_lines.append(f"[dim]{line}[/dim]")
+
+        # Show up to 20 lines of output
+        for line in error_lines[:20]:
+            console.print(f"  {line}")
+        if len(error_lines) > 20:
+            console.print(f"[dim]  ... ({len(error_lines) - 20} more lines)[/dim]")
+
+        console.print()
+        console.print("[dim]How to fix:[/dim]")
+        console.print("  - Check the error messages above for specific issues")
+        console.print("  - Validate your frontmatter with: python publish.py validate <path>")
+        console.print("  - Run 'hugo' manually for more detailed output")
+        return False
+
+
 def get_target_path(frontmatter, body, output_dir=DEFAULT_OUTPUT_DIR):
     """
     Compute the target Hugo path for a note.
@@ -1129,6 +1241,8 @@ def cmd_publish(args):
     environment = getattr(args, 'environment', None)
     if environment is not None and not isinstance(environment, str):
         environment = None
+    # Get check flag for post-publish Hugo build validation (use 'is True' to handle MagicMock)
+    check_build = getattr(args, 'check', False) is True
 
     # Step 1: Parse the note and validate it's publishable
     try:
@@ -1409,6 +1523,16 @@ def cmd_publish(args):
 
     console.print()
 
+    # Step 8: Post-publish validation (if --check flag is set)
+    if check_build:
+        console.print()
+        build_success = validate_hugo_build(hugo_root, quiet=is_quiet())
+        if not build_success:
+            print_error("Post-publish validation failed! The Hugo site has build errors.")
+            console.print("[dim]The content was written, but Hugo cannot build the site.[/dim]")
+            console.print("[dim]Fix the issues above and run 'hugo' to verify.[/dim]")
+            sys.exit(1)
+
 
 def cmd_publish_dispatch(args):
     """
@@ -1463,6 +1587,8 @@ def cmd_publish_all(args):
     environment = getattr(args, 'environment', None)
     if environment is not None and not isinstance(environment, str):
         environment = None
+    # Get check flag for post-publish Hugo build validation (use 'is True' to handle MagicMock)
+    check_build = getattr(args, 'check', False) is True
 
     # Step 1: Find all publishable notes
     try:
@@ -1673,6 +1799,16 @@ def cmd_publish_all(args):
             console.print(f"  [error]{path.name}:[/error] {error}")
 
     console.print()
+
+    # Post-publish validation (if --check flag is set and at least one note was published)
+    if check_build and published_count > 0:
+        console.print()
+        build_success = validate_hugo_build(hugo_root, quiet=is_quiet())
+        if not build_success:
+            print_error("Post-publish validation failed! The Hugo site has build errors.")
+            console.print("[dim]Some content was written, but Hugo cannot build the site.[/dim]")
+            console.print("[dim]Fix the issues above and run 'hugo' to verify.[/dim]")
+            sys.exit(1)
 
 
 def cmd_preview(args):
@@ -2178,6 +2314,11 @@ Examples:
         "-f", "--force",
         action="store_true",
         help="Re-publish notes even if they've been published before (useful for updates)"
+    )
+    publish_parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Run Hugo build after publishing to validate the site builds successfully"
     )
     publish_parser.set_defaults(func=cmd_publish_dispatch)
 

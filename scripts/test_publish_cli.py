@@ -6355,5 +6355,393 @@ class TestCmdStatus(unittest.TestCase):
             self.assertIn("Pending publication", output)
 
 
+class TestRunHugoBuild(unittest.TestCase):
+    """Tests for run_hugo_build function."""
+
+    @patch('shutil.which')
+    def test_hugo_not_found(self, mock_which):
+        """run_hugo_build returns error when hugo executable not found."""
+        from publish import run_hugo_build
+
+        mock_which.return_value = None
+
+        success, output = run_hugo_build(Path('/tmp/hugo-site'))
+
+        self.assertFalse(success)
+        self.assertIn("Hugo executable not found", output)
+
+    @patch('shutil.which')
+    @patch('subprocess.run')
+    def test_hugo_build_success(self, mock_run, mock_which):
+        """run_hugo_build returns success when hugo build succeeds."""
+        from publish import run_hugo_build
+
+        mock_which.return_value = '/usr/bin/hugo'
+        mock_run.return_value = MagicMock(
+            returncode=0,
+            stdout='Building sites...\nBuilt in 500ms',
+            stderr=''
+        )
+
+        success, output = run_hugo_build(Path('/tmp/hugo-site'))
+
+        self.assertTrue(success)
+        self.assertIn("Building sites", output)
+
+    @patch('shutil.which')
+    @patch('subprocess.run')
+    def test_hugo_build_failure(self, mock_run, mock_which):
+        """run_hugo_build returns failure when hugo build fails."""
+        from publish import run_hugo_build
+
+        mock_which.return_value = '/usr/bin/hugo'
+        mock_run.return_value = MagicMock(
+            returncode=1,
+            stdout='',
+            stderr='ERROR: template error at "baseof.html":10: unexpected EOF'
+        )
+
+        success, output = run_hugo_build(Path('/tmp/hugo-site'))
+
+        self.assertFalse(success)
+        self.assertIn("ERROR", output)
+
+    @patch('shutil.which')
+    @patch('subprocess.run')
+    def test_hugo_build_timeout(self, mock_run, mock_which):
+        """run_hugo_build handles timeout gracefully."""
+        import subprocess
+        from publish import run_hugo_build
+
+        mock_which.return_value = '/usr/bin/hugo'
+        mock_run.side_effect = subprocess.TimeoutExpired(cmd='hugo', timeout=120)
+
+        success, output = run_hugo_build(Path('/tmp/hugo-site'))
+
+        self.assertFalse(success)
+        self.assertIn("timed out", output)
+
+    @patch('shutil.which')
+    @patch('subprocess.run')
+    def test_hugo_build_exception(self, mock_run, mock_which):
+        """run_hugo_build handles unexpected exceptions."""
+        from publish import run_hugo_build
+
+        mock_which.return_value = '/usr/bin/hugo'
+        mock_run.side_effect = Exception("Unexpected error")
+
+        success, output = run_hugo_build(Path('/tmp/hugo-site'))
+
+        self.assertFalse(success)
+        self.assertIn("Error running Hugo build", output)
+
+    @patch('shutil.which')
+    @patch('subprocess.run')
+    def test_hugo_build_combines_stdout_stderr(self, mock_run, mock_which):
+        """run_hugo_build combines stdout and stderr in output."""
+        from publish import run_hugo_build
+
+        mock_which.return_value = '/usr/bin/hugo'
+        mock_run.return_value = MagicMock(
+            returncode=0,
+            stdout='Building sites...',
+            stderr='WARN: something minor'
+        )
+
+        success, output = run_hugo_build(Path('/tmp/hugo-site'))
+
+        self.assertTrue(success)
+        self.assertIn("Building sites", output)
+        self.assertIn("WARN", output)
+
+
+class TestValidateHugoBuild(unittest.TestCase):
+    """Tests for validate_hugo_build function."""
+
+    @patch('publish.run_hugo_build')
+    def test_validate_success(self, mock_run):
+        """validate_hugo_build returns True on success."""
+        from publish import validate_hugo_build
+
+        mock_run.return_value = (True, 'Built successfully')
+
+        with patch('sys.stdout', new_callable=StringIO):
+            result = validate_hugo_build(Path('/tmp/hugo-site'))
+
+        self.assertTrue(result)
+
+    @patch('publish.run_hugo_build')
+    def test_validate_failure(self, mock_run):
+        """validate_hugo_build returns False on failure."""
+        from publish import validate_hugo_build
+
+        mock_run.return_value = (False, 'ERROR: template error')
+
+        with patch('sys.stdout', new_callable=StringIO):
+            result = validate_hugo_build(Path('/tmp/hugo-site'))
+
+        self.assertFalse(result)
+
+    @patch('publish.run_hugo_build')
+    def test_validate_quiet_mode_suppresses_success(self, mock_run):
+        """validate_hugo_build suppresses success message in quiet mode."""
+        from publish import validate_hugo_build
+        from console import set_quiet
+
+        mock_run.return_value = (True, 'Built successfully')
+        set_quiet(True)
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            result = validate_hugo_build(Path('/tmp/hugo-site'), quiet=True)
+
+        self.assertTrue(result)
+        output = mock_stdout.getvalue()
+        # Success messages should not appear in quiet mode
+        self.assertNotIn("Validating Hugo build", output)
+        set_quiet(False)
+
+    @patch('publish.run_hugo_build')
+    def test_validate_shows_error_output(self, mock_run):
+        """validate_hugo_build displays error details on failure."""
+        from publish import validate_hugo_build
+
+        mock_run.return_value = (False, 'ERROR: template error at line 10')
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            result = validate_hugo_build(Path('/tmp/hugo-site'))
+
+        self.assertFalse(result)
+        output = mock_stdout.getvalue()
+        self.assertIn("validation failed", output.lower())
+        self.assertIn("How to fix", output)
+
+
+class TestCheckFlag(unittest.TestCase):
+    """Tests for --check flag functionality in publish command."""
+
+    def test_check_flag_available_in_cli(self):
+        """Verify --check flag is available in CLI arguments."""
+        import inspect
+        from publish import main
+
+        source = inspect.getsource(main)
+        self.assertIn("--check", source)
+
+    def test_check_flag_in_publish_help(self):
+        """--check flag has proper help text."""
+        import inspect
+        from publish import main
+
+        source = inspect.getsource(main)
+        self.assertIn("Run Hugo build after publishing", source)
+
+    @patch('publish.validate_hugo_build')
+    @patch('publish.record_published')
+    @patch('publish.write_hugo_post_routed')
+    @patch('publish.convert_note')
+    @patch('publish.extract_and_resolve_media')
+    @patch('publish.validate_internal_links')
+    @patch('publish.validate_media_references')
+    def test_publish_with_check_runs_validation(
+        self, mock_validate_media, mock_validate_links,
+        mock_extract, mock_convert, mock_write, mock_record, mock_validate_build
+    ):
+        """publish --check runs Hugo build validation after publishing."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir) / "content" / "english" / "post"
+            output_dir.mkdir(parents=True)
+
+            note_path = Path(tmpdir) / "test-note.md"
+            note_path.write_text("""---
+title: Check Test
+date: 2024-06-01
+tags:
+  - test
+publish: true
+---
+
+Content.
+""")
+            mock_extract.return_value = ([], 0)
+            mock_convert.return_value = ({'title': 'Check Test', 'date': '2024-06-01'}, 'Content.', '/tmp/test.md')
+            mock_write.return_value = output_dir / "2024-06-01-check-test.md"
+            mock_validate_media.return_value = []
+            mock_validate_links.return_value = []
+            mock_validate_build.return_value = True
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = True
+            mock_args.keep_associations = False
+            mock_args.strict = False
+            mock_args.vault = None
+            mock_args.check = True  # Enable --check flag
+            mock_args.verbose = False
+            mock_args.quiet = False
+
+            with patch('sys.stdout', new_callable=StringIO):
+                cmd_publish(mock_args)
+
+            # Verify validate_hugo_build was called
+            mock_validate_build.assert_called_once()
+
+    @patch('publish.validate_hugo_build')
+    @patch('publish.record_published')
+    @patch('publish.write_hugo_post_routed')
+    @patch('publish.convert_note')
+    @patch('publish.extract_and_resolve_media')
+    @patch('publish.validate_internal_links')
+    @patch('publish.validate_media_references')
+    def test_publish_without_check_skips_validation(
+        self, mock_validate_media, mock_validate_links,
+        mock_extract, mock_convert, mock_write, mock_record, mock_validate_build
+    ):
+        """publish without --check skips Hugo build validation."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir) / "content" / "english" / "post"
+            output_dir.mkdir(parents=True)
+
+            note_path = Path(tmpdir) / "test-note.md"
+            note_path.write_text("""---
+title: No Check Test
+date: 2024-06-02
+tags:
+  - test
+publish: true
+---
+
+Content.
+""")
+            mock_extract.return_value = ([], 0)
+            mock_convert.return_value = ({'title': 'No Check Test', 'date': '2024-06-02'}, 'Content.', '/tmp/test.md')
+            mock_write.return_value = output_dir / "2024-06-02-no-check-test.md"
+            mock_validate_media.return_value = []
+            mock_validate_links.return_value = []
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = True
+            mock_args.keep_associations = False
+            mock_args.strict = False
+            mock_args.vault = None
+            mock_args.check = False  # --check not enabled
+            mock_args.verbose = False
+            mock_args.quiet = False
+
+            with patch('sys.stdout', new_callable=StringIO):
+                cmd_publish(mock_args)
+
+            # Verify validate_hugo_build was NOT called
+            mock_validate_build.assert_not_called()
+
+    @patch('publish.validate_hugo_build')
+    @patch('publish.record_published')
+    @patch('publish.write_hugo_post_routed')
+    @patch('publish.convert_note')
+    @patch('publish.extract_and_resolve_media')
+    @patch('publish.validate_internal_links')
+    @patch('publish.validate_media_references')
+    def test_publish_check_failure_exits_with_error(
+        self, mock_validate_media, mock_validate_links,
+        mock_extract, mock_convert, mock_write, mock_record, mock_validate_build
+    ):
+        """publish --check exits with error if Hugo build fails."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir) / "content" / "english" / "post"
+            output_dir.mkdir(parents=True)
+
+            note_path = Path(tmpdir) / "test-note.md"
+            note_path.write_text("""---
+title: Build Fail Test
+date: 2024-06-03
+tags:
+  - test
+publish: true
+---
+
+Content.
+""")
+            mock_extract.return_value = ([], 0)
+            mock_convert.return_value = ({'title': 'Build Fail Test', 'date': '2024-06-03'}, 'Content.', '/tmp/test.md')
+            mock_write.return_value = output_dir / "2024-06-03-build-fail-test.md"
+            mock_validate_media.return_value = []
+            mock_validate_links.return_value = []
+            mock_validate_build.return_value = False  # Build fails
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = True
+            mock_args.keep_associations = False
+            mock_args.strict = False
+            mock_args.vault = None
+            mock_args.check = True  # Enable --check flag
+            mock_args.verbose = False
+            mock_args.quiet = False
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                with self.assertRaises(SystemExit) as context:
+                    cmd_publish(mock_args)
+
+            self.assertEqual(context.exception.code, 1)
+            output = mock_stdout.getvalue()
+            self.assertIn("Post-publish validation failed", output)
+
+    @patch('publish.validate_hugo_build')
+    def test_batch_publish_with_check_runs_validation(self, mock_validate_build):
+        """publish --all --check runs Hugo build validation after batch publish."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            vault_dir = Path(tmpdir) / "vault"
+            vault_dir.mkdir()
+            output_dir = Path(tmpdir) / "content" / "english" / "post"
+            output_dir.mkdir(parents=True)
+
+            note = vault_dir / "note.md"
+            note.write_text("""---
+title: Batch Check Test
+date: 2024-07-01
+tags:
+  - test
+publish: true
+---
+
+Content.
+""")
+            mock_validate_build.return_value = True
+
+            mock_args = MagicMock()
+            mock_args.publish_all = True
+            mock_args.vault = str(vault_dir)
+            mock_args.dry_run = False
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = True
+            mock_args.keep_associations = False
+            mock_args.force = False
+            mock_args.check = True  # Enable --check flag
+            mock_args.verbose = False
+            mock_args.quiet = False
+            mock_args.environment = None
+
+            with patch('sys.stdout', new_callable=StringIO):
+                with patch('publish.record_published'):
+                    cmd_publish_all(mock_args)
+
+            # Verify validate_hugo_build was called
+            mock_validate_build.assert_called_once()
+
+
 if __name__ == '__main__':
     unittest.main()

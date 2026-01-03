@@ -133,4 +133,14 @@ This phase adds validation, error handling, and quality-of-life improvements to 
   - Added 7 comprehensive tests in `TestForceFlag` class covering: CLI argument availability, short form, batch force republish, batch skip without force, mixed notes handling, single publish message, and help text
   - All 247 tests pass (2 skipped)
 
-- [ ] Add post-publish validation that builds Hugo and checks for errors after writing new content
+- [x] Add post-publish validation that builds Hugo and checks for errors after writing new content
+  - Added `run_hugo_build()` function that executes `hugo --gc --minify` and captures output/exit code
+  - Added `validate_hugo_build()` function that runs the build and displays user-friendly error messages with fix suggestions
+  - Handles edge cases: Hugo not found, build timeout (120s), unexpected exceptions
+  - Displays build output with color-coded lines (error=red, warning=yellow)
+  - Provides actionable "How to fix" guidance: validate frontmatter, check error messages, run hugo manually
+  - Added `--check` flag to `publish` subcommand that triggers post-publish Hugo build validation
+  - Integrated into both single note (`cmd_publish`) and batch (`cmd_publish_all`) publish workflows
+  - Exits with code 1 if Hugo build fails after publishing (content is still written)
+  - Added 16 comprehensive tests in `TestRunHugoBuild`, `TestValidateHugoBuild`, and `TestCheckFlag` classes
+  - All 263 tests pass (2 skipped)
