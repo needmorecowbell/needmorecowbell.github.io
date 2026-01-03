@@ -1285,15 +1285,33 @@ def cmd_publish(args):
             console.print(preview)
         return
 
+    # Check if target file already exists (for overwrite warning)
+    target_exists = target_path.exists()
+    if target_exists:
+        console.print(f"[warning]Note: Target file already exists and will be overwritten[/warning]")
+
     # Non-dry-run mode: Confirm before proceeding
     if not yes_flag:
-        if not confirm_prompt("Proceed with publishing?", default=True):
-            console.print("[dim]Aborted.[/dim]")
-            sys.exit(0)
+        # If target exists, require explicit overwrite confirmation
+        if target_exists:
+            if not confirm_prompt("Overwrite existing Hugo post?", default=False):
+                console.print("[dim]Aborted.[/dim]")
+                sys.exit(0)
+        else:
+            if not confirm_prompt("Proceed with publishing?", default=True):
+                console.print("[dim]Aborted.[/dim]")
+                sys.exit(0)
         console.print()
 
     # Step 4: Upload media to MinIO
     media_url_map = None
+    if media_items and not skip_upload:
+        # Confirm before uploading to MinIO
+        if not yes_flag:
+            if not confirm_prompt(f"Upload {len(media_items)} media file(s) to MinIO?", default=True):
+                console.print("[dim]Skipping media upload.[/dim]")
+                skip_upload = True
+
     if media_items and not skip_upload:
         try:
             print_info(f"Uploading {len(media_items)} media file(s) to MinIO...")
@@ -1459,7 +1477,26 @@ def cmd_publish_all(args):
         console.print("[dim]Use 'publish <path>' to force re-publishing a specific note.[/dim]")
         return
 
-    # Step 3: Display summary
+    # Step 3: Calculate which posts would overwrite existing files and count media
+    overwrite_count = 0
+    total_media_count = 0
+    for note in unpublished_notes:
+        fm = note['frontmatter']
+        body = note.get('body', '')
+        # Compute target path
+        hugo_fm = transform_to_hugo(fm, body)
+        slug = generate_slug(hugo_fm.get('title', ''), hugo_fm.get('date'))
+        content_type = determine_content_type(fm)
+        section_path = get_hugo_section_path(content_type)
+        target_path = hugo_root / section_path / f"{slug}.md"
+        if target_path.exists():
+            overwrite_count += 1
+        # Count media references
+        content = note['path'].read_text()
+        media_refs = find_media_references(content)
+        total_media_count += len(media_refs)
+
+    # Step 4: Display summary
     console.print()
     console.print("[header]" + "=" * 60 + "[/header]")
     console.print("[header]BATCH PUBLISH SUMMARY[/header]")
@@ -1472,6 +1509,10 @@ def cmd_publish_all(args):
     console.print(f"Total publishable notes:  {format_count(str(len(all_notes)))}")
     console.print(f"Already published:        {format_dim(str(len(all_notes) - len(unpublished_notes)))}")
     console.print(f"To publish:               {format_success(str(len(unpublished_notes)))}")
+    if overwrite_count > 0:
+        console.print(f"Will overwrite:           {format_warning(str(overwrite_count))}")
+    if total_media_count > 0 and not skip_upload:
+        console.print(f"Media files to upload:    {format_count(str(total_media_count))}")
     console.print()
 
     # List notes to be published
@@ -1508,9 +1549,22 @@ def cmd_publish_all(args):
 
     # Non-dry-run mode: Confirm before proceeding
     if not yes_flag:
-        if not confirm_prompt(f"Publish {len(unpublished_notes)} note(s)?", default=True):
-            console.print("[dim]Aborted.[/dim]")
-            sys.exit(0)
+        # If overwrites exist, require explicit confirmation with stricter prompt
+        if overwrite_count > 0:
+            console.print(f"[warning]Warning: {overwrite_count} existing post(s) will be overwritten.[/warning]")
+            if not confirm_prompt(f"Overwrite {overwrite_count} existing post(s) and publish {len(unpublished_notes)} note(s)?", default=False):
+                console.print("[dim]Aborted.[/dim]")
+                sys.exit(0)
+        else:
+            if not confirm_prompt(f"Publish {len(unpublished_notes)} note(s)?", default=True):
+                console.print("[dim]Aborted.[/dim]")
+                sys.exit(0)
+
+        # Confirm media upload if there are media files
+        if total_media_count > 0 and not skip_upload:
+            if not confirm_prompt(f"Upload {total_media_count} media file(s) to MinIO?", default=True):
+                console.print("[dim]Skipping media upload.[/dim]")
+                skip_upload = True
         console.print()
 
     # Step 4: Publish each note

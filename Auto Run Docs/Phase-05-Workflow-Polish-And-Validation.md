@@ -110,7 +110,19 @@ This phase adds validation, error handling, and quality-of-life improvements to 
   - Added 14 comprehensive tests covering: MinIO connection checks (all env vars missing, some missing, connection failure, success), last publish date (no file, empty, multiple dates, missing timestamps), and cmd_status (displays info, minio statuses, vault not found, quiet mode)
   - All 231 tests pass (2 skipped)
 
-- [ ] Add confirmation prompts before destructive operations (uploading to MinIO, overwriting existing Hugo posts) with `--yes` flag to skip prompts
+- [x] Add confirmation prompts before destructive operations (uploading to MinIO, overwriting existing Hugo posts) with `--yes` flag to skip prompts
+  - Added overwrite detection in `cmd_publish()` that checks if target Hugo post already exists before publishing
+  - When target exists, displays warning message and requires explicit confirmation with `default=False` (user must type 'y')
+  - When target is new, uses standard "Proceed with publishing?" prompt with `default=True`
+  - Added MinIO upload confirmation prompt when media files are present (before upload begins)
+  - Users can decline MinIO upload while still proceeding with post conversion and writing
+  - Added overwrite count and media count to batch publish summary (`cmd_publish_all()`)
+  - Batch mode shows "Will overwrite: N" in summary when existing posts will be replaced
+  - Batch mode shows "Media files to upload: N" when notes contain media references
+  - Batch overwrite confirmation uses `default=False` with explicit warning message
+  - All prompts skippable with existing `-y/--yes` flag for non-interactive/CI usage
+  - Added 9 new tests in `TestPublishConfirmationPrompts` and `TestBatchPublishConfirmationPrompts` classes
+  - All 240 tests pass (2 skipped)
 
 - [ ] Implement `--force` flag for the `publish` subcommand to re-publish notes even if they've been published before (useful for updates)
 

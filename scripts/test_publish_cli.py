@@ -3316,6 +3316,387 @@ Note with missing date (error) and empty title (warning).
                 self.assertIn("warning(s)", output)
 
 
+class TestPublishConfirmationPrompts(unittest.TestCase):
+    """Tests for confirmation prompts before destructive operations."""
+
+    def test_overwrite_warning_shown_when_target_exists(self):
+        """When target Hugo post exists, overwrite warning is displayed."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create the note
+            note_path = Path(tmpdir) / "overwrite-test.md"
+            note_path.write_text("""---
+title: Overwrite Test
+date: 2024-01-15
+tags:
+  - test
+publish: true
+---
+
+Test content.
+""")
+            # Create the target Hugo post (to simulate existing post)
+            target_dir = Path(tmpdir) / "content/english/post"
+            target_dir.mkdir(parents=True, exist_ok=True)
+            target_file = target_dir / "2024-01-15-overwrite-test.md"
+            target_file.write_text("Existing content")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.yes = True  # Use yes to skip prompts but check warning
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.strict = False
+            mock_args.vault = None
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_publish(mock_args)
+                output = mock_stdout.getvalue()
+                # Should show overwrite warning
+                self.assertIn("Target file already exists and will be overwritten", output)
+
+    def test_overwrite_prompt_requires_explicit_confirmation(self):
+        """When target exists, overwrite prompt has default=False (requires explicit yes)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "overwrite-confirm.md"
+            note_path.write_text("""---
+title: Overwrite Confirm
+date: 2024-02-20
+tags:
+  - test
+publish: true
+---
+
+Test content.
+""")
+            # Create existing target
+            target_dir = Path(tmpdir) / "content/english/post"
+            target_dir.mkdir(parents=True, exist_ok=True)
+            target_file = target_dir / "2024-02-20-overwrite-confirm.md"
+            target_file.write_text("Existing content")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.yes = False  # No auto-confirm
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.strict = False
+            mock_args.vault = None
+
+            # Simulate user pressing Enter (empty response) - should abort due to default=False
+            with patch('builtins.input', return_value=''):
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    with self.assertRaises(SystemExit) as context:
+                        cmd_publish(mock_args)
+                    self.assertEqual(context.exception.code, 0)  # Graceful abort
+                    output = mock_stdout.getvalue()
+                    self.assertIn("Aborted", output)
+
+    def test_overwrite_proceeds_when_user_confirms(self):
+        """When target exists and user confirms, publish proceeds."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "overwrite-proceed.md"
+            note_path.write_text("""---
+title: Overwrite Proceed
+date: 2024-03-10
+tags:
+  - test
+publish: true
+---
+
+New content.
+""")
+            # Create existing target
+            target_dir = Path(tmpdir) / "content/english/post"
+            target_dir.mkdir(parents=True, exist_ok=True)
+            target_file = target_dir / "2024-03-10-overwrite-proceed.md"
+            target_file.write_text("Old content")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.yes = False
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.strict = False
+            mock_args.vault = None
+
+            # User confirms overwrite
+            with patch('builtins.input', return_value='y'):
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    cmd_publish(mock_args)
+                    output = mock_stdout.getvalue()
+                    self.assertIn("PUBLISH COMPLETE", output)
+
+            # File should be overwritten with new content
+            new_content = target_file.read_text()
+            self.assertIn("New content", new_content)
+
+    def test_minio_upload_prompt_shown_when_media_present(self):
+        """When media files are present, MinIO upload prompt is shown."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create note with simple content (no actual media references)
+            note_path = Path(tmpdir) / "media-note.md"
+            note_path.write_text("""---
+title: Media Note
+date: 2024-04-01
+tags:
+  - test
+publish: true
+---
+
+Simple content.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.yes = False  # No auto-confirm
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = False  # Want to try upload
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.strict = False
+            mock_args.vault = None
+
+            # Mock the media extraction to simulate having media files
+            mock_media_items = [('test-image.jpg', Path(tmpdir) / 'test-image.jpg')]
+            with patch('publish.extract_and_resolve_media', return_value=(mock_media_items, 0)):
+                # First confirm publish, then decline MinIO upload
+                input_responses = iter(['y', 'n'])  # Yes to publish, No to MinIO
+                with patch('builtins.input', side_effect=lambda x: next(input_responses)):
+                    with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                        cmd_publish(mock_args)
+                        output = mock_stdout.getvalue()
+                        # Should show skipping message
+                        self.assertIn("Skipping media upload", output)
+
+    def test_minio_upload_skipped_with_yes_flag(self):
+        """With --yes flag, MinIO upload confirmation is skipped."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "yes-flag.md"
+            note_path.write_text("""---
+title: Yes Flag
+date: 2024-05-01
+tags:
+  - test
+publish: true
+---
+
+Simple content.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.strict = False
+            mock_args.vault = None
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                cmd_publish(mock_args)
+                output = mock_stdout.getvalue()
+                # Should not prompt for overwrite
+                self.assertNotIn("Overwrite existing Hugo post?", output)
+                # Should not prompt for upload (we used --skip-upload anyway, but check no prompt text)
+                self.assertNotIn("to MinIO? [", output)  # Check for prompt pattern, not just word "upload"
+
+    def test_new_post_uses_default_true_for_confirmation(self):
+        """For new posts (no overwrite), confirmation defaults to yes."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            note_path = Path(tmpdir) / "new-post.md"
+            note_path.write_text("""---
+title: New Post
+date: 2024-06-01
+tags:
+  - test
+publish: true
+---
+
+New content.
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = str(note_path)
+            mock_args.dry_run = False
+            mock_args.yes = False
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.strict = False
+            mock_args.vault = None
+
+            # User presses Enter (empty response) - should proceed due to default=True
+            with patch('builtins.input', return_value=''):
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    cmd_publish(mock_args)
+                    output = mock_stdout.getvalue()
+                    self.assertIn("PUBLISH COMPLETE", output)
+
+
+class TestBatchPublishConfirmationPrompts(unittest.TestCase):
+    """Tests for batch publish confirmation prompts."""
+
+    def test_batch_publish_shows_overwrite_count(self):
+        """Batch publish shows count of posts that will be overwritten."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create vault structure
+            vault_path = Path(tmpdir) / "vault"
+            vault_path.mkdir()
+
+            # Create a note
+            note1 = vault_path / "note1.md"
+            note1.write_text("""---
+title: Note One
+date: 2024-07-01
+tags:
+  - test
+publish: true
+---
+
+Content 1.
+""")
+
+            # Create existing target (to trigger overwrite)
+            target_dir = Path(tmpdir) / "content/english/post"
+            target_dir.mkdir(parents=True, exist_ok=True)
+            target_file = target_dir / "2024-07-01-note-one.md"
+            target_file.write_text("Existing content")
+
+            mock_args = MagicMock()
+            mock_args.path = None
+            mock_args.publish_all = True
+            mock_args.dry_run = True  # Dry run to just check output
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.vault = str(vault_path)
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.strict = False
+
+            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                # Need to reset the publish tracker
+                with patch('publish.get_unpublished_notes', return_value=[{
+                    'path': note1,
+                    'frontmatter': {'title': 'Note One', 'date': '2024-07-01', 'tags': ['test'], 'publish': True},
+                    'body': 'Content 1.'
+                }]):
+                    cmd_publish_all(mock_args)
+                    output = mock_stdout.getvalue()
+                    # Should show overwrite count in summary
+                    self.assertIn("Will overwrite:", output)
+                    self.assertIn("1", output)
+
+    def test_batch_publish_overwrite_requires_explicit_confirm(self):
+        """When batch has overwrites, confirmation defaults to No."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            vault_path = Path(tmpdir) / "vault"
+            vault_path.mkdir()
+
+            note1 = vault_path / "batch-note.md"
+            note1.write_text("""---
+title: Batch Note
+date: 2024-08-01
+tags:
+  - test
+publish: true
+---
+
+Content.
+""")
+
+            # Create existing target
+            target_dir = Path(tmpdir) / "content/english/post"
+            target_dir.mkdir(parents=True, exist_ok=True)
+            target_file = target_dir / "2024-08-01-batch-note.md"
+            target_file.write_text("Existing")
+
+            mock_args = MagicMock()
+            mock_args.path = None
+            mock_args.publish_all = True
+            mock_args.dry_run = False
+            mock_args.yes = False
+            mock_args.hugo_root = tmpdir
+            mock_args.vault = str(vault_path)
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.strict = False
+
+            with patch('publish.get_unpublished_notes', return_value=[{
+                'path': note1,
+                'frontmatter': {'title': 'Batch Note', 'date': '2024-08-01', 'tags': ['test'], 'publish': True},
+                'body': 'Content.'
+            }]):
+                # Empty input should abort (default is No for overwrites)
+                with patch('builtins.input', return_value=''):
+                    with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                        with self.assertRaises(SystemExit) as context:
+                            cmd_publish_all(mock_args)
+                        self.assertEqual(context.exception.code, 0)
+                        output = mock_stdout.getvalue()
+                        self.assertIn("Aborted", output)
+
+    def test_batch_publish_shows_media_count(self):
+        """Batch publish shows total media count when media present."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            vault_path = Path(tmpdir) / "vault"
+            vault_path.mkdir()
+
+            # Create media
+            media_dir = vault_path / "Media"
+            media_dir.mkdir()
+            (media_dir / "image.jpg").write_bytes(b"fake")
+
+            note1 = vault_path / "media-batch.md"
+            note1.write_text("""---
+title: Media Batch
+date: 2024-09-01
+tags:
+  - test
+publish: true
+---
+
+![[Media/image.jpg]]
+""")
+
+            mock_args = MagicMock()
+            mock_args.path = None
+            mock_args.publish_all = True
+            mock_args.dry_run = True
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.vault = str(vault_path)
+            mock_args.skip_upload = False  # Allow upload to show count
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.strict = False
+
+            with patch('publish.get_unpublished_notes', return_value=[{
+                'path': note1,
+                'frontmatter': {'title': 'Media Batch', 'date': '2024-09-01', 'tags': ['test'], 'publish': True},
+                'body': '![[Media/image.jpg]]'
+            }]):
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    cmd_publish_all(mock_args)
+                    output = mock_stdout.getvalue()
+                    # Should show media count in summary
+                    self.assertIn("Media files to upload:", output)
+
+
 class TestCmdPublishIntegration(unittest.TestCase):
     """Integration tests for cmd_publish with full pipeline."""
 
