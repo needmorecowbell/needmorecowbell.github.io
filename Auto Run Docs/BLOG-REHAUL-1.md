@@ -7,7 +7,8 @@ The site is currently branded as "Adam's Dev Log" with a tech-focused descriptio
 - [x] Update site title from "Adam's Dev Log" to a more inclusive name (e.g., "Adam Musciano" or "Adam's Corner")
     - Changed to "Adam Musciano" in: config/_default/config.toml, config/_default/languages.toml, config/_default/params.toml
     - Also updated README.md header to match
-- [ ] Update site description from "A Developer's Ramblings" to something broader (e.g., "Projects, crafts, code, and everything in between")
+- [x] Update site description from "A Developer's Ramblings" to something broader (e.g., "Projects, crafts, code, and everything in between")
+    - Changed to "Projects, crafts, code, and everything in between" in config/_default/params.toml
 - [ ] Fix typo in menu: "Photgraphy" → "Photography"
 - [ ] Consider adding a "Crafts" or "Making" section to the menu, or consolidate under "Projects"
 - [ ] Review social icons - Twitter may be outdated, consider removing or updating
