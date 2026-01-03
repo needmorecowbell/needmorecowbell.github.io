@@ -123,6 +123,14 @@ cp "$MEDIA_ROOT/2021/02/21-02-21 20-33-58 1096.jpg" "/tmp/2021_rum_run/21-02-21_
 upload_folder "/tmp/2021_rum_run" "projects/2021_rum_run"
 rm -rf /tmp/2021_rum_run
 
+# 2022 Kitchen Island Staining - individual file from 2022/05/08
+echo ""
+echo "--- Kitchen Island Staining ---"
+mkdir -p /tmp/kitchen_island_staining
+cp "$MEDIA_ROOT/2022/05/08/Snapchat-2002572156.jpg" "/tmp/kitchen_island_staining/island_finished.jpg" 2>/dev/null || true
+upload_folder "/tmp/kitchen_island_staining" "projects/kitchen_island_staining"
+rm -rf /tmp/kitchen_island_staining
+
 echo ""
 echo "=== Photography/Travel Galleries ==="
 

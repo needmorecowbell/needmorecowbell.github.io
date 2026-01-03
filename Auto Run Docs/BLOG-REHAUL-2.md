@@ -36,10 +36,11 @@ Create blog posts from the following Obsidian project notes. These are more pers
   - Target: `content/english/post/2014-06-ukulele-coffin-case.md`
   - **Completed**: Created blog post with narrative about designing a coffin-shaped case for the homemade electric ukulele. Analyzed 1 image (detailed blueprint on graph paper showing exterior dimensions, lid ventilation system with 8 ball valves, and interior ukulele placement). Post covers the design motivations, the unique ventilation/humidity control system with 12ft of nylon tubing, and why a coffin shape works well for instrument cases. Added uke_coffin folder to upload_media.sh script.
 
-- [ ] **Kitchen Island Staining** - Refinishing with mom
+- [x] **Kitchen Island Staining** - Refinishing with mom
   - Source: `/home/adam/Notes/Projects/2022 Kitchen island staining.md`
   - Family project, lessons learned about stain/sealer
   - Target: `content/english/post/2022-05-kitchen-island-staining.md`
+  - **Completed**: Created blog post about refinishing the kitchen island with mom during Hickman House buyout (May 2022). Post covers the iron stain removal process, using a combination stain/acrylic sealer product, and lessons learned about why dedicated stain + polyurethane coats work better than all-in-one products. Analyzed 1 image showing the finished island with glossy brown top and dark cabinet base. Added kitchen_island_staining folder to upload_media.sh script with file rename from Snapchat filename to island_finished.jpg.
 
 ## Notes
 - Posts should be written in a casual, family-friendly tone
