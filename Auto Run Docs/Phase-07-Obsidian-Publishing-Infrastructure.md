@@ -47,11 +47,23 @@ This phase creates the scripts and templates needed to publish from Obsidian to 
   - **Video thumbnails**: Confirmed generation - `20-12-21_18-19-47_0953.thumb.jpg` (80KB) created via ffmpeg and uploaded
   - **Hugo rendering**: `hugo build` completes without errors, gallery shortcode renders correctly in output HTML with s3cdn references
 
-- [ ] Update CONTENT_GUIDE.md with Obsidian workflow documentation
+- [x] Update CONTENT_GUIDE.md with Obsidian workflow documentation
   - Document the Obsidian note structure
   - Document required frontmatter fields
   - Document the publishing command
   - Add troubleshooting section
+
+  **Completed:** Comprehensive documentation added to CONTENT_GUIDE.md including:
+  - Full Obsidian note structure with template example
+  - Required and optional frontmatter fields tables
+  - Body metadata fields documentation (`**Created**::`, `**Description**::`)
+  - Pictures section formats (wikilinks and embeds)
+  - Content type routing table with Hugo directories and S3 paths
+  - Complete command reference with all options (`--dry-run`, `--type`, `--skip-upload`, etc.)
+  - Step-by-step publishing workflow
+  - Conversion transformation reference table
+  - Troubleshooting section covering: media not found, rclone config, ffmpeg missing, date parsing, gallery rendering, content type detection, and Python dependencies
+  - Environment variables documentation
 
 ## Reference: Current Obsidian Note Structure
 
