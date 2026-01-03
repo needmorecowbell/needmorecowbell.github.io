@@ -124,6 +124,13 @@ This phase adds validation, error handling, and quality-of-life improvements to 
   - Added 9 new tests in `TestPublishConfirmationPrompts` and `TestBatchPublishConfirmationPrompts` classes
   - All 240 tests pass (2 skipped)
 
-- [ ] Implement `--force` flag for the `publish` subcommand to re-publish notes even if they've been published before (useful for updates)
+- [x] Implement `--force` flag for the `publish` subcommand to re-publish notes even if they've been published before (useful for updates)
+  - Added `-f/--force` argument to the `publish` subcommand in `publish.py:2160-2163`
+  - Modified `cmd_publish_all()` to skip the unpublished filter when `--force` is set, re-publishing all notes regardless of publish state
+  - Batch summary displays "Force mode: ENABLED (re-publishing all)" when force mode is active
+  - Single note publish (`cmd_publish`) now shows informational message when note was previously published
+  - Updated "all have already been published" message to mention `--force` option
+  - Added 7 comprehensive tests in `TestForceFlag` class covering: CLI argument availability, short form, batch force republish, batch skip without force, mixed notes handling, single publish message, and help text
+  - All 247 tests pass (2 skipped)
 
 - [ ] Add post-publish validation that builds Hugo and checks for errors after writing new content

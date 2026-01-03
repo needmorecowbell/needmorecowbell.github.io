@@ -4225,6 +4225,255 @@ Content 2.
                     clear_publish_record(note1)
 
 
+class TestForceFlag(unittest.TestCase):
+    """Tests for --force flag functionality."""
+
+    def test_force_flag_available_in_publish_cli(self):
+        """Verify --force flag is available in CLI arguments."""
+        import inspect
+        from publish import main
+
+        # Verify --force is defined in the main function source
+        source = inspect.getsource(main)
+        self.assertIn("--force", source)
+        self.assertIn("-f", source)
+
+    def test_force_flag_short_form(self):
+        """Verify -f short form is documented with force flag."""
+        import inspect
+        from publish import main
+
+        # Verify -f short form is defined
+        source = inspect.getsource(main)
+        self.assertIn('"-f", "--force"', source)
+
+    def test_batch_publish_force_republishes_already_published(self):
+        """--force flag causes batch publish to include already-published notes."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir) / "content" / "english" / "post"
+            output_dir.mkdir(parents=True)
+
+            # Create a publishable note
+            note = Path(tmpdir) / "published.md"
+            note.write_text("""---
+title: Already Published
+date: 2024-01-15
+publish: true
+---
+
+Content.
+""")
+
+            # Mark it as published in the tracking file
+            tracking_file = Path(__file__).parent / '.published.json'
+            from publish_tracker import record_published, clear_publish_record
+            record_published(note, tracking_file=tracking_file)
+
+            mock_args = MagicMock()
+            mock_args.publish_all = True
+            mock_args.vault = tmpdir
+            mock_args.dry_run = True
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.force = True  # Force re-publish
+
+            try:
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    from publish import cmd_publish_all
+                    cmd_publish_all(mock_args)
+                    output = mock_stdout.getvalue()
+
+                    # With force, should show the note to publish even though it's already published
+                    self.assertIn('Already Published', output)
+                    self.assertIn('To publish:', output)
+                    # Should indicate force mode
+                    self.assertIn('Force mode', output)
+            finally:
+                clear_publish_record(note)
+
+    def test_batch_publish_without_force_skips_published(self):
+        """Without --force, batch publish skips already-published notes."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a publishable note
+            note = Path(tmpdir) / "published.md"
+            note.write_text("""---
+title: Already Published
+date: 2024-01-15
+publish: true
+---
+
+Content.
+""")
+
+            # Mark it as published in the tracking file
+            tracking_file = Path(__file__).parent / '.published.json'
+            from publish_tracker import record_published, clear_publish_record
+            record_published(note, tracking_file=tracking_file)
+
+            mock_args = MagicMock()
+            mock_args.publish_all = True
+            mock_args.vault = tmpdir
+            mock_args.dry_run = True
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.force = False  # No force
+
+            try:
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    from publish import cmd_publish_all
+                    cmd_publish_all(mock_args)
+                    output = mock_stdout.getvalue()
+
+                    # Without force, should show all have already been published
+                    self.assertIn('all have already been published', output)
+            finally:
+                clear_publish_record(note)
+
+    def test_force_flag_with_mixed_notes(self):
+        """--force publishes both new and already-published notes."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir) / "content" / "english" / "post"
+            output_dir.mkdir(parents=True)
+
+            # Create two notes
+            note1 = Path(tmpdir) / "published.md"
+            note1.write_text("""---
+title: Already Published Note
+date: 2024-01-15
+publish: true
+---
+
+Content 1.
+""")
+            note2 = Path(tmpdir) / "new.md"
+            note2.write_text("""---
+title: New Note
+date: 2024-01-16
+publish: true
+---
+
+Content 2.
+""")
+
+            # Mark only note1 as published
+            tracking_file = Path(__file__).parent / '.published.json'
+            from publish_tracker import record_published, clear_publish_record
+            record_published(note1, tracking_file=tracking_file)
+
+            mock_args = MagicMock()
+            mock_args.publish_all = True
+            mock_args.vault = tmpdir
+            mock_args.dry_run = True
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.force = True  # Force re-publish
+
+            try:
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    from publish import cmd_publish_all
+                    cmd_publish_all(mock_args)
+                    output = mock_stdout.getvalue()
+
+                    # With force, should show both notes to publish
+                    self.assertIn('Already Published Note', output)
+                    self.assertIn('New Note', output)
+                    self.assertIn('To publish:               2', output)
+                    self.assertIn('Already published:        1', output)
+            finally:
+                clear_publish_record(note1)
+
+    def test_single_publish_shows_previously_published_message(self):
+        """Single note publish shows info message when note was previously published."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir) / "content" / "english" / "post"
+            output_dir.mkdir(parents=True)
+
+            note = Path(tmpdir) / "published.md"
+            note.write_text("""---
+title: Already Published
+date: 2024-01-15
+tags:
+  - test
+publish: true
+---
+
+Content.
+""")
+
+            # Mark it as published
+            tracking_file = Path(__file__).parent / '.published.json'
+            from publish_tracker import record_published, clear_publish_record
+            record_published(note, tracking_file=tracking_file)
+
+            mock_args = MagicMock()
+            mock_args.path = str(note)
+            mock_args.dry_run = True
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.strict = False
+            mock_args.vault = None
+
+            try:
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    from publish import cmd_publish
+                    cmd_publish(mock_args)
+                    output = mock_stdout.getvalue()
+
+                    # Should show info message about previously published
+                    self.assertIn('previously published', output)
+            finally:
+                clear_publish_record(note)
+
+    def test_all_published_message_mentions_force_flag(self):
+        """When all notes are published, message mentions --force option."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a publishable note
+            note = Path(tmpdir) / "published.md"
+            note.write_text("""---
+title: Already Published
+date: 2024-01-15
+publish: true
+---
+
+Content.
+""")
+
+            mock_args = MagicMock()
+            mock_args.publish_all = True
+            mock_args.vault = tmpdir
+            mock_args.dry_run = True
+            mock_args.yes = True
+            mock_args.hugo_root = tmpdir
+            mock_args.skip_upload = True
+            mock_args.no_gallery = False
+            mock_args.keep_associations = False
+            mock_args.force = False
+
+            # Patch get_unpublished_notes to return empty list (all published)
+            with patch('publish.get_unpublished_notes') as mock_get_unpub:
+                mock_get_unpub.return_value = []
+
+                with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                    from publish import cmd_publish_all
+                    cmd_publish_all(mock_args)
+                    output = mock_stdout.getvalue()
+
+                    # Message should mention --force option
+                    self.assertIn('--force', output)
+
+
 class TestCmdPublishAllIntegration(unittest.TestCase):
     """Integration tests for cmd_publish_all."""
 

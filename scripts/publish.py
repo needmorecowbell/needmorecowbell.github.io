@@ -1147,6 +1147,11 @@ def cmd_publish(args):
                 console.print("[dim]Aborted.[/dim]")
                 sys.exit(0)
 
+    # Check if note was previously published (informational)
+    was_published = is_note_published(note_path)
+    if was_published:
+        print_info("Note was previously published. This will update the existing Hugo post.")
+
     # Run validation (respects --strict flag)
     vault_path = Path(args.vault) if hasattr(args, 'vault') and args.vault else None
     all_issues = []
@@ -1435,6 +1440,8 @@ def cmd_publish_all(args):
 
     Uses a tracking file (.published.json) to record which notes have
     been published and their content hashes to detect changes.
+
+    With --force flag, re-publishes all notes regardless of publish state.
     """
     # Get flags from args
     dry_run = getattr(args, 'dry_run', False)
@@ -1442,6 +1449,8 @@ def cmd_publish_all(args):
     generate_gallery = not getattr(args, 'no_gallery', False)
     keep_associations = getattr(args, 'keep_associations', False)
     yes_flag = getattr(args, 'yes', False)
+    # Get force flag - use 'is True' to handle MagicMock objects in tests
+    force = getattr(args, 'force', False) is True
     hugo_root = Path(args.hugo_root) if hasattr(args, 'hugo_root') and args.hugo_root else DEFAULT_HUGO_ROOT
     vault_path = Path(args.vault) if hasattr(args, 'vault') and args.vault else None
     # Get verbose flag and enable verbose logging if set
@@ -1469,18 +1478,24 @@ def cmd_publish_all(args):
         print_warning("No publishable notes found.")
         return
 
-    # Step 2: Filter to only unpublished notes
-    unpublished_notes = get_unpublished_notes(all_notes)
+    # Step 2: Filter to only unpublished notes (unless --force is specified)
+    if force:
+        # With --force, publish all notes regardless of publish state
+        notes_to_publish = all_notes
+        already_published_count = len(all_notes) - len(get_unpublished_notes(all_notes))
+    else:
+        notes_to_publish = get_unpublished_notes(all_notes)
+        already_published_count = len(all_notes) - len(notes_to_publish)
 
-    if not unpublished_notes:
+    if not notes_to_publish:
         print_info(f"Found {len(all_notes)} publishable note(s), but all have already been published.")
-        console.print("[dim]Use 'publish <path>' to force re-publishing a specific note.[/dim]")
+        console.print("[dim]Use --force to re-publish all notes, or 'publish <path>' for a specific note.[/dim]")
         return
 
     # Step 3: Calculate which posts would overwrite existing files and count media
     overwrite_count = 0
     total_media_count = 0
-    for note in unpublished_notes:
+    for note in notes_to_publish:
         fm = note['frontmatter']
         body = note.get('body', '')
         # Compute target path
@@ -1507,8 +1522,10 @@ def cmd_publish_all(args):
         console.print(f"Environment:  {environment}")
     console.print()
     console.print(f"Total publishable notes:  {format_count(str(len(all_notes)))}")
-    console.print(f"Already published:        {format_dim(str(len(all_notes) - len(unpublished_notes)))}")
-    console.print(f"To publish:               {format_success(str(len(unpublished_notes)))}")
+    console.print(f"Already published:        {format_dim(str(already_published_count))}")
+    console.print(f"To publish:               {format_success(str(len(notes_to_publish)))}")
+    if force:
+        console.print(f"[warning]Force mode:             ENABLED (re-publishing all)[/warning]")
     if overwrite_count > 0:
         console.print(f"Will overwrite:           {format_warning(str(overwrite_count))}")
     if total_media_count > 0 and not skip_upload:
@@ -1517,7 +1534,7 @@ def cmd_publish_all(args):
 
     # List notes to be published
     console.print("Notes to publish:")
-    for note in unpublished_notes:
+    for note in notes_to_publish:
         fm = note['frontmatter']
         title = fm.get('title', note['path'].stem)
         content_type = determine_content_type(fm)
@@ -1531,20 +1548,20 @@ def cmd_publish_all(args):
         console.print("[warning][DRY RUN][/warning] No changes will be made.")
         console.print()
 
-        for i, note in enumerate(unpublished_notes, 1):
+        for i, note in enumerate(notes_to_publish, 1):
             note_path = note['path']
             fm = note['frontmatter']
             title = fm.get('title', note_path.stem)
             content_type = determine_content_type(fm)
             section_path = get_hugo_section_path(content_type)
 
-            console.print(f"\n[info][{i}/{len(unpublished_notes)}][/info] {title}")
+            console.print(f"\n[info][{i}/{len(notes_to_publish)}][/info] {title}")
             console.print(f"  Source:       [info]{note_path}[/info]")
             console.print(f"  Content type: {content_type}")
             console.print(f"  Target:       [info]{hugo_root / section_path}[/info]")
 
         console.print()
-        console.print(f"[warning][DRY RUN][/warning] Would publish {format_count(str(len(unpublished_notes)))} note(s).")
+        console.print(f"[warning][DRY RUN][/warning] Would publish {format_count(str(len(notes_to_publish)))} note(s).")
         return
 
     # Non-dry-run mode: Confirm before proceeding
@@ -1552,11 +1569,11 @@ def cmd_publish_all(args):
         # If overwrites exist, require explicit confirmation with stricter prompt
         if overwrite_count > 0:
             console.print(f"[warning]Warning: {overwrite_count} existing post(s) will be overwritten.[/warning]")
-            if not confirm_prompt(f"Overwrite {overwrite_count} existing post(s) and publish {len(unpublished_notes)} note(s)?", default=False):
+            if not confirm_prompt(f"Overwrite {overwrite_count} existing post(s) and publish {len(notes_to_publish)} note(s)?", default=False):
                 console.print("[dim]Aborted.[/dim]")
                 sys.exit(0)
         else:
-            if not confirm_prompt(f"Publish {len(unpublished_notes)} note(s)?", default=True):
+            if not confirm_prompt(f"Publish {len(notes_to_publish)} note(s)?", default=True):
                 console.print("[dim]Aborted.[/dim]")
                 sys.exit(0)
 
@@ -1572,12 +1589,12 @@ def cmd_publish_all(args):
     failed_count = 0
     failed_notes = []
 
-    for i, note in enumerate(unpublished_notes, 1):
+    for i, note in enumerate(notes_to_publish, 1):
         note_path = note['path']
         fm = note['frontmatter']
         title = fm.get('title', note_path.stem)
 
-        console.print(f"\n[info][{i}/{len(unpublished_notes)}][/info] Publishing: [highlight]{title}[/highlight]")
+        console.print(f"\n[info][{i}/{len(notes_to_publish)}][/info] Publishing: [highlight]{title}[/highlight]")
         console.print("-" * 40)
 
         try:
@@ -2156,6 +2173,11 @@ Examples:
         "-q", "--quiet",
         action="store_true",
         help="Suppress all output except errors"
+    )
+    publish_parser.add_argument(
+        "-f", "--force",
+        action="store_true",
+        help="Re-publish notes even if they've been published before (useful for updates)"
     )
     publish_parser.set_defaults(func=cmd_publish_dispatch)
 
