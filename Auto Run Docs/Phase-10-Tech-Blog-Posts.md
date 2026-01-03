@@ -29,17 +29,19 @@ This phase reviews and publishes tech-focused blog posts from the Notes/Blog fol
   - If publishing, run through pipeline
   - **Completed:** Post was already in content folder. The 2017 predictions about streaming/cloud computing have aged well (cloud gaming, Chromebooks, etc. are now mainstream). Improvements made: Fixed typo "ths" → "this", corrected "IWannaCry" → "WannaCry", converted HTML `<b>` tags to markdown `**`, capitalized "4g" → "4G" and "raspberry pi" → "Raspberry Pi", added proper markdown headers for structure, replaced raw HTML YouTube embed with Hugo shortcode `{{< youtube >}}`, added context note at top explaining this is a 2017 retrospective piece. Hugo build verified successful.
 
-- [ ] Decide on Coding Livestream series approach
+- [x] Decide on Coding Livestream series approach
   - Option A: Publish as 4 separate posts
   - Option B: Consolidate into single "Coding Livestream Series" post
   - Option C: Skip if content is too dated
   - Review each post for relevance and accuracy
+  - **Decision: Option A - Published as 4 separate posts.** Posts were already in content folder. Topics remain relevant: web scraping techniques, SSH honeypots (Cowrie still actively maintained), YARA rules (industry standard for malware detection), and computer vision fundamentals. Posts are linked via `series: coding-livestream` tag.
 
-- [ ] If publishing Coding Livestream posts:
-  - [ ] Publish Livestream 1: Find Every Arby's
-  - [ ] Publish Livestream 2: SSH Honeypot
-  - [ ] Publish Livestream 3: YARA
-  - [ ] Publish Livestream 4: Computer Vision
+- [x] If publishing Coding Livestream posts:
+  - [x] Publish Livestream 1: Find Every Arby's
+  - [x] Publish Livestream 2: SSH Honeypot
+  - [x] Publish Livestream 3: YARA
+  - [x] Publish Livestream 4: Computer Vision
+  - **Completed:** All 4 posts updated with: (1) Replaced raw HTML iframe embeds with Hugo `{{< youtube >}}` shortcodes, (2) Added context note indicating 2018 livestream series, (3) Added descriptive headers and topic bullet points for each post, (4) Added relevant links (Cowrie GitHub, YARA docs). Hugo build verified successful.
 
 - [ ] Review and publish Vigiles/Grafana post
   - Review content for accuracy

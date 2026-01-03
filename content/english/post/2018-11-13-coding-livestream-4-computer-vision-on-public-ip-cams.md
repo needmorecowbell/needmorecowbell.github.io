@@ -1,14 +1,22 @@
 ---
 layout: post
 title: 'Coding Livestream 4: Computer Vision on Public IP Cams'
-author:     "Adam Musciano"
+author: "Adam Musciano"
 date: "2018-11-13"
 series:
   - coding-livestream
 ---
 
+*This is part 4 of my 2018 Coding Livestream series, where I tackled various programming challenges live.*
 
-<div style="text-align:center;">
-<iframe width="560" height="315" src="https://www.youtube.com/embed/xS0nCT0yrfg" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-  <p>In this stream I cover how to harvest IP cameras for computer vision exercises.</p>
-</div>
+## Computer Vision with Public Camera Feeds
+
+In this livestream, I explore using publicly accessible IP camera feeds as a data source for computer vision experiments. This session covers finding open camera streams and applying basic computer vision techniques to analyze the footage.
+
+Topics covered:
+- Finding publicly accessible IP camera streams
+- Working with OpenCV for image processing
+- Object detection on live video feeds
+- Ethical considerations when working with public cameras
+
+{{< youtube xS0nCT0yrfg >}}

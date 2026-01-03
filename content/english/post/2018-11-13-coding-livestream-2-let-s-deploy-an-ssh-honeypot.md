@@ -1,14 +1,21 @@
 ---
 layout: post
 title: "Coding Livestream 2: Let's Deploy an SSH Honeypot"
-author:     "Adam Musciano"
+author: "Adam Musciano"
 date: "2018-11-13"
 series:
   - coding-livestream
 ---
 
+*This is part 2 of my 2018 Coding Livestream series, where I tackled various programming challenges live.*
 
-<div style="text-align:center;">
-<iframe width="560" height="315" src="https://www.youtube.com/embed/Xf9g7npdHAY" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-  <p>In this stream I deploy an SSH Honeypot called Cowrie</p>
-</div>
+## Deploying Cowrie SSH Honeypot
+
+In this livestream, I deploy and configure [Cowrie](https://github.com/cowrie/cowrie), a medium-interaction SSH honeypot. Honeypots are decoy systems designed to attract attackers and log their activities, providing valuable insights into attack patterns and malicious behavior.
+
+Topics covered:
+- Setting up Cowrie on a cloud server
+- Configuring the honeypot to capture attacker sessions
+- Analyzing the types of attacks and credentials used by bots
+
+{{< youtube Xf9g7npdHAY >}}
