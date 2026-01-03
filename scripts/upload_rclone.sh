@@ -99,6 +99,17 @@ if [[ -f "$MEDIA_ROOT/2022/05/08/Snapchat-2002572156.jpg" ]]; then
 fi
 
 echo ""
+echo "=== Truck Cap Build Project ==="
+mkdir -p /tmp/upload_truck_cap
+cp "$MEDIA_ROOT/2020/08/20-08-10 new truck cap swap.jpg" "/tmp/upload_truck_cap/truck_with_cap.jpg" 2>/dev/null || true
+cp "$MEDIA_ROOT/2022/03/truck camper conversion/20220305_185038.jpg" "/tmp/upload_truck_cap/bed_platform.jpg" 2>/dev/null || true
+cp "$MEDIA_ROOT/2022/03/truck camper conversion/truck cap lighting/20220312_170302.jpg" "/tmp/upload_truck_cap/lighting_panel.jpg" 2>/dev/null || true
+cp "$MEDIA_ROOT/2022/04/truck cap project/Snapchat-688654621.jpg" "/tmp/upload_truck_cap/interior_finished.jpg" 2>/dev/null || true
+cp "$MEDIA_ROOT/2022/04/truck cap project/Snapchat-1777810870.mp4" "/tmp/upload_truck_cap/interior_tour.mp4" 2>/dev/null || true
+rclone copy /tmp/upload_truck_cap/ "$REMOTE/projects/truck_cap_build/" --progress
+rm -rf /tmp/upload_truck_cap
+
+echo ""
 echo "=== Kegorator Project (multi-day) ==="
 mkdir -p /tmp/upload_kegorator
 cp "$MEDIA_ROOT/2024/08/20/kegorator_project/Snapchat-409236232.jpg" "/tmp/upload_kegorator/08_20_initial.jpg" 2>/dev/null || true
