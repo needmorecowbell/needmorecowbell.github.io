@@ -15,3 +15,6 @@ python-dotenv>=1.0.0
 
 # Image processing for thumbnail generation
 Pillow>=10.0.0
+
+# Testing framework
+pytest>=8.0.0

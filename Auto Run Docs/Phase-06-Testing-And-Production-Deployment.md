@@ -63,7 +63,8 @@ This phase adds a test suite to ensure the publishing pipeline works correctly, 
     - `comma_separated_tags.md`: Tags as comma-separated string
     - `string_date_formats.md`: Human-readable date format
 
-- [ ] Add `pytest` to `scripts/requirements.txt`
+- [x] Add `pytest` to `scripts/requirements.txt`
+  - Added `pytest>=8.0.0` to scripts/requirements.txt with descriptive comment
 
 - [ ] Create `scripts/tests/test_integration.py` with end-to-end tests that convert a sample note and verify the Hugo output
 
