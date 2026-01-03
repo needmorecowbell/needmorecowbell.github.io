@@ -9,7 +9,8 @@ The site is currently branded as "Adam's Dev Log" with a tech-focused descriptio
     - Also updated README.md header to match
 - [x] Update site description from "A Developer's Ramblings" to something broader (e.g., "Projects, crafts, code, and everything in between")
     - Changed to "Projects, crafts, code, and everything in between" in config/_default/params.toml
-- [ ] Fix typo in menu: "Photgraphy" → "Photography"
+- [x] Fix typo in menu: "Photgraphy" → "Photography"
+    - Fixed in config/_default/menus.en.toml line 20
 - [ ] Consider adding a "Crafts" or "Making" section to the menu, or consolidate under "Projects"
 - [ ] Review social icons - Twitter may be outdated, consider removing or updating
 - [ ] Update profile picture URL to use production S3CDN path (currently hardcoded to local IP)

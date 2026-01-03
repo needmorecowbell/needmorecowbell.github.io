@@ -17,7 +17,7 @@
   url = "/gallery/"
 
   [[main]]
-  name = "Photgraphy"
+  name = "Photography"
   weight = 500
   identifier = "photography"
   url = "/photography/"
