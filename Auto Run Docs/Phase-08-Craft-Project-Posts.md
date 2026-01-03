@@ -63,12 +63,13 @@ This phase publishes high-quality craft/maker project posts using the Obsidian p
   - Verify renders correctly
   - **Completed**: No Obsidian note existed. Created Hugo post directly from media analysis. Uploaded 2 images and 1 video to MinIO (`projects/porch_reflooring/`). Generated video thumbnail. Media shows Owens Corning WeatherLock barrier, APOC #30 roofing felt, and Zip System flashing tape installation. Hugo post generated at `content/english/projects/porch-reflooring.md`. Hugo build verified successful.
 
-- [ ] Publish Stairwell Chandelier post
+- [x] Publish Stairwell Chandelier post
   - Create Obsidian note if not exists
   - Enrich content
   - Upload images to MinIO
   - Generate Hugo post via pipeline
   - Verify renders correctly
+  - **Completed**: No Obsidian note existed. Created Hugo post directly from media analysis (3 images analyzed). Post features a DIY pendant light built from consignment shop finds: $10 glass dome, $13 pendant hardware, $7 Edison bulb (~$30 total). Uploaded 3 images to MinIO (`projects/stairwell_chandelier/`). Updated upload script. Hugo post generated at `content/english/projects/stairwell-chandelier.md`. Hugo build verified successful.
 
 ## Notes
 
