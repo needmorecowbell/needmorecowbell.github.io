@@ -431,11 +431,13 @@ class TestRealConfig(unittest.TestCase):
         """Reads the actual development configuration."""
         try:
             config = get_hugo_config(environment='development')
-            # Development should have localhost S3CDN
+            # Development should have S3CDN configured
             self.assertIn('S3CDN', config)
+            # Development typically uses HTTP (not HTTPS) for local/LAN resources
+            # Accept http:// URLs (localhost, LAN IPs, or docker hostnames)
             self.assertTrue(
-                'localhost' in config['S3CDN'] or 'minio' in config['S3CDN'].lower(),
-                f"Development S3CDN should point to local: {config['S3CDN']}"
+                config['S3CDN'].startswith('http://'),
+                f"Development S3CDN should use HTTP for local resources: {config['S3CDN']}"
             )
         except HugoConfigError:
             self.skipTest("Real config not available")
