@@ -17,4 +17,7 @@ The site is currently branded as "Adam's Dev Log" with a tech-focused descriptio
     - Updated Twitter to X branding: title changed from "Twitter" to "X (Twitter)", URL updated from twitter.com to x.com
     - Note: Kept `fa-twitter` icon because site uses Font Awesome 5.15.1 which doesn't include the newer `fa-x-twitter` icon (available in FA 6+). The bird icon is still widely recognized.
     - Reviewed other social icons (GitHub, LinkedIn, email) - all are current and appropriate
-- [ ] Update profile picture URL to use production S3CDN path (currently hardcoded to local IP)
+- [x] Update profile picture URL to use production S3CDN path (currently hardcoded to local IP)
+    - **Already completed**: The `profilePicture` parameter in `config/_default/params.toml` is correctly set to `https://s3cdn.617a.net/amblog/assets/img/prof.jpg`
+    - Both production and development environments resolve to this correct S3CDN URL
+    - Verified via `hugo config -e production` and `hugo config -e development`
