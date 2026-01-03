@@ -66,7 +66,17 @@ This phase adds a test suite to ensure the publishing pipeline works correctly, 
 - [x] Add `pytest` to `scripts/requirements.txt`
   - Added `pytest>=8.0.0` to scripts/requirements.txt with descriptive comment
 
-- [ ] Create `scripts/tests/test_integration.py` with end-to-end tests that convert a sample note and verify the Hugo output
+- [x] Create `scripts/tests/test_integration.py` with end-to-end tests that convert a sample note and verify the Hugo output
+  - Created comprehensive integration test suite with 24 tests covering:
+    - `TestFullPipelineBasicPost`: 3 tests for basic post conversion (full pipeline, slug generation, preview without writing)
+    - `TestFullPipelineWithWikilinks`: 2 tests for wikilink conversion (pipeline test, special characters)
+    - `TestFullPipelineWithMedia`: 2 tests for embedded media (images/video/audio with s3cdn shortcode and direct URL)
+    - `TestFullPipelineContentTypes`: 3 tests for content type routing (photography, project, tag inference)
+    - `TestFullPipelineEdgeCases`: 6 tests for edge cases (unicode, empty frontmatter, H1 title extraction, comma-separated tags, drafts, no body)
+    - `TestPipelineWithMediaUrlMap`: 1 test for media URL mapping priority
+    - `TestRoutedWriting`: 2 tests for routed writing (directory creation, content type override)
+    - `TestCompleteWorkflow`: 2 tests for complete publishing workflow (single post, multiple content types)
+    - `TestFormatFrontmatter`: 3 tests for frontmatter formatting (field order, special characters, lists)
 
 - [ ] Add a `test` target to the Makefile that runs `pytest scripts/tests/`
 
