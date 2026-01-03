@@ -18,3 +18,8 @@ scripts/.env
 
 # Publish tracking state (local only)
 scripts/.published.json
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
