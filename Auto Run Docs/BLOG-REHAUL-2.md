@@ -30,10 +30,11 @@ Create blog posts from the following Obsidian project notes. These are more pers
   - Target: `content/english/post/2020-12-basement-coral-lab.md`
   - **Completed**: Created blog post with full narrative about the DIY coral frag tank setup in the Hickman House basement. Post covers: the scientific motivation (studying light refraction through coral for digital modeling), the low-budget setup (storage containers on metal rack), the monitoring/analysis approach, and why coral creates fascinating optical patterns. Analyzed 3 images (plus 1 video in media folder) showing the tank setup with illumination and laptop monitoring station. Added basement_coral_lab folder to upload_media.sh script with filename space-to-underscore conversion.
 
-- [ ] **Ukulele Coffin Case** - Custom coffin-shaped ukulele case
+- [x] **Ukulele Coffin Case** - Custom coffin-shaped ukulele case
   - Source: `/home/adam/Notes/Projects/Ukulele Coffin Case.md`
   - Woodworking project, has 1 picture
   - Target: `content/english/post/2014-06-ukulele-coffin-case.md`
+  - **Completed**: Created blog post with narrative about designing a coffin-shaped case for the homemade electric ukulele. Analyzed 1 image (detailed blueprint on graph paper showing exterior dimensions, lid ventilation system with 8 ball valves, and interior ukulele placement). Post covers the design motivations, the unique ventilation/humidity control system with 12ft of nylon tubing, and why a coffin shape works well for instrument cases. Added uke_coffin folder to upload_media.sh script.
 
 - [ ] **Kitchen Island Staining** - Refinishing with mom
   - Source: `/home/adam/Notes/Projects/2022 Kitchen island staining.md`

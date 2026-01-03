@@ -102,6 +102,7 @@ upload_folder "$MEDIA_ROOT/2020/12/Zippo Lighter Project" "projects/wood_zippo_l
 upload_folder "$MEDIA_ROOT/2021/03/Garden Bed Project" "projects/raised_bed_project"
 upload_folder "$MEDIA_ROOT/2021/06/vertical rotisserie project" "projects/vertical_rotisserie"
 upload_folder "$MEDIA_ROOT/2019/pancetta" "projects/2019_pancetta"
+upload_folder "$MEDIA_ROOT/2014/uke-coffin" "projects/uke_coffin"
 
 # Basement Coral Lab - frag tank for studying light refraction
 echo ""
