@@ -91,7 +91,13 @@ This phase adds validation, error handling, and quality-of-life improvements to 
   - Added 14 new tests covering verbose functionality (all passing)
   - All 193 tests pass (2 skipped)
 
-- [ ] Add `--quiet` flag that suppresses all output except errors
+- [x] Add `--quiet` flag that suppresses all output except errors
+  - Added `-q/--quiet` flag to all CLI subcommands: `scan`, `list`, `media`, `validate`, `convert`, `publish`, and `preview`
+  - Quiet mode suppresses all output except errors (print_error always outputs)
+  - Uses `set_quiet()` and `is_quiet()` functions from `console.py` to manage global quiet state
+  - Updated all command handlers to call `set_quiet(quiet is True)` at the start to handle MagicMock objects in tests
+  - Added 8 new tests covering quiet mode for the newly added subcommands (scan, list, media, validate)
+  - All 217 tests pass (2 skipped)
 
 - [ ] Create a `status` subcommand that shows: count of publishable notes, count already published, MinIO connection status, and last publish date
 

@@ -121,6 +121,8 @@ from console import (
     print_verbose_step,
     print_verbose_detail,
     print_verbose_list,
+    set_quiet,
+    is_quiet,
 )
 
 # Default Hugo content output directory (relative to blog root)
@@ -418,6 +420,10 @@ def print_list_table(notes, output_dir=DEFAULT_OUTPUT_DIR):
 
 def cmd_scan(args):
     """Find and display all notes marked for publishing."""
+    # Get quiet flag and enable quiet mode if set
+    quiet = getattr(args, 'quiet', False)
+    set_quiet(quiet is True)
+
     vault_path = Path(args.vault) if args.vault else None
 
     try:
@@ -433,6 +439,10 @@ def cmd_scan(args):
 
 def cmd_list(args):
     """Show publishable notes with their target Hugo paths."""
+    # Get quiet flag and enable quiet mode if set
+    quiet = getattr(args, 'quiet', False)
+    set_quiet(quiet is True)
+
     vault_path = Path(args.vault) if args.vault else None
     output_dir = args.output if args.output else DEFAULT_OUTPUT_DIR
 
@@ -778,6 +788,10 @@ def upload_media_to_minio(media_items: list, show_progress: bool = True) -> dict
 
 def cmd_media(args):
     """List all media files referenced by a note without uploading."""
+    # Get quiet flag and enable quiet mode if set
+    quiet = getattr(args, 'quiet', False)
+    set_quiet(quiet is True)
+
     note_path = Path(args.path)
 
     # Extract and resolve media references
@@ -837,6 +851,10 @@ def cmd_validate(args):
     - 1: Validation errors found (note cannot be published as-is)
     - 2: Validation warnings found (note can be published but has issues)
     """
+    # Get quiet flag and enable quiet mode if set
+    quiet = getattr(args, 'quiet', False)
+    set_quiet(quiet is True)
+
     note_path = Path(args.path)
 
     # Parse the note to get frontmatter and body
@@ -933,6 +951,10 @@ def cmd_convert(args):
     # Get verbose flag and enable verbose logging if set
     verbose = getattr(args, 'verbose', False)
     set_verbose(verbose)
+
+    # Get quiet flag and enable quiet mode if set
+    quiet = getattr(args, 'quiet', False)
+    set_quiet(quiet is True)
 
     # Get skip_upload flag
     skip_upload = getattr(args, 'skip_upload', False)
@@ -1100,6 +1122,9 @@ def cmd_publish(args):
     # Get verbose flag and enable verbose logging if set
     verbose = getattr(args, 'verbose', False)
     set_verbose(verbose)
+    # Get quiet flag and enable quiet mode if set
+    quiet = getattr(args, 'quiet', False)
+    set_quiet(quiet is True)
     # Get environment flag (ensure we get None if not set, not a MagicMock)
     environment = getattr(args, 'environment', None)
     if environment is not None and not isinstance(environment, str):
@@ -1404,6 +1429,9 @@ def cmd_publish_all(args):
     # Get verbose flag and enable verbose logging if set
     verbose = getattr(args, 'verbose', False)
     set_verbose(verbose)
+    # Get quiet flag and enable quiet mode if set
+    quiet = getattr(args, 'quiet', False)
+    set_quiet(quiet is True)
     # Get environment flag (ensure we get None if not set, not a MagicMock)
     environment = getattr(args, 'environment', None)
     if environment is not None and not isinstance(environment, str):
@@ -1603,6 +1631,9 @@ def cmd_preview(args):
     # Get verbose flag and enable verbose logging if set
     verbose = getattr(args, 'verbose', False)
     set_verbose(verbose)
+    # Get quiet flag and enable quiet mode if set
+    quiet = getattr(args, 'quiet', False)
+    set_quiet(quiet is True)
     # Get environment flag
     environment = getattr(args, 'environment', None)
     if environment is not None and not isinstance(environment, str):
@@ -1893,6 +1924,11 @@ Examples:
         action="store_true",
         help="Show detailed logging of each step in the conversion and upload process"
     )
+    publish_parser.add_argument(
+        "-q", "--quiet",
+        action="store_true",
+        help="Suppress all output except errors"
+    )
     publish_parser.set_defaults(func=cmd_publish_dispatch)
 
     # scan subcommand
@@ -1903,6 +1939,11 @@ Examples:
     scan_parser.add_argument(
         "--vault",
         help="Path to the Obsidian vault (default: ~/Notes)"
+    )
+    scan_parser.add_argument(
+        "-q", "--quiet",
+        action="store_true",
+        help="Suppress all output except errors"
     )
     scan_parser.set_defaults(func=cmd_scan)
 
@@ -1919,6 +1960,11 @@ Examples:
         "--output",
         help="Hugo output directory (default: content/english/post)"
     )
+    list_parser.add_argument(
+        "-q", "--quiet",
+        action="store_true",
+        help="Suppress all output except errors"
+    )
     list_parser.set_defaults(func=cmd_list)
 
     # media subcommand
@@ -1929,6 +1975,11 @@ Examples:
     media_parser.add_argument(
         "path",
         help="Path to the Obsidian note to analyze"
+    )
+    media_parser.add_argument(
+        "-q", "--quiet",
+        action="store_true",
+        help="Suppress all output except errors"
     )
     media_parser.set_defaults(func=cmd_media)
 
@@ -1948,6 +1999,11 @@ Examples:
     validate_parser.add_argument(
         "--hugo-root",
         help=f"Path to Hugo site root for link validation (default: {DEFAULT_HUGO_ROOT})"
+    )
+    validate_parser.add_argument(
+        "-q", "--quiet",
+        action="store_true",
+        help="Suppress all output except errors"
     )
     validate_parser.set_defaults(func=cmd_validate)
 
@@ -1992,6 +2048,11 @@ Examples:
         "-v", "--verbose",
         action="store_true",
         help="Show detailed logging of each step in the conversion and upload process"
+    )
+    convert_parser.add_argument(
+        "-q", "--quiet",
+        action="store_true",
+        help="Suppress all output except errors"
     )
     convert_parser.set_defaults(func=cmd_convert)
 
@@ -2050,6 +2111,11 @@ Examples:
         "-v", "--verbose",
         action="store_true",
         help="Show detailed logging of each step in the conversion and upload process"
+    )
+    preview_parser.add_argument(
+        "-q", "--quiet",
+        action="store_true",
+        help="Suppress all output except errors"
     )
     preview_parser.set_defaults(func=cmd_preview)
 
