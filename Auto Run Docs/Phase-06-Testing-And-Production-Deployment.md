@@ -140,7 +140,11 @@ This phase adds a test suite to ensure the publishing pipeline works correctly, 
     - Associations section: Properly removed from output
   - All 689 tests pass (426 in tests/, 263 in test_publish_cli.py)
 
-- [ ] Run Hugo build (`hugo --environment production`) and verify no errors
+- [x] Run Hugo build (`hugo --environment production`) and verify no errors
+  - Ran `hugo --environment production` successfully with no build errors
+  - Build completed in ~60ms, generating 114 pages, 3 paginator pages, 1 static file, and 6 aliases
+  - Only warnings are unused template warnings from the theme (informational, not errors)
+  - Public directory generated correctly with all expected content directories
 
 - [ ] Create a pull request description template in `.github/PULL_REQUEST_TEMPLATE.md` documenting the new publishing workflow
 
