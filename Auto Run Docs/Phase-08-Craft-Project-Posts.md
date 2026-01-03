@@ -40,11 +40,12 @@ This phase publishes high-quality craft/maker project posts using the Obsidian p
   - Verify renders correctly
   - **Completed**: Enriched Obsidian note with materials list, build process, results, and lessons learned sections. Added `content_type: project` to frontmatter and removed 2 references to missing video files. Uploaded 7 images and 2 videos to MinIO (9 files total). Generated video thumbnails. Hugo post generated at `content/english/projects/stained-glass-hexagon-window.md`.
 
-- [ ] Publish Quarter Rings post
+- [x] Publish Quarter Rings post
   - Enrich content in Obsidian note if needed
   - Upload images to MinIO
   - Generate Hugo post via pipeline
   - Verify renders correctly
+  - **Completed**: Enriched Obsidian note with materials list, build process description, results, and lessons learned sections. Added `content_type: project` to frontmatter. Uploaded 8 images and 1 video to MinIO (9 files total). Generated video thumbnail. Removed old nanogallery2-based post and replaced with new Hugo post at `content/english/projects/quarter-rings.md`.
 
 - [ ] Publish Sumac Wine post
   - Create Obsidian note if not exists
