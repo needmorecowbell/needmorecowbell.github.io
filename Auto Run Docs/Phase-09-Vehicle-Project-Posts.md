@@ -20,11 +20,12 @@ This phase publishes truck/vehicle modification project posts using the Obsidian
   - Verify renders correctly
   - **Completed:** Created project post with 4 images and 1 video. Media uploaded to MinIO at `projects/truck_cap_build/`. Images analyzed: truck exterior with cap, bed platform construction, LED lighting panel wiring, and finished interior. Video thumbnail generated for interior tour video.
 
-- [ ] Publish Truck Exhaust Swap post
+- [x] Publish Truck Exhaust Swap post
   - Enrich content in Obsidian note if needed
   - Upload images to MinIO
   - Generate Hugo post via pipeline
   - Verify renders correctly
+  - **Completed:** Created project post with 1 video. Media uploaded to MinIO at `projects/truck_exhaust_swap/`. Video shows exhaust unboxing with a cat playing with the styrofoam packaging materials. Video thumbnail generated. Images analyzed: 1 video (7 seconds, analyzed via frame extraction).
 
 - [ ] Publish Truck Loudspeaker post
   - Enrich content in Obsidian note if needed
