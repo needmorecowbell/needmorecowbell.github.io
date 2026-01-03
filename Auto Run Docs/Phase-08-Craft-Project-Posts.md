@@ -47,12 +47,13 @@ This phase publishes high-quality craft/maker project posts using the Obsidian p
   - Verify renders correctly
   - **Completed**: Enriched Obsidian note with materials list, build process description, results, and lessons learned sections. Added `content_type: project` to frontmatter. Uploaded 8 images and 1 video to MinIO (9 files total). Generated video thumbnail. Removed old nanogallery2-based post and replaced with new Hugo post at `content/english/projects/quarter-rings.md`.
 
-- [ ] Publish Sumac Wine post
+- [x] Publish Sumac Wine post
   - Create Obsidian note if not exists
   - Enrich content
   - Upload images to MinIO
   - Generate Hugo post via pipeline
   - Verify renders correctly
+  - **Completed**: Post already existed at `content/english/post/2023-08-14-sumac-wine-project.md` with good content. Uploaded 3 videos to MinIO (`img/posts/sumac-wine/`). Generated video thumbnails. Added video gallery section to the post. Hugo build verified successful.
 
 - [ ] Publish Porch Reflooring post
   - Create Obsidian note if not exists
