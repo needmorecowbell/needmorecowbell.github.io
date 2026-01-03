@@ -2,7 +2,7 @@
 # Site Parameters
 # =============================================================================
 
-title = "Adam's Dev Log"
+title = "Adam Musciano"
 author = "Adam Musciano"
 copyright = "2017-{{ YEAR }}"
 description = "A Developer's Ramblings"

@@ -1,4 +1,4 @@
-# Adam's DevLog
+# Adam Musciano
 
 Personal blog built with Hugo, featuring an Obsidian-to-Hugo publishing pipeline and S3-compatible media storage.
 
