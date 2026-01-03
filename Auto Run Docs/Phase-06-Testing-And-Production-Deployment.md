@@ -82,7 +82,30 @@ This phase adds a test suite to ensure the publishing pipeline works correctly, 
   - Target already existed at line 73-74: `cd $(SCRIPTS_DIR) && python3 -m pytest -v`
   - Verified working: runs 1437 tests (1434 passed, 2 skipped, 1 unrelated failure in test_config_manager.py)
 
-- [ ] Create `scripts/tests/test_gallery_generator.py` with tests for Pictures section extraction and nanogallery HTML generation
+- [x] Create `scripts/tests/test_gallery_generator.py` with tests for Pictures section extraction and nanogallery HTML generation
+  - Created comprehensive test suite with 132 tests covering:
+    - `TestExtractPicturesSection`: 12 tests for Pictures section extraction (simple, at end, case-insensitive, singular, empty, whitespace handling, formatting preservation)
+    - `TestExtractMediaFromPicturesSection`: 10 tests for media extraction (images, videos, mixed media, order preservation, whitespace handling, case-insensitive extensions)
+    - `TestFindMediaInSection`: 8 tests for media reference parsing (multiple images, video formats, subdirectories, inline references)
+    - `TestHasPicturesSection`: 6 tests for Pictures section detection (case variations, similar-but-not-matching headers)
+    - `TestGetPicturesSectionLocation`: 5 tests for section location finding (simple, at end, no section, empty/none content)
+    - `TestRemovePicturesSection`: 6 tests for section removal (middle, end, only section, no section, formatting preservation)
+    - `TestPicturesSectionPattern`: 6 tests for regex pattern validation
+    - `TestGenerateNanogalleryHtml`: 16 tests for HTML generation (images, empty list, default config, base URL, anchor format, thumbnail suffix, descriptions, custom config, nested merge, mixed media, path stripping, order preservation, Hugo shortcodes)
+    - `TestGenerateGalleryFromObsidian`: 6 tests for Obsidian-to-gallery conversion (basic note, no pictures, empty pictures, custom CDN, project slug, filename extraction)
+    - `TestDefaultNanogalleryConfig`: 4 tests for config constant validation
+    - `TestHasAssociationsSection`: 5 tests for Associations section detection
+    - `TestExtractAssociationsSection`: 4 tests for Associations extraction
+    - `TestGetAssociationsSectionLocation`: 5 tests for location finding
+    - `TestRemoveAssociationsSection`: 4 tests for section removal
+    - `TestExtractWikilinksFromAssociations`: 4 tests for wikilink extraction
+    - `TestFindWikilinksInSection`: 4 tests for wikilink parsing
+    - `TestConvertAssociationsToHugoLinks`: 6 tests for Hugo link conversion
+    - `TestSlugifyForHugo`: 6 tests for slug generation
+    - `TestPicturesSectionIntegration`: 4 integration tests for Pictures workflows
+    - `TestGalleryGenerationIntegration`: 3 integration tests for gallery generation
+    - `TestAssociationsIntegration`: 2 integration tests for Associations workflows
+    - `TestAssociationsSectionPattern`: 6 tests for Associations regex pattern
 
 - [ ] Run the full test suite and fix any failing tests
 
