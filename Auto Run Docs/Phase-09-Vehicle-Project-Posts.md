@@ -27,11 +27,12 @@ This phase publishes truck/vehicle modification project posts using the Obsidian
   - Verify renders correctly
   - **Completed:** Created project post with 1 video. Media uploaded to MinIO at `projects/truck_exhaust_swap/`. Video shows exhaust unboxing with a cat playing with the styrofoam packaging materials. Video thumbnail generated. Images analyzed: 1 video (7 seconds, analyzed via frame extraction).
 
-- [ ] Publish Truck Loudspeaker post
+- [x] Publish Truck Loudspeaker post
   - Enrich content in Obsidian note if needed
   - Upload images to MinIO
   - Generate Hugo post via pipeline
   - Verify renders correctly
+  - **Completed:** Created project post with 2 videos. Media uploaded to MinIO at `projects/truck_loudspeaker/`. Videos show PA system components and operation: 1) ~10 second demo of amplifier wiring and setup, 2) ~4 second demo of horn speaker connected to amplifier. Video thumbnails generated. Videos analyzed: 6 frames extracted across 2 videos for content analysis.
 
 - [ ] Publish DIY Tonneau Cover post
   - Create Obsidian note if not exists
