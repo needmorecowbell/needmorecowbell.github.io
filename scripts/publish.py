@@ -1158,7 +1158,8 @@ def cmd_convert(args):
         console.print("[header]--- Preview of converted content ---[/header]")
         console.print()
         preview = preview_hugo_post(hugo_frontmatter, converted_body)
-        console.print(preview)
+        # Use markup=False to prevent Rich from interpreting brackets in YAML lists
+        console.print(preview, markup=False)
     else:
         # Write the Hugo post
         written_path = write_hugo_post(hugo_frontmatter, converted_body, target_path)
@@ -1398,10 +1399,12 @@ def cmd_publish(args):
         # Limit preview length
         preview_lines = preview.split('\n')
         if len(preview_lines) > 50:
-            console.print('\n'.join(preview_lines[:50]))
+            # Use markup=False to prevent Rich from interpreting brackets in YAML lists
+            console.print('\n'.join(preview_lines[:50]), markup=False)
             console.print(f"\n[dim]... (truncated, {len(preview_lines) - 50} more lines)[/dim]")
         else:
-            console.print(preview)
+            # Use markup=False to prevent Rich from interpreting brackets in YAML lists
+            console.print(preview, markup=False)
         return
 
     # Check if target file already exists (for overwrite warning)

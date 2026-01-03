@@ -126,7 +126,19 @@ This phase adds a test suite to ensure the publishing pipeline works correctly, 
     - Associations section with 3 linked pages
   - Post serves as canonical test case for the full Obsidian-to-Hugo publishing pipeline
 
-- [ ] Run the full publish pipeline on the sample post in dry-run mode and verify the output
+- [x] Run the full publish pipeline on the sample post in dry-run mode and verify the output
+  - Ran `python publish.py convert ~/Notes/Blog/sample-publishing-pipeline-test.md --dry-run --skip-upload`
+  - Fixed a bug where Rich console was interpreting YAML list brackets `[testing, pipeline, sample]` as Rich markup, causing tags/categories to appear empty in dry-run preview output
+  - Added `markup=False` parameter to `console.print()` calls for preview content in both `cmd_convert` and `cmd_publish` functions
+  - Verified all pipeline features work correctly:
+    - Frontmatter transformation: All fields correctly converted including tags as YAML list
+    - Wikilink conversion: Simple `[[Page]]` and aliased `[[Page|alias]]` links properly converted
+    - Image embedding: Converted to `![alt]({{<s3cdn>}}/path)` format with auto-generated alt text
+    - Video/audio embedding: Converted to HTML5 `<video>` and `<audio>` elements with s3cdn shortcode
+    - Gallery generation: nanogallery2 HTML properly generated with 5 images
+    - Pictures section: Removed from body and replaced with gallery at end
+    - Associations section: Properly removed from output
+  - All 689 tests pass (426 in tests/, 263 in test_publish_cli.py)
 
 - [ ] Run Hugo build (`hugo --environment production`) and verify no errors
 
