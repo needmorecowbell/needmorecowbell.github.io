@@ -78,7 +78,9 @@ This phase adds a test suite to ensure the publishing pipeline works correctly, 
     - `TestCompleteWorkflow`: 2 tests for complete publishing workflow (single post, multiple content types)
     - `TestFormatFrontmatter`: 3 tests for frontmatter formatting (field order, special characters, lists)
 
-- [ ] Add a `test` target to the Makefile that runs `pytest scripts/tests/`
+- [x] Add a `test` target to the Makefile that runs `pytest scripts/tests/`
+  - Target already existed at line 73-74: `cd $(SCRIPTS_DIR) && python3 -m pytest -v`
+  - Verified working: runs 1437 tests (1434 passed, 2 skipped, 1 unrelated failure in test_config_manager.py)
 
 - [ ] Create `scripts/tests/test_gallery_generator.py` with tests for Pictures section extraction and nanogallery HTML generation
 
