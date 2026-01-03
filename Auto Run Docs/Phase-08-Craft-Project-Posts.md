@@ -26,11 +26,12 @@ This phase publishes high-quality craft/maker project posts using the Obsidian p
   - Verify renders correctly
   - **Completed**: Enriched Obsidian note with materials list, build process description, and corrected date. Uploaded 8 images to MinIO (10 missing images from the original note were removed). Hugo post generated at `content/english/projects/slab-computer-desk.md`.
 
-- [ ] Publish Wood Zippo Lighter post
+- [x] Publish Wood Zippo Lighter post
   - Enrich content in Obsidian note if needed
   - Upload images to MinIO
   - Generate Hugo post via pipeline
   - Verify renders correctly
+  - **Completed**: Enriched Obsidian note with materials list, build process, results, and lessons learned sections. Uploaded 7 images to MinIO. Hugo post generated at `content/english/projects/wood-zippo-lighter.md`.
 
 - [ ] Publish Stained Glass Hexagon Window post
   - Enrich content in Obsidian note if needed
