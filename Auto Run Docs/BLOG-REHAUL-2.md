@@ -24,10 +24,11 @@ Create blog posts from the following Obsidian project notes. These are more pers
   - **Completed**: Created blog post with full narrative about brewing and distilling rum at Hickman House with Oscar, Ammar, and Alex. Post covers the fermentation process, distillation details, and the two varieties produced (raw and spiced). Analyzed 1 image showing mason jars of golden rum alongside a Cape May Brewing Co. growler. Added rum project folder to upload_media.sh script.
 
 ### Hobby/Craft Projects
-- [ ] **Basement Coral Lab** - Coral frag tank for studying light refraction
+- [x] **Basement Coral Lab** - Coral frag tank for studying light refraction
   - Source: `/home/adam/Notes/Projects/Basement Coral Lab.md`
   - Science + hobby crossover, has pictures
   - Target: `content/english/post/2020-12-basement-coral-lab.md`
+  - **Completed**: Created blog post with full narrative about the DIY coral frag tank setup in the Hickman House basement. Post covers: the scientific motivation (studying light refraction through coral for digital modeling), the low-budget setup (storage containers on metal rack), the monitoring/analysis approach, and why coral creates fascinating optical patterns. Analyzed 3 images (plus 1 video in media folder) showing the tank setup with illumination and laptop monitoring station. Added basement_coral_lab folder to upload_media.sh script with filename space-to-underscore conversion.
 
 - [ ] **Ukulele Coffin Case** - Custom coffin-shaped ukulele case
   - Source: `/home/adam/Notes/Projects/Ukulele Coffin Case.md`

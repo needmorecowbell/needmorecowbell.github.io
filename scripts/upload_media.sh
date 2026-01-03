@@ -103,6 +103,17 @@ upload_folder "$MEDIA_ROOT/2021/03/Garden Bed Project" "projects/raised_bed_proj
 upload_folder "$MEDIA_ROOT/2021/06/vertical rotisserie project" "projects/vertical_rotisserie"
 upload_folder "$MEDIA_ROOT/2019/pancetta" "projects/2019_pancetta"
 
+# Basement Coral Lab - frag tank for studying light refraction
+echo ""
+echo "--- Basement Coral Lab ---"
+mkdir -p /tmp/basement_coral_lab
+for f in "$MEDIA_ROOT/2020/12/Basement Coral Lab Project/"*; do
+    fname=$(basename "$f" | tr ' ' '_')
+    cp "$f" "/tmp/basement_coral_lab/$fname" 2>/dev/null || true
+done
+upload_folder "/tmp/basement_coral_lab" "projects/basement_coral_lab"
+rm -rf /tmp/basement_coral_lab
+
 # 2021 Rum Run - individual files from 2021/02
 echo ""
 echo "--- 2021 Rum Run ---"
