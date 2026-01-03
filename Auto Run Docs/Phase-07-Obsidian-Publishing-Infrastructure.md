@@ -21,11 +21,17 @@ This phase creates the scripts and templates needed to publish from Obsidian to 
   - Supports `--dry-run`, `--skip-upload`, `--type` options
   - Cleans up Obsidian-specific sections (Associations, Collaborators, References)
 
-- [ ] Create Obsidian blog template at `~/Notes/Templates/Blog Post.md`
+- [x] Create Obsidian blog template at `~/Notes/Templates/Blog Post.md`
   - Include Hugo-compatible frontmatter fields
   - Add `publish: false` by default
   - Include `content_type: post|project|photography` field
   - Add placeholder sections for content
+
+  **Completed:** Created template matching existing Obsidian template style with:
+  - Frontmatter: `tags`, `aliases`, `publish: false`, `content_type: post`
+  - Metadata section: `{{Title}}`, `**Created**::`, `**Author**::`, `**Description**::`
+  - Content sections: Content, Associations, Collaborators, Pictures, References
+  - User can change `content_type` to `project` or `photography` as needed
 
 - [ ] Test pipeline with existing project notes
   - Test with `~/Notes/Projects/Slab Computer Desk.md` (18 photos)
