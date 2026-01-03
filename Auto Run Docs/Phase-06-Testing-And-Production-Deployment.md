@@ -43,7 +43,25 @@ This phase adds a test suite to ensure the publishing pipeline works correctly, 
     - `TestExtensionSets`: 9 tests for extension set validation (lowercase, subsets, no overlaps)
     - `TestIntegration`: 4 tests for complete media extraction workflows
 
-- [ ] Create `scripts/tests/fixtures/` directory with sample Obsidian notes in various formats for testing
+- [x] Create `scripts/tests/fixtures/` directory with sample Obsidian notes in various formats for testing
+  - Created `scripts/tests/fixtures/` directory with `__init__.py` containing helper functions (`get_fixture_path`, `read_fixture`)
+  - Created 16 sample Obsidian notes covering various test scenarios:
+    - `basic_publishable_post.md`: Standard post with `publish: true`, tags, author, categories
+    - `draft_post.md`: Post with `publish: false` (should be ignored)
+    - `no_publish_flag.md`: Post without publish field (should be ignored)
+    - `complex_frontmatter.md`: Nested structures, aliases, multiline strings, content_type
+    - `post_with_pictures_section.md`: Photography post with `## Pictures` gallery section
+    - `post_with_embedded_media.md`: All media types (images, videos, audio)
+    - `post_with_wikilinks.md`: Various wikilink formats (simple, aliases, special chars)
+    - `unicode_content.md`: International characters, emoji, accented chars
+    - `invalid_yaml.md`: Intentionally broken YAML for error handling tests
+    - `empty_frontmatter.md`: Edge case with empty frontmatter block
+    - `photography_content_type.md`: Photography-specific content type with location
+    - `project_content_type.md`: Project-specific content type with github, technologies
+    - `no_body_content.md`: Post with only frontmatter, no body
+    - `title_from_h1.md`: Post without title in frontmatter (extracted from H1)
+    - `comma_separated_tags.md`: Tags as comma-separated string
+    - `string_date_formats.md`: Human-readable date format
 
 - [ ] Add `pytest` to `scripts/requirements.txt`
 
