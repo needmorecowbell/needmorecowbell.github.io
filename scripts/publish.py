@@ -1802,6 +1802,177 @@ def cmd_preview(args):
     print_info("Preview session ended.")
 
 
+def check_minio_connection() -> tuple:
+    """
+    Check if MinIO is configured and accessible.
+
+    Returns:
+        Tuple of (is_configured, is_connected, error_message)
+        - is_configured: True if all required env vars are set
+        - is_connected: True if we can connect to MinIO
+        - error_message: Error details if not configured/connected
+    """
+    import os
+    from minio_uploader import (
+        MINIO_ENDPOINT_VAR,
+        MINIO_ACCESS_KEY_VAR,
+        MINIO_SECRET_KEY_VAR,
+        MINIO_BUCKET_VAR,
+    )
+
+    # Check if required environment variables are set
+    endpoint = os.environ.get(MINIO_ENDPOINT_VAR)
+    access_key = os.environ.get(MINIO_ACCESS_KEY_VAR)
+    secret_key = os.environ.get(MINIO_SECRET_KEY_VAR)
+    bucket = os.environ.get(MINIO_BUCKET_VAR)
+
+    missing = []
+    if not endpoint:
+        missing.append(MINIO_ENDPOINT_VAR)
+    if not access_key:
+        missing.append(MINIO_ACCESS_KEY_VAR)
+    if not secret_key:
+        missing.append(MINIO_SECRET_KEY_VAR)
+    if not bucket:
+        missing.append(MINIO_BUCKET_VAR)
+
+    if missing:
+        return False, False, f"Missing env vars: {', '.join(missing)}"
+
+    # Try to connect and check bucket
+    try:
+        from minio_uploader import get_minio_client, get_bucket_name
+
+        client = get_minio_client()
+        bucket_name = get_bucket_name()
+
+        # Try to check if bucket exists (this tests the connection)
+        bucket_exists = client.bucket_exists(bucket_name)
+        if bucket_exists:
+            return True, True, None
+        else:
+            return True, True, f"Bucket '{bucket_name}' does not exist (will be created on first upload)"
+
+    except ImportError as e:
+        return True, False, f"minio package not installed: {e}"
+    except Exception as e:
+        return True, False, f"Connection failed: {e}"
+
+
+def get_last_publish_date(tracking_file: Path = None) -> str:
+    """
+    Get the most recent publish date from the tracking file.
+
+    Args:
+        tracking_file: Path to the tracking file. Defaults to .published.json
+
+    Returns:
+        Formatted date string of the last publish, or "Never" if no publishes
+    """
+    state = load_publish_state(tracking_file)
+    published = state.get('published', {})
+
+    if not published:
+        return "Never"
+
+    # Find the most recent published_at timestamp
+    latest_date = None
+    for record in published.values():
+        published_at = record.get('published_at')
+        if published_at:
+            try:
+                # Parse ISO format date
+                from datetime import datetime
+                dt = datetime.fromisoformat(published_at)
+                if latest_date is None or dt > latest_date:
+                    latest_date = dt
+            except (ValueError, TypeError):
+                continue
+
+    if latest_date:
+        return latest_date.strftime('%Y-%m-%d %H:%M:%S')
+    return "Unknown"
+
+
+def cmd_status(args):
+    """
+    Show the current status of the publishing workflow.
+
+    Displays:
+    - Count of publishable notes (with publish: true)
+    - Count of already published notes
+    - MinIO connection status
+    - Last publish date
+    """
+    # Get quiet flag and enable quiet mode if set
+    quiet = getattr(args, 'quiet', False)
+    set_quiet(quiet is True)
+
+    vault_path = Path(args.vault) if hasattr(args, 'vault') and args.vault else None
+
+    # Print header
+    console.print()
+    console.print("[header]" + "=" * 60 + "[/header]")
+    console.print("[header]PUBLISHING STATUS[/header]")
+    console.print("[header]" + "=" * 60 + "[/header]")
+    console.print()
+
+    # Step 1: Find all publishable notes
+    try:
+        all_notes = find_publishable_notes(vault_path=vault_path)
+    except FileNotFoundError as e:
+        print_error(f"Error: {e}")
+        sys.exit(1)
+    except NotADirectoryError as e:
+        print_error(f"Error: {e}")
+        sys.exit(1)
+
+    total_publishable = len(all_notes)
+
+    # Step 2: Get unpublished notes (to calculate already published)
+    unpublished_notes = get_unpublished_notes(all_notes)
+    already_published = total_publishable - len(unpublished_notes)
+
+    # Step 3: Check MinIO connection
+    is_configured, is_connected, minio_message = check_minio_connection()
+
+    # Step 4: Get last publish date
+    last_publish = get_last_publish_date()
+
+    # Display the status
+    console.print("[header]Notes[/header]")
+    console.print("-" * 40)
+    console.print(f"  Publishable notes:    {format_count(str(total_publishable))}")
+    console.print(f"  Already published:    {format_success(str(already_published))}")
+    console.print(f"  Pending publication:  {format_warning(str(len(unpublished_notes))) if len(unpublished_notes) > 0 else format_dim('0')}")
+    console.print()
+
+    console.print("[header]MinIO Storage[/header]")
+    console.print("-" * 40)
+    if not is_configured:
+        console.print(f"  Status:      {format_error('NOT CONFIGURED')}")
+        console.print(f"  [dim]{minio_message}[/dim]")
+    elif is_connected:
+        console.print(f"  Status:      {format_success('CONNECTED')}")
+        if minio_message:
+            console.print(f"  [dim]{minio_message}[/dim]")
+    else:
+        console.print(f"  Status:      {format_error('DISCONNECTED')}")
+        console.print(f"  [dim]{minio_message}[/dim]")
+    console.print()
+
+    console.print("[header]History[/header]")
+    console.print("-" * 40)
+    console.print(f"  Last publish:         {format_info(last_publish)}")
+    console.print()
+
+    # Show vault path
+    effective_vault = vault_path or Path.home() / "Notes"
+    console.print("[dim]Vault: " + str(effective_vault) + "[/dim]")
+    console.print("[header]" + "=" * 60 + "[/header]")
+    console.print()
+
+
 def main():
     """Main entry point for the CLI."""
     parser = argparse.ArgumentParser(
@@ -1851,6 +2022,9 @@ Examples:
 
     python publish.py preview ~/Notes/Blog/my-post.md --port 8080 --no-browser
         Preview on a custom port without opening browser
+
+    python publish.py status
+        Show publishing workflow status (note counts, MinIO, last publish)
         """
     )
 
@@ -2118,6 +2292,22 @@ Examples:
         help="Suppress all output except errors"
     )
     preview_parser.set_defaults(func=cmd_preview)
+
+    # status subcommand
+    status_parser = subparsers.add_parser(
+        "status",
+        help="Show publishing workflow status (note counts, MinIO connection, last publish)"
+    )
+    status_parser.add_argument(
+        "--vault",
+        help="Path to the Obsidian vault (default: ~/Notes)"
+    )
+    status_parser.add_argument(
+        "-q", "--quiet",
+        action="store_true",
+        help="Suppress all output except errors"
+    )
+    status_parser.set_defaults(func=cmd_status)
 
     # Parse arguments and run appropriate command
     args = parser.parse_args()

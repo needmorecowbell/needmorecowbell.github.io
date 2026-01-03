@@ -5347,5 +5347,383 @@ Test content.
             os.unlink(temp_path)
 
 
+class TestCheckMinioConnection(unittest.TestCase):
+    """Tests for check_minio_connection function."""
+
+    def test_missing_all_env_vars(self):
+        """Returns not configured when all env vars are missing."""
+        from publish import check_minio_connection
+        import os
+
+        # Clear all MinIO env vars
+        env_vars = ['MINIO_ENDPOINT', 'MINIO_ACCESS_KEY', 'MINIO_SECRET_KEY', 'MINIO_BUCKET']
+        original_values = {}
+        for var in env_vars:
+            original_values[var] = os.environ.pop(var, None)
+
+        try:
+            is_configured, is_connected, message = check_minio_connection()
+            self.assertFalse(is_configured)
+            self.assertFalse(is_connected)
+            self.assertIn("Missing env vars", message)
+        finally:
+            # Restore original values
+            for var, value in original_values.items():
+                if value is not None:
+                    os.environ[var] = value
+
+    def test_missing_some_env_vars(self):
+        """Returns not configured when some env vars are missing."""
+        from publish import check_minio_connection
+        import os
+
+        # Set only endpoint
+        env_vars = ['MINIO_ENDPOINT', 'MINIO_ACCESS_KEY', 'MINIO_SECRET_KEY', 'MINIO_BUCKET']
+        original_values = {}
+        for var in env_vars:
+            original_values[var] = os.environ.pop(var, None)
+
+        os.environ['MINIO_ENDPOINT'] = 'localhost:9000'
+
+        try:
+            is_configured, is_connected, message = check_minio_connection()
+            self.assertFalse(is_configured)
+            self.assertFalse(is_connected)
+            self.assertIn("Missing env vars", message)
+            self.assertIn("MINIO_ACCESS_KEY", message)
+        finally:
+            # Restore original values
+            os.environ.pop('MINIO_ENDPOINT', None)
+            for var, value in original_values.items():
+                if value is not None:
+                    os.environ[var] = value
+
+    @patch('minio_uploader.get_minio_client')
+    @patch('minio_uploader.get_bucket_name')
+    def test_configured_but_connection_fails(self, mock_get_bucket, mock_get_client):
+        """Returns configured but not connected when connection fails."""
+        from publish import check_minio_connection
+        import os
+
+        # Set all env vars
+        env_vars = ['MINIO_ENDPOINT', 'MINIO_ACCESS_KEY', 'MINIO_SECRET_KEY', 'MINIO_BUCKET']
+        original_values = {}
+        for var in env_vars:
+            original_values[var] = os.environ.get(var)
+        os.environ['MINIO_ENDPOINT'] = 'localhost:9000'
+        os.environ['MINIO_ACCESS_KEY'] = 'test'
+        os.environ['MINIO_SECRET_KEY'] = 'test'
+        os.environ['MINIO_BUCKET'] = 'test-bucket'
+
+        # Mock connection failure
+        mock_get_client.side_effect = Exception("Connection refused")
+
+        try:
+            is_configured, is_connected, message = check_minio_connection()
+            self.assertTrue(is_configured)
+            self.assertFalse(is_connected)
+            self.assertIn("Connection failed", message)
+        finally:
+            # Restore original values
+            for var, value in original_values.items():
+                if value is not None:
+                    os.environ[var] = value
+                else:
+                    os.environ.pop(var, None)
+
+    @patch('minio_uploader.get_minio_client')
+    @patch('minio_uploader.get_bucket_name')
+    def test_configured_and_connected(self, mock_get_bucket, mock_get_client):
+        """Returns configured and connected when connection succeeds."""
+        from publish import check_minio_connection
+        import os
+
+        # Set all env vars
+        env_vars = ['MINIO_ENDPOINT', 'MINIO_ACCESS_KEY', 'MINIO_SECRET_KEY', 'MINIO_BUCKET']
+        original_values = {}
+        for var in env_vars:
+            original_values[var] = os.environ.get(var)
+        os.environ['MINIO_ENDPOINT'] = 'localhost:9000'
+        os.environ['MINIO_ACCESS_KEY'] = 'test'
+        os.environ['MINIO_SECRET_KEY'] = 'test'
+        os.environ['MINIO_BUCKET'] = 'test-bucket'
+
+        # Mock successful connection
+        mock_client = MagicMock()
+        mock_client.bucket_exists.return_value = True
+        mock_get_client.return_value = mock_client
+        mock_get_bucket.return_value = 'test-bucket'
+
+        try:
+            is_configured, is_connected, message = check_minio_connection()
+            self.assertTrue(is_configured)
+            self.assertTrue(is_connected)
+            self.assertIsNone(message)
+        finally:
+            # Restore original values
+            for var, value in original_values.items():
+                if value is not None:
+                    os.environ[var] = value
+                else:
+                    os.environ.pop(var, None)
+
+
+class TestGetLastPublishDate(unittest.TestCase):
+    """Tests for get_last_publish_date function."""
+
+    def test_no_tracking_file_returns_never(self):
+        """Returns 'Never' when tracking file doesn't exist."""
+        from publish import get_last_publish_date
+        import tempfile
+
+        # Use a non-existent file path
+        with tempfile.TemporaryDirectory() as temp_dir:
+            fake_tracking_file = Path(temp_dir) / '.nonexistent.json'
+            result = get_last_publish_date(fake_tracking_file)
+            self.assertEqual(result, "Never")
+
+    def test_empty_published_returns_never(self):
+        """Returns 'Never' when no notes have been published."""
+        from publish import get_last_publish_date
+        import tempfile
+        import json
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            tracking_file = Path(temp_dir) / '.published.json'
+            tracking_file.write_text(json.dumps({'published': {}}))
+
+            result = get_last_publish_date(tracking_file)
+            self.assertEqual(result, "Never")
+
+    def test_returns_most_recent_date(self):
+        """Returns the most recent publish date."""
+        from publish import get_last_publish_date
+        import tempfile
+        import json
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            tracking_file = Path(temp_dir) / '.published.json'
+            state = {
+                'published': {
+                    '/path/to/note1.md': {
+                        'hash': 'abc123',
+                        'published_at': '2024-01-01T10:00:00'
+                    },
+                    '/path/to/note2.md': {
+                        'hash': 'def456',
+                        'published_at': '2024-06-15T14:30:00'
+                    },
+                    '/path/to/note3.md': {
+                        'hash': 'ghi789',
+                        'published_at': '2024-03-10T08:00:00'
+                    }
+                }
+            }
+            tracking_file.write_text(json.dumps(state))
+
+            result = get_last_publish_date(tracking_file)
+            self.assertEqual(result, "2024-06-15 14:30:00")
+
+    def test_handles_missing_published_at(self):
+        """Handles records without published_at gracefully."""
+        from publish import get_last_publish_date
+        import tempfile
+        import json
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            tracking_file = Path(temp_dir) / '.published.json'
+            state = {
+                'published': {
+                    '/path/to/note1.md': {
+                        'hash': 'abc123'
+                        # No published_at field
+                    },
+                    '/path/to/note2.md': {
+                        'hash': 'def456',
+                        'published_at': '2024-06-15T14:30:00'
+                    }
+                }
+            }
+            tracking_file.write_text(json.dumps(state))
+
+            result = get_last_publish_date(tracking_file)
+            self.assertEqual(result, "2024-06-15 14:30:00")
+
+
+class TestCmdStatus(unittest.TestCase):
+    """Tests for cmd_status command."""
+
+    @patch('publish.find_publishable_notes')
+    @patch('publish.get_unpublished_notes')
+    @patch('publish.check_minio_connection')
+    @patch('publish.get_last_publish_date')
+    def test_displays_status_info(self, mock_last_publish, mock_minio, mock_unpublished, mock_find_notes):
+        """cmd_status displays all status information."""
+        from publish import cmd_status
+        from console import set_quiet
+
+        set_quiet(False)
+
+        # Mock the data
+        mock_find_notes.return_value = [
+            {'path': Path('/note1.md'), 'frontmatter': {'title': 'Note 1'}, 'body': ''},
+            {'path': Path('/note2.md'), 'frontmatter': {'title': 'Note 2'}, 'body': ''},
+            {'path': Path('/note3.md'), 'frontmatter': {'title': 'Note 3'}, 'body': ''},
+        ]
+        mock_unpublished.return_value = [
+            {'path': Path('/note3.md'), 'frontmatter': {'title': 'Note 3'}, 'body': ''},
+        ]
+        mock_minio.return_value = (True, True, None)
+        mock_last_publish.return_value = "2024-06-15 14:30:00"
+
+        args = MagicMock()
+        args.vault = None
+        args.quiet = False
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            cmd_status(args)
+            output = mock_stdout.getvalue()
+
+            # Check all sections are present
+            self.assertIn("PUBLISHING STATUS", output)
+            self.assertIn("Notes", output)
+            self.assertIn("MinIO Storage", output)
+            self.assertIn("History", output)
+
+            # Check note counts
+            self.assertIn("3", output)  # Total publishable
+            self.assertIn("2", output)  # Already published
+            self.assertIn("1", output)  # Pending
+
+            # Check MinIO status
+            self.assertIn("CONNECTED", output)
+
+            # Check last publish date
+            self.assertIn("2024-06-15 14:30:00", output)
+
+    @patch('publish.find_publishable_notes')
+    @patch('publish.get_unpublished_notes')
+    @patch('publish.check_minio_connection')
+    @patch('publish.get_last_publish_date')
+    def test_displays_minio_not_configured(self, mock_last_publish, mock_minio, mock_unpublished, mock_find_notes):
+        """cmd_status shows MinIO not configured status."""
+        from publish import cmd_status
+        from console import set_quiet
+
+        set_quiet(False)
+
+        mock_find_notes.return_value = []
+        mock_unpublished.return_value = []
+        mock_minio.return_value = (False, False, "Missing env vars: MINIO_ENDPOINT")
+        mock_last_publish.return_value = "Never"
+
+        args = MagicMock()
+        args.vault = None
+        args.quiet = False
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            cmd_status(args)
+            output = mock_stdout.getvalue()
+
+            self.assertIn("NOT CONFIGURED", output)
+            self.assertIn("Missing env vars", output)
+
+    @patch('publish.find_publishable_notes')
+    @patch('publish.get_unpublished_notes')
+    @patch('publish.check_minio_connection')
+    @patch('publish.get_last_publish_date')
+    def test_displays_minio_disconnected(self, mock_last_publish, mock_minio, mock_unpublished, mock_find_notes):
+        """cmd_status shows MinIO disconnected status."""
+        from publish import cmd_status
+        from console import set_quiet
+
+        set_quiet(False)
+
+        mock_find_notes.return_value = []
+        mock_unpublished.return_value = []
+        mock_minio.return_value = (True, False, "Connection failed: timeout")
+        mock_last_publish.return_value = "Never"
+
+        args = MagicMock()
+        args.vault = None
+        args.quiet = False
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            cmd_status(args)
+            output = mock_stdout.getvalue()
+
+            self.assertIn("DISCONNECTED", output)
+            self.assertIn("Connection failed", output)
+
+    @patch('publish.find_publishable_notes')
+    def test_handles_vault_not_found(self, mock_find_notes):
+        """cmd_status handles vault not found error."""
+        from publish import cmd_status
+
+        mock_find_notes.side_effect = FileNotFoundError("Vault not found: /fake/path")
+
+        args = MagicMock()
+        args.vault = "/fake/path"
+        args.quiet = False
+
+        with self.assertRaises(SystemExit) as context:
+            cmd_status(args)
+
+        self.assertEqual(context.exception.code, 1)
+
+    def test_sets_quiet_mode(self):
+        """cmd_status enables quiet mode when --quiet flag is set."""
+        from console import is_quiet, set_quiet
+        from publish import cmd_status
+
+        set_quiet(False)
+
+        args = MagicMock()
+        args.quiet = True
+        args.vault = None
+
+        with patch('publish.find_publishable_notes') as mock_find:
+            with patch('publish.get_unpublished_notes') as mock_unpub:
+                with patch('publish.check_minio_connection') as mock_minio:
+                    with patch('publish.get_last_publish_date') as mock_last:
+                        mock_find.return_value = []
+                        mock_unpub.return_value = []
+                        mock_minio.return_value = (True, True, None)
+                        mock_last.return_value = "Never"
+
+                        cmd_status(args)
+                        self.assertTrue(is_quiet())
+
+    @patch('publish.find_publishable_notes')
+    @patch('publish.get_unpublished_notes')
+    @patch('publish.check_minio_connection')
+    @patch('publish.get_last_publish_date')
+    def test_no_pending_shows_zero(self, mock_last_publish, mock_minio, mock_unpublished, mock_find_notes):
+        """cmd_status shows 0 for pending when all notes are published."""
+        from publish import cmd_status
+        from console import set_quiet
+
+        set_quiet(False)
+
+        # All notes are published
+        mock_find_notes.return_value = [
+            {'path': Path('/note1.md'), 'frontmatter': {'title': 'Note 1'}, 'body': ''},
+        ]
+        mock_unpublished.return_value = []
+        mock_minio.return_value = (True, True, None)
+        mock_last_publish.return_value = "2024-01-01 10:00:00"
+
+        args = MagicMock()
+        args.vault = None
+        args.quiet = False
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            cmd_status(args)
+            output = mock_stdout.getvalue()
+
+            # Should show 0 for pending
+            self.assertIn("Pending publication", output)
+
+
 if __name__ == '__main__':
     unittest.main()

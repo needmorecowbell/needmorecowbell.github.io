@@ -99,7 +99,16 @@ This phase adds validation, error handling, and quality-of-life improvements to 
   - Added 8 new tests covering quiet mode for the newly added subcommands (scan, list, media, validate)
   - All 217 tests pass (2 skipped)
 
-- [ ] Create a `status` subcommand that shows: count of publishable notes, count already published, MinIO connection status, and last publish date
+- [x] Create a `status` subcommand that shows: count of publishable notes, count already published, MinIO connection status, and last publish date
+  - Added `check_minio_connection()` helper function that checks env vars (MINIO_ENDPOINT, ACCESS_KEY, SECRET_KEY, BUCKET) and tests connection
+  - Added `get_last_publish_date()` helper function that parses `.published.json` tracking file and returns most recent publish timestamp
+  - Added `cmd_status()` function that displays formatted status report with three sections: Notes, MinIO Storage, History
+  - Shows publishable notes count, already published count, and pending publication count
+  - MinIO status shows CONNECTED/DISCONNECTED/NOT CONFIGURED with error details
+  - History section shows last publish date in YYYY-MM-DD HH:MM:SS format or "Never" if no publishes
+  - Added `status` subcommand with `--vault` and `-q/--quiet` flags
+  - Added 14 comprehensive tests covering: MinIO connection checks (all env vars missing, some missing, connection failure, success), last publish date (no file, empty, multiple dates, missing timestamps), and cmd_status (displays info, minio statuses, vault not found, quiet mode)
+  - All 231 tests pass (2 skipped)
 
 - [ ] Add confirmation prompts before destructive operations (uploading to MinIO, overwriting existing Hugo posts) with `--yes` flag to skip prompts
 
