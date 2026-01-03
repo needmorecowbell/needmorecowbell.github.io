@@ -14,7 +14,13 @@ This phase adds a test suite to ensure the publishing pipeline works correctly, 
     - `TestParseObsidianNote`: 4 tests for file parsing (real files, file not found, unicode content, string paths)
     - `TestFindPublishableNotes`: 12 tests for vault scanning (recursive scanning, skip dirs, multiple notes, invalid YAML handling)
 
-- [ ] Create `scripts/tests/test_syntax_converter.py` with unit tests for wikilink conversion, image embedding, and video embedding
+- [x] Create `scripts/tests/test_syntax_converter.py` with unit tests for wikilink conversion, image embedding, and video embedding
+  - Created comprehensive test suite with 59 tests covering:
+    - `TestSlugify`: 12 tests for URL slug generation (case conversion, special chars, unicode, numbers, whitespace)
+    - `TestConvertWikilinks`: 11 tests for wikilink conversion (simple links, aliases, multiple links, embedded image exclusion, whitespace handling)
+    - `TestConvertEmbeddedImages`: 17 tests for image embedding (formats, CDN paths, S3CDN URLs, media URL maps, alt text generation, priority handling)
+    - `TestConvertEmbeddedMedia`: 16 tests for video/audio embedding (all format types with MIME types, CDN/S3CDN/URL map support)
+    - `TestIntegration`: 3 tests for combined conversion workflows and operation ordering
 
 - [ ] Create `scripts/tests/test_frontmatter_transformer.py` with unit tests for Hugo frontmatter generation and slug creation
 
