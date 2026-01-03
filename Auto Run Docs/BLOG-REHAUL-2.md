@@ -11,10 +11,11 @@ Create blog posts from the following Obsidian project notes. These are more pers
   - Target: `content/english/post/2019-01-pancetta-project.md`
   - **Completed**: Created blog post with 2 available images (2019-01-07 fresh roll, 2019-01-31 final cured). Added pancetta folder to upload_media.sh script. Note: Only 2 of the 4 referenced images were found in ~/Media/2019/pancetta/.
 
-- [ ] **Vertical Rotisserie** - DIY al pastor rotisserie from a burn barrel
+- [x] **Vertical Rotisserie** - DIY al pastor rotisserie from a burn barrel
   - Source: `/home/adam/Notes/Projects/Vertical Rotisserie.md`
   - Has 7 pictures/videos, great backstory about Puerto Morelos tacos
   - Target: `content/english/projects/vertical_rotisserie.md` (already exists, may need update)
+  - **Completed**: Expanded blog post with full Puerto Morelos backstory narrative. Added sections covering: the tacos that inspired the build, the DIY construction details (burn barrel, salvaged grill parts, low RPM motor), first cook experience, and reflections. Included 3 inline images with captions plus full gallery with all 7 media files (3 photos, 4 videos). Updated metadata with subtitle, description, and header image. Media already in upload script.
 
 - [ ] **2021 Rum Run** - Home distilling rum with friends
   - Source: `/home/adam/Notes/Projects/2021 Rum Run.md`
