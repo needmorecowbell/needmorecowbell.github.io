@@ -33,12 +33,19 @@ This phase creates the scripts and templates needed to publish from Obsidian to 
   - Content sections: Content, Associations, Collaborators, Pictures, References
   - User can change `content_type` to `project` or `photography` as needed
 
-- [ ] Test pipeline with existing project notes
+- [x] Test pipeline with existing project notes
   - Test with `~/Notes/Projects/Slab Computer Desk.md` (18 photos)
   - Test with `~/Notes/Projects/Wood Zippo Lighter.md`
   - Verify images upload correctly to MinIO
   - Verify video thumbnails are generated
   - Verify Hugo renders properly
+
+  **Completed:** Pipeline tested successfully with both project notes:
+  - **Slab Computer Desk**: Dry-run verified. Found 8 of 18 referenced images (some files missing from Media folder). Pipeline correctly processes available files and reports missing ones.
+  - **Wood Zippo Lighter**: Full test with upload. All 8 media files (7 images + 1 mp4 video) uploaded successfully to MinIO with sanitized filenames (spaces → underscores).
+  - **MinIO uploads**: Verified via `rclone ls` - all files present at `homes3:amblog/assets/projects/wood_zippo_lighter/`
+  - **Video thumbnails**: Confirmed generation - `20-12-21_18-19-47_0953.thumb.jpg` (80KB) created via ffmpeg and uploaded
+  - **Hugo rendering**: `hugo build` completes without errors, gallery shortcode renders correctly in output HTML with s3cdn references
 
 - [ ] Update CONTENT_GUIDE.md with Obsidian workflow documentation
   - Document the Obsidian note structure
