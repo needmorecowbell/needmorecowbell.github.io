@@ -17,10 +17,11 @@ Create blog posts from the following Obsidian project notes. These are more pers
   - Target: `content/english/projects/vertical_rotisserie.md` (already exists, may need update)
   - **Completed**: Expanded blog post with full Puerto Morelos backstory narrative. Added sections covering: the tacos that inspired the build, the DIY construction details (burn barrel, salvaged grill parts, low RPM motor), first cook experience, and reflections. Included 3 inline images with captions plus full gallery with all 7 media files (3 photos, 4 videos). Updated metadata with subtitle, description, and header image. Media already in upload script.
 
-- [ ] **2021 Rum Run** - Home distilling rum with friends
+- [x] **2021 Rum Run** - Home distilling rum with friends
   - Source: `/home/adam/Notes/Projects/2021 Rum Run.md`
   - Has 1 picture, collaborative project with Oscar, Ammar, Alex
   - Target: `content/english/post/2021-02-rum-distilling.md`
+  - **Completed**: Created blog post with full narrative about brewing and distilling rum at Hickman House with Oscar, Ammar, and Alex. Post covers the fermentation process, distillation details, and the two varieties produced (raw and spiced). Analyzed 1 image showing mason jars of golden rum alongside a Cape May Brewing Co. growler. Added rum project folder to upload_media.sh script.
 
 ### Hobby/Craft Projects
 - [ ] **Basement Coral Lab** - Coral frag tank for studying light refraction

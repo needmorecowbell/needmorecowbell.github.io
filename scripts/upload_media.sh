@@ -103,6 +103,14 @@ upload_folder "$MEDIA_ROOT/2021/03/Garden Bed Project" "projects/raised_bed_proj
 upload_folder "$MEDIA_ROOT/2021/06/vertical rotisserie project" "projects/vertical_rotisserie"
 upload_folder "$MEDIA_ROOT/2019/pancetta" "projects/2019_pancetta"
 
+# 2021 Rum Run - individual files from 2021/02
+echo ""
+echo "--- 2021 Rum Run ---"
+mkdir -p /tmp/2021_rum_run
+cp "$MEDIA_ROOT/2021/02/21-02-21 20-33-58 1096.jpg" "/tmp/2021_rum_run/21-02-21_20-33-58_1096.jpg" 2>/dev/null || true
+upload_folder "/tmp/2021_rum_run" "projects/2021_rum_run"
+rm -rf /tmp/2021_rum_run
+
 echo ""
 echo "=== Photography/Travel Galleries ==="
 
