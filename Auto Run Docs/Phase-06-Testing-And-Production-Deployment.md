@@ -159,6 +159,22 @@ This phase adds a test suite to ensure the publishing pipeline works correctly, 
     - Media upload instructions
     - CLI commands reference table
 
-- [ ] Document the complete publishing workflow in `scripts/README.md` with step-by-step instructions from authoring in Obsidian to seeing the post live
+- [x] Document the complete publishing workflow in `scripts/README.md` with step-by-step instructions from authoring in Obsidian to seeing the post live
+  - Added comprehensive "Complete Publishing Workflow" section with 10 detailed steps:
+    1. Write Your Post in Obsidian (frontmatter requirements, content types)
+    2. Add Media (images, videos, audio embedding syntax)
+    3. Add a Photo Gallery (Pictures section for nanogallery2)
+    4. Link to Other Posts (wikilinks and Associations section)
+    5. Validate Your Post (pre-publish validation)
+    6. Preview the Conversion (dry-run mode)
+    7. Publish the Post (with/without media upload)
+    8. Verify with Hugo Build (production build check)
+    9. Preview Locally (development server)
+    10. Deploy to Production (git commit and Cloudflare Pages)
+  - Added Table of Contents for easy navigation
+  - Added Quick Reference with complete workflow commands
+  - Added Makefile Shortcuts reference table
+  - Added Bulk Publishing instructions
+  - Added Troubleshooting section for common issues
 
 - [ ] Merge the develop branch to master (user should verify Cloudflare Pages builds successfully after this step)

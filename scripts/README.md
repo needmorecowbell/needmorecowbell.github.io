@@ -2,6 +2,294 @@
 
 A CLI tool for publishing notes from an Obsidian vault to a Hugo blog. It handles frontmatter transformation, Obsidian wikilink conversion, and media embedding.
 
+## Table of Contents
+
+- [Complete Publishing Workflow](#complete-publishing-workflow)
+- [Installation](#installation)
+- [MinIO Setup (Optional)](#minio-setup-optional)
+- [Quick Start](#quick-start)
+- [Commands](#commands)
+- [How It Works](#how-it-works)
+- [Module Overview](#module-overview)
+- [Running Tests](#running-tests)
+- [Default Paths](#default-paths)
+
+---
+
+## Complete Publishing Workflow
+
+This section provides end-to-end instructions for publishing a blog post from Obsidian to a live Cloudflare Pages site.
+
+### Step 1: Write Your Post in Obsidian
+
+Create a new markdown file in your Obsidian vault (default: `~/Notes/Blog/`). Add YAML frontmatter at the top:
+
+```markdown
+---
+title: My Amazing Blog Post
+date: 2026-01-15
+publish: true
+draft: false
+tags:
+  - tutorial
+  - python
+author: Your Name
+description: A brief summary of your post for SEO and previews.
+content_type: post
+categories:
+  - programming
+---
+
+# My Amazing Blog Post
+
+Your content here...
+```
+
+#### Required Frontmatter Fields
+
+| Field | Description |
+|-------|-------------|
+| `title` | Post title (or extracted from first H1 heading) |
+| `date` | Publication date in YYYY-MM-DD format |
+| `publish` | Must be `true` to be discovered by the pipeline |
+| `tags` | List of tags for categorization |
+
+#### Optional Frontmatter Fields
+
+| Field | Description |
+|-------|-------------|
+| `draft` | Set to `true` to mark as draft (won't appear in production) |
+| `author` | Author name |
+| `description` | SEO description/summary |
+| `content_type` | Routing: `post` (default), `photography`, or `project` |
+| `categories` | List of categories |
+| `series` | Series name for multi-part posts |
+
+#### Content Type-Specific Fields
+
+| Content Type | Additional Fields |
+|--------------|-------------------|
+| `post` | `author`, `categories`, `series` |
+| `photography` | `location`, `camera`, `lens` |
+| `project` | `github`, `technologies`, `status` |
+
+### Step 2: Add Media (Images, Videos, Audio)
+
+Embed media using Obsidian's syntax:
+
+```markdown
+## Adding Images
+
+![[2026/01/my-photo.jpg]]
+
+## Adding Videos
+
+![[tutorials/demo.mp4]]
+
+## Adding Audio
+
+![[podcasts/episode-01.mp3]]
+```
+
+Media files should be in your Media folder (default: `~/Notes/Media/`). Paths are relative to that folder.
+
+### Step 3: Add a Photo Gallery (Optional)
+
+For photography posts or posts with image galleries, add a `## Pictures` section:
+
+```markdown
+## Pictures
+
+![[2026/01/gallery/image1.jpg]]
+![[2026/01/gallery/image2.png]]
+![[2026/01/gallery/image3.webp]]
+```
+
+This section is automatically converted to a nanogallery2 photo gallery in the final Hugo output.
+
+### Step 4: Link to Other Posts (Optional)
+
+Use Obsidian wikilinks to reference other posts:
+
+```markdown
+Check out my [[Previous Post]] for more context.
+
+You might also like [[Another Article|this related article]].
+```
+
+For related content, add an `## Associations` section:
+
+```markdown
+## Associations
+
+- [[Getting Started Guide]]
+- [[Advanced Tips]]
+- [[FAQ]]
+```
+
+This section is converted to Hugo internal links and renamed to "## Related" (or can be removed with flags).
+
+### Step 5: Validate Your Post
+
+Before publishing, validate your post to catch issues:
+
+```bash
+cd scripts/
+python publish.py validate ~/Notes/Blog/my-post.md
+```
+
+This checks:
+- Required frontmatter fields are present
+- Media files exist
+- Internal links point to valid posts
+
+### Step 6: Preview the Conversion
+
+Run a dry-run to see the converted output without making changes:
+
+```bash
+python publish.py publish ~/Notes/Blog/my-post.md --dry-run
+```
+
+This shows:
+- The target Hugo path
+- Media files that will be uploaded
+- Gallery generation status
+- A preview of the converted markdown
+
+### Step 7: Publish the Post
+
+When ready, publish the post:
+
+```bash
+# With media upload to MinIO
+python publish.py publish ~/Notes/Blog/my-post.md
+
+# Skip media upload (use s3cdn shortcode placeholders)
+python publish.py publish ~/Notes/Blog/my-post.md --skip-upload
+
+# Auto-confirm without prompts
+python publish.py publish ~/Notes/Blog/my-post.md --yes
+```
+
+The command will:
+1. Validate the post
+2. Upload media files to MinIO (if configured)
+3. Convert Obsidian syntax to Hugo format
+4. Write the Hugo post to the appropriate content directory
+5. Record the publish state
+
+### Step 8: Verify with Hugo Build
+
+After publishing, build the Hugo site to verify everything works:
+
+```bash
+# From the blog root directory
+hugo --environment production
+
+# Or use the Makefile
+make build
+```
+
+Check for any errors or warnings in the build output.
+
+### Step 9: Preview Locally (Optional)
+
+To preview your post before deploying:
+
+```bash
+# Start the Hugo development server
+make dev
+
+# Or directly
+hugo server -e development --buildDrafts --buildFuture
+```
+
+Visit http://localhost:1313 to see your site.
+
+### Step 10: Deploy to Production
+
+Commit and push your changes to trigger a Cloudflare Pages deployment:
+
+```bash
+git add content/
+git commit -m "Add new blog post: My Amazing Blog Post"
+git push origin develop
+```
+
+Then create a pull request to merge `develop` into `master`. Cloudflare Pages will automatically build and deploy when changes are merged to `master`.
+
+### Quick Reference: Complete Workflow
+
+```bash
+# 1. Validate
+python scripts/publish.py validate ~/Notes/Blog/my-post.md
+
+# 2. Preview (dry-run)
+python scripts/publish.py publish ~/Notes/Blog/my-post.md --dry-run
+
+# 3. Publish
+python scripts/publish.py publish ~/Notes/Blog/my-post.md
+
+# 4. Build Hugo
+hugo --environment production
+
+# 5. Commit and push
+git add content/
+git commit -m "Add: My Amazing Blog Post"
+git push origin develop
+```
+
+### Makefile Shortcuts
+
+The repository includes a Makefile with common commands:
+
+| Command | Description |
+|---------|-------------|
+| `make dev` | Start Hugo development server |
+| `make build` | Build site for production |
+| `make publish-scan` | Scan vault for publishable notes |
+| `make publish-list` | Show target paths for all notes |
+| `make publish-dry` | Dry-run publish all notes |
+| `make test-publish` | Dry-run + Hugo build verification |
+| `make test` | Run all tests |
+| `make clean` | Remove generated files |
+
+### Bulk Publishing
+
+To publish all notes at once:
+
+```bash
+# Preview all publishable notes
+python scripts/publish.py publish --all --dry-run
+
+# Publish all notes
+python scripts/publish.py publish --all --yes
+```
+
+### Troubleshooting
+
+#### Note not discovered by `scan`
+- Ensure `publish: true` is in the frontmatter
+- Check the file is in the vault directory (`~/Notes/Blog/` by default)
+- Verify the YAML frontmatter is valid (between `---` markers)
+
+#### Media files not uploading
+- Check MinIO credentials in `scripts/.env`
+- Verify media files exist in the Media folder
+- Use `python publish.py media <path>` to check references
+
+#### Wikilinks not converting
+- Ensure links use the `[[Page Name]]` syntax
+- For aliases, use `[[Page Name|Display Text]]`
+
+#### Gallery not generating
+- Ensure you have a `## Pictures` section (not `### Pictures`)
+- Check images use the `![[path]]` embed syntax
+- Use `--no-gallery` to disable if unwanted
+
+---
+
 ## Installation
 
 ```bash
