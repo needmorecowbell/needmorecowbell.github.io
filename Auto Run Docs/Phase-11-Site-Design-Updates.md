@@ -102,10 +102,22 @@ This phase modernizes the blog's visual design while preserving its minimalist s
   - Verified only one jQuery reference in output HTML
   - **Savings: ~150KB** (60KB Bootstrap + 90KB duplicate jQuery)
 
-- [ ] Update Font Awesome to 6.x
+- [x] Update Font Awesome to 6.x
   - Update CDN links
   - Check icon names for breaking changes
   - Test all icon displays
+
+  **COMPLETED (2026-01-04):**
+  - Updated Font Awesome CDN from 5.15.1 to 6.7.2 in `layouts/partials/head.html`
+  - New CDN URL: `https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css`
+  - SRI hash: `sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==`
+  - Icons verified working (FA6 has backward compatibility for FA5 icon names):
+    - Social icons: `fab fa-github`, `fab fa-twitter`, `fab fa-linkedin`, `fas fa-envelope`
+    - Date icons: `fas fa-calendar-day`
+    - Reading time: `fas fa-stopwatch`
+    - Theme toggle: `fas fa-adjust`
+    - Pagination: `fa fa-angle-left`, `fa fa-angle-right`
+  - Site builds successfully (209 pages)
 
 ### Phase 11.2: Gallery Modernization
 
