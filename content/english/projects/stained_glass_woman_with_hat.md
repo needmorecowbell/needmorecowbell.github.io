@@ -27,10 +27,5 @@ A half finished stained glass project, never could get the center of the face ju
         "topRight":   "playPauseButton, rotateLeft, rotateRight, fullscreenButton, closeButton"
     }   
 }'>
-    <a href="stainedglasswoman_04.jpg" data-ngthumb="stainedglasswoman_04.jpg" data-ngdesc=""></a>
-    <a href="stainedglasswoman_06.jpg" data-ngthumb="stainedglasswoman_06.jpg" data-ngdesc=""></a>
-    <a href="stainedglasswoman_05.jpg" data-ngthumb="stainedglasswoman_05.jpg" data-ngdesc=""></a>
-    <a href="stainedglasswoman_02.jpg" data-ngthumb="stainedglasswoman_02.jpg" data-ngdesc=""></a>
     <a href="stainedglasswoman_01.jpg" data-ngthumb="stainedglasswoman_01.jpg" data-ngdesc=""></a>
-    <a href="stainedglasswoman_03.jpg" data-ngthumb="stainedglasswoman_03.jpg" data-ngdesc=""></a>
 </div>

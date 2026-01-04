@@ -1,0 +1,16 @@
+source_dir: /home/adam/Media/2021/03/Garden Bed Project
+destination: projects/raised_bed_project
+prefix: raised_bed
+images:
+- src: 21-03-21 11-43-29 1230.jpg
+  name: raised_bed_01.jpg
+  caption: ''
+- src: 21-03-21 12-29-29 1231.jpg
+  name: raised_bed_02.jpg
+  caption: ''
+- src: 21-03-21 12-30-01 1232.jpg
+  name: raised_bed_03.jpg
+  caption: ''
+- src: 21-03-21 12-30-07 1233.jpg
+  name: raised_bed_04.jpg
+  caption: ''

@@ -14,8 +14,11 @@
 #   - Default MinIO: http://localhost:9000/bucket-name
 #   - Docker MinIO: http://minio:9000/bucket-name
 #   - Staging: https://minio.staging.example.com/blog-assets
-S3CDN = "http://localhost:9000/blog-assets"
+S3CDN = "http://10.0.0.20:9000/amblog/assets"
 
 # Media upload path for the publish script
 # This matches the bucket configured in scripts/.env
-mediaBasePath = "blog-assets"
+mediaBasePath = "amblog/assets"
+
+# Profile picture for development
+profilePicture = "http://10.0.0.20:9000/amblog/assets/img/prof.jpg"

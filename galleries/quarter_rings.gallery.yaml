@@ -1,0 +1,31 @@
+source_dir: /home/adam/Media/2019/quarter ring project
+destination: projects/quarter_rings
+prefix: ring
+images:
+- src: 2019-02-25_19.28.21.mp4
+  name: ring_01.mp4
+  caption: ''
+- src: 20190225_171654.jpg
+  name: ring_02.jpg
+  caption: ''
+- src: 20190405_171350.jpg
+  name: ring_03.jpg
+  caption: ''
+- src: 20190405_171418.jpg
+  name: ring_04.jpg
+  caption: ''
+- src: 20190421_191927.jpg
+  name: ring_05.jpg
+  caption: ''
+- src: 20190421_191930.jpg
+  name: ring_06.jpg
+  caption: ''
+- src: 20190421_191936.jpg
+  name: ring_07.jpg
+  caption: ''
+- src: 20190421_215108.jpg
+  name: ring_08.jpg
+  caption: ''
+- src: Snapchat-2072224828.jpg
+  name: ring_09.jpg
+  caption: ''

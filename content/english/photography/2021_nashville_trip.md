@@ -7,27 +7,4 @@ tags: ["Nashville","Travel"]
 
 ## Nashville Trip 2021
 
-  <div ID="gallery-travel-nashville2021" data-nanogallery2='{
-      "itemsBaseURL": "{{<s3cdn>}}/img/gallery/travel/nashville_2021/",
-      "thumbnailWidth": "250",
-      "thumbnailHeight": "250",
-      "thumbnailBorderVertical": 1,
-      "thumbnailBorderHorizontal": 1,
-      "thumbnailLabel": {
-        "position": "overImageOnBottom",
-        "displayDescription": true
-      },
-      "thumbnailHoverEffect2": "labelAppear75|descriptionSlideUp",
-      "galleryDisplayMode": "pagination",
-      "galleryMaxRows": 1,
-      "thumbnailAlignment": "center",
-      "thumbnailOpenImage": true,
-      "viewerTools":     {
-        "topLeft":    "pageCounter, label",
-        "topRight":   "playPauseButton, rotateLeft, rotateRight, fullscreenButton, closeButton"
-       }   
-    }'>
-    <a href="07_2021_Nashville_01.jpg" data-ngthumb="07_2021_Nashville_01.jpg" data-ngdesc="">Nashville, TN</a>
-    <a href="07_2021_Nashville_02.jpg" data-ngthumb="07_2021_Nashville_02.jpg" data-ngdesc="">Nashville, TN</a>
-  </div>
-
+{{< gallery path="img/gallery/travel/nashville_2021" images="21-07-02_21-58-14_1546.jpg, 21-07-03_11-21-59_1549.jpg, 21-07-03_11-22-22_1550.jpg, 21-07-03_13-44-11_1551.jpg, 21-07-03_14-29-31_1553.jpg, 21-07-03_20-37-34_1555.jpg, 21-07-03_22-51-25_1556.jpg, 21-07-04_12-11-43_1559.jpg, 21-07-04_13-18-58_1560.jpg, 21-07-04_13-19-01_1561.jpg, 21-07-04_17-58-05_1562.jpg, 21-07-04_18-03-23_1564.jpg, 21-07-05_09-59-31_1569.jpg, 21-07-05_09-59-32_1570.jpg, 21-07-05_09-59-32_1571.jpg, 21-07-06_11-28-12_1579.jpg, 21-07-06_11-28-19_1580.jpg, 21-07-06_11-28-19_1581.jpg" />}}

@@ -113,6 +113,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+  // Initialize GLightbox if available
   if (typeof GLightbox !== 'undefined') {
     GLightbox({
       selector: '#{{ $id }} .glightbox',
@@ -122,5 +123,29 @@ document.addEventListener('DOMContentLoaded', function() {
       closeOnOutsideClick: true
     });
   }
+
+  // Image load/error handling for gallery items
+  var galleryImages = document.querySelectorAll('#{{ $id }} img');
+  galleryImages.forEach(function(img) {
+    // Handle already loaded images (cached)
+    if (img.complete) {
+      img.classList.add('loaded');
+    } else {
+      // Handle image load
+      img.addEventListener('load', function() {
+        this.classList.add('loaded');
+      });
+
+      // Handle image error
+      img.addEventListener('error', function() {
+        this.classList.add('error');
+        this.setAttribute('data-error', 'true');
+        var parent = this.closest('a');
+        if (parent) {
+          parent.classList.add('image-error');
+        }
+      });
+    }
+  });
 });
 </script>

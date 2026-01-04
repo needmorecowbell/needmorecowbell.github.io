@@ -2121,3 +2121,712 @@ html[data-theme='dark'] ::selection {
   scrollbar-width: thin;
   scrollbar-color: var(--border-color) var(--secondary-bg-color);
 }
+
+/* =============================================================================
+   Final Visual Polish - Phase 11.6
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   Transition Timing Variables
+
+   Consistent easing and duration across all interactive elements.
+   Using CSS custom properties for easy adjustment.
+   ----------------------------------------------------------------------------- */
+
+:root {
+  /* Timing functions */
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Durations */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --duration-slower: 400ms;
+}
+
+/* -----------------------------------------------------------------------------
+   Enhanced Link Hover States
+
+   Smooth underline animation and color transitions for all links.
+   ----------------------------------------------------------------------------- */
+
+/* Base link styling with transition */
+a {
+  transition: color var(--duration-normal) var(--ease-out-quart);
+}
+
+/* Post content links - underline on hover */
+.post .post-content a:not(.tag):not(.category):not(.glightbox) {
+  position: relative;
+  text-decoration: none;
+}
+
+.post .post-content a:not(.tag):not(.category):not(.glightbox)::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background-color: currentColor;
+  transition: width var(--duration-normal) var(--ease-out-quart);
+}
+
+.post .post-content a:not(.tag):not(.category):not(.glightbox):hover::after {
+  width: 100%;
+}
+
+/* Read more link arrow animation */
+.post .post-content .read_more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: color var(--duration-normal) var(--ease-out-quart),
+              gap var(--duration-normal) var(--ease-out-quart);
+}
+
+.post .post-content .read_more::after {
+  content: '→';
+  display: inline-block;
+  transition: transform var(--duration-normal) var(--ease-out-quart);
+}
+
+.post .post-content .read_more:hover {
+  gap: 0.5rem;
+}
+
+.post .post-content .read_more:hover::after {
+  transform: translateX(3px);
+}
+
+/* -----------------------------------------------------------------------------
+   Button Hover States
+
+   Unified button hover effects with smooth transitions.
+   ----------------------------------------------------------------------------- */
+
+/* Theme switch button */
+.theme-switch {
+  transition: background-color var(--duration-normal) var(--ease-out-quart),
+              color var(--duration-normal) var(--ease-out-quart),
+              transform var(--duration-fast) var(--ease-spring),
+              box-shadow var(--duration-normal) var(--ease-out-quart);
+}
+
+.theme-switch:hover {
+  transform: scale(1.05);
+}
+
+.theme-switch:active {
+  transform: scale(0.95);
+}
+
+/* Hamburger menu button */
+.navbar-burger {
+  transition: background-color var(--duration-normal) var(--ease-out-quart),
+              transform var(--duration-fast) var(--ease-spring);
+}
+
+.navbar-burger:active {
+  transform: scale(0.95);
+}
+
+/* Pagination buttons */
+.pagination a {
+  transition: color var(--duration-normal) var(--ease-out-quart),
+              background-color var(--duration-normal) var(--ease-out-quart),
+              border-color var(--duration-normal) var(--ease-out-quart),
+              transform var(--duration-fast) var(--ease-spring);
+}
+
+.pagination a:hover {
+  color: var(--link-color);
+  background-color: var(--tag-hover-bg);
+}
+
+.pagination a:active {
+  transform: scale(0.95);
+}
+
+/* Pagination arrows */
+.pagination .prev::before,
+.pagination .next::after {
+  transition: transform var(--duration-normal) var(--ease-out-quart);
+}
+
+.pagination .prev:hover::before {
+  transform: translateX(-3px);
+}
+
+.pagination .next:hover::after {
+  transform: translateX(3px);
+}
+
+/* -----------------------------------------------------------------------------
+   Card & Post Hover States
+
+   Subtle elevation and highlight effects for post cards.
+   ----------------------------------------------------------------------------- */
+
+/* Post cards in list view */
+.post {
+  transition: background-color var(--duration-slow) var(--ease-out-quart);
+  border-radius: 8px;
+}
+
+/* Post title link hover */
+.post .post-title h3 a {
+  transition: color var(--duration-normal) var(--ease-out-quart);
+}
+
+/* Post thumbnail hover effect */
+.post .post-thumbnail {
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.post .post-thumbnail img {
+  transition: transform var(--duration-slow) var(--ease-out-quart),
+              filter var(--duration-slow) var(--ease-out-quart);
+}
+
+.post .post-thumbnail:hover img {
+  transform: scale(1.03);
+}
+
+/* Archive listing hover */
+.list-with-title .listing .listing-post {
+  transition: background-color var(--duration-normal) var(--ease-out-quart),
+              margin var(--duration-normal) var(--ease-out-quart),
+              padding var(--duration-normal) var(--ease-out-quart),
+              border-radius var(--duration-normal) var(--ease-out-quart);
+}
+
+.list-with-title .listing .listing-post a {
+  transition: color var(--duration-normal) var(--ease-out-quart);
+}
+
+/* -----------------------------------------------------------------------------
+   Tag & Category Hover States
+
+   Pill-style tags with smooth hover transitions.
+   ----------------------------------------------------------------------------- */
+
+.tag,
+.category {
+  transition: color var(--duration-normal) var(--ease-out-quart),
+              background-color var(--duration-normal) var(--ease-out-quart),
+              border-color var(--duration-normal) var(--ease-out-quart),
+              transform var(--duration-fast) var(--ease-spring),
+              box-shadow var(--duration-normal) var(--ease-out-quart);
+}
+
+.tag:hover,
+.category:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.tag:active,
+.category:active {
+  transform: translateY(0);
+}
+
+html[data-theme='dark'] .tag:hover,
+html[data-theme='dark'] .category:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* -----------------------------------------------------------------------------
+   Social Link Hover States
+
+   Circular icon buttons with lift effect on hover.
+   ----------------------------------------------------------------------------- */
+
+.sidebar .social-links a {
+  transition: color var(--duration-normal) var(--ease-out-quart),
+              background-color var(--duration-normal) var(--ease-out-quart),
+              border-color var(--duration-normal) var(--ease-out-quart),
+              transform var(--duration-normal) var(--ease-spring),
+              box-shadow var(--duration-normal) var(--ease-out-quart);
+}
+
+.sidebar .social-links a:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.sidebar .social-links a:active {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+html[data-theme='dark'] .sidebar .social-links a:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Social icon scale on hover */
+.sidebar .social-links a i {
+  transition: transform var(--duration-normal) var(--ease-out-quart);
+}
+
+.sidebar .social-links a:hover i {
+  transform: scale(1.1);
+}
+
+/* -----------------------------------------------------------------------------
+   Profile Picture Hover State
+
+   Subtle glow and scale on profile image.
+   ----------------------------------------------------------------------------- */
+
+.sidebar .logo-title .title img {
+  transition: transform var(--duration-slow) var(--ease-out-quart),
+              box-shadow var(--duration-slow) var(--ease-out-quart),
+              filter var(--duration-slow) var(--ease-out-quart);
+}
+
+.sidebar .logo-title .title img:hover {
+  transform: scale(1.03);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+html[data-theme='dark'] .sidebar .logo-title .title img:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* -----------------------------------------------------------------------------
+   Gallery Item Hover States
+
+   Image zoom, shadow lift, and overlay effects.
+   ----------------------------------------------------------------------------- */
+
+.gallery-grid a {
+  transition: transform var(--duration-slow) var(--ease-out-quart),
+              box-shadow var(--duration-slow) var(--ease-out-quart);
+}
+
+.gallery-grid a:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 1;
+}
+
+html[data-theme='dark'] .gallery-grid a:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.gallery-grid a img {
+  transition: transform var(--duration-slow) var(--ease-out-quart);
+}
+
+.gallery-grid a:hover img {
+  transform: scale(1.05);
+}
+
+/* Video play button hover effect */
+.gallery-grid a.video-item::after {
+  transition: background-color var(--duration-normal) var(--ease-out-quart),
+              transform var(--duration-normal) var(--ease-spring);
+}
+
+.gallery-grid a.video-item:hover::after {
+  background-color: rgba(0, 0, 0, 0.75);
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+/* -----------------------------------------------------------------------------
+   Breadcrumb Hover States
+   ----------------------------------------------------------------------------- */
+
+.breadcrumbs a {
+  transition: color var(--duration-normal) var(--ease-out-quart);
+}
+
+.breadcrumbs .home-icon {
+  transition: transform var(--duration-normal) var(--ease-spring),
+              opacity var(--duration-normal) var(--ease-out-quart);
+}
+
+.breadcrumbs a:hover .home-icon {
+  transform: scale(1.1);
+}
+
+/* -----------------------------------------------------------------------------
+   Navigation Link Hover States
+   ----------------------------------------------------------------------------- */
+
+header .nav__list a {
+  transition: color var(--duration-normal) var(--ease-out-quart),
+              background-color var(--duration-normal) var(--ease-out-quart);
+}
+
+header .nav__list .nav__links a::after {
+  transition: width var(--duration-normal) var(--ease-out-quart),
+              height var(--duration-normal) var(--ease-out-quart);
+}
+
+/* -----------------------------------------------------------------------------
+   Footer Link Hover States
+   ----------------------------------------------------------------------------- */
+
+.footer a {
+  transition: color var(--duration-normal) var(--ease-out-quart),
+              opacity var(--duration-normal) var(--ease-out-quart);
+}
+
+.footer a:hover {
+  opacity: 1;
+}
+
+/* -----------------------------------------------------------------------------
+   Image Loading States
+
+   Smooth fade-in when images load, placeholder background while loading.
+   ----------------------------------------------------------------------------- */
+
+/* Gallery images loading state */
+.gallery-grid a {
+  background-color: var(--secondary-bg-color);
+  background-image: linear-gradient(
+    90deg,
+    var(--secondary-bg-color) 0%,
+    var(--bg-color) 50%,
+    var(--secondary-bg-color) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Stop shimmer once image is loaded */
+.gallery-grid a img {
+  opacity: 0;
+  transition: opacity var(--duration-slow) var(--ease-out-quart),
+              transform var(--duration-slow) var(--ease-out-quart);
+}
+
+.gallery-grid a img.loaded,
+.gallery-grid a img[src] {
+  opacity: 1;
+}
+
+/* Disable shimmer animation when reduced motion is preferred */
+@media (prefers-reduced-motion: reduce) {
+  .gallery-grid a {
+    animation: none;
+    background-image: none;
+  }
+
+  .gallery-grid a img {
+    opacity: 1;
+  }
+}
+
+/* Post thumbnail loading state */
+.post .post-thumbnail {
+  background-color: var(--secondary-bg-color);
+  min-height: 150px;
+}
+
+.post .post-thumbnail img {
+  opacity: 0;
+  transition: opacity var(--duration-slow) var(--ease-out-quart),
+              transform var(--duration-slow) var(--ease-out-quart);
+}
+
+.post .post-thumbnail img.loaded,
+.post .post-thumbnail img[src] {
+  opacity: 1;
+}
+
+/* Content images loading state */
+.post .post-content img {
+  background-color: var(--secondary-bg-color);
+  min-height: 100px;
+  transition: opacity var(--duration-slow) var(--ease-out-quart);
+}
+
+/* -----------------------------------------------------------------------------
+   Image Error States
+
+   Fallback display when images fail to load.
+   ----------------------------------------------------------------------------- */
+
+/* Gallery image error state */
+.gallery-grid a img.error,
+.gallery-grid a img[data-error="true"] {
+  opacity: 0.5;
+  filter: grayscale(100%);
+}
+
+.gallery-grid a.image-error {
+  background-color: var(--secondary-bg-color);
+  animation: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gallery-grid a.image-error::before {
+  content: '⚠';
+  font-size: 2rem;
+  color: var(--nav-text-color);
+  opacity: 0.5;
+}
+
+/* Post thumbnail error state */
+.post .post-thumbnail.image-error {
+  background-color: var(--secondary-bg-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+}
+
+.post .post-thumbnail.image-error::after {
+  content: 'Image unavailable';
+  font-size: 1.3rem;
+  color: var(--nav-text-color);
+  opacity: 0.6;
+}
+
+/* Content image error state */
+.post .post-content img.error,
+.post .post-content img[data-error="true"] {
+  opacity: 0.5;
+  filter: grayscale(100%);
+  border: 1px dashed var(--border-color);
+  padding: 2rem;
+  text-align: center;
+}
+
+/* -----------------------------------------------------------------------------
+   Loading Spinner for External Content
+
+   Used for iframe embeds or external content loading.
+   ----------------------------------------------------------------------------- */
+
+.loading-spinner {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--link-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Disable animation for reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner {
+    animation: none;
+    border-style: dashed;
+  }
+}
+
+/* Content loading overlay */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--bg-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: opacity var(--duration-slow) var(--ease-out-quart);
+}
+
+.loading-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* -----------------------------------------------------------------------------
+   Form Element States
+
+   Input focus, hover, and validation states.
+   ----------------------------------------------------------------------------- */
+
+/* Input fields */
+input[type="text"],
+input[type="email"],
+input[type="url"],
+input[type="search"],
+textarea,
+select {
+  transition: border-color var(--duration-normal) var(--ease-out-quart),
+              box-shadow var(--duration-normal) var(--ease-out-quart),
+              background-color var(--duration-normal) var(--ease-out-quart);
+}
+
+input[type="text"]:hover,
+input[type="email"]:hover,
+input[type="url"]:hover,
+input[type="search"]:hover,
+textarea:hover,
+select:hover {
+  border-color: var(--nav-text-color);
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="url"]:focus,
+input[type="search"]:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--link-color);
+  box-shadow: 0 0 0 3px var(--focus-ring-color);
+  outline: none;
+}
+
+/* Submit buttons */
+input[type="submit"],
+button[type="submit"] {
+  transition: background-color var(--duration-normal) var(--ease-out-quart),
+              border-color var(--duration-normal) var(--ease-out-quart),
+              color var(--duration-normal) var(--ease-out-quart),
+              transform var(--duration-fast) var(--ease-spring),
+              box-shadow var(--duration-normal) var(--ease-out-quart);
+}
+
+input[type="submit"]:hover,
+button[type="submit"]:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+input[type="submit"]:active,
+button[type="submit"]:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* -----------------------------------------------------------------------------
+   Code Block Hover States
+
+   Subtle highlight on hover for code blocks.
+   ----------------------------------------------------------------------------- */
+
+.post .post-content pre {
+  transition: border-color var(--duration-normal) var(--ease-out-quart),
+              box-shadow var(--duration-normal) var(--ease-out-quart);
+}
+
+.post .post-content pre:hover {
+  border-color: var(--nav-text-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+html[data-theme='dark'] .post .post-content pre:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Inline code hover */
+.post .post-content code {
+  transition: background-color var(--duration-normal) var(--ease-out-quart),
+              border-color var(--duration-normal) var(--ease-out-quart);
+}
+
+.post .post-content code:hover {
+  background-color: var(--tag-hover-bg);
+}
+
+/* -----------------------------------------------------------------------------
+   Blockquote Hover State
+   ----------------------------------------------------------------------------- */
+
+.post .post-content blockquote {
+  transition: border-left-color var(--duration-normal) var(--ease-out-quart),
+              background-color var(--duration-normal) var(--ease-out-quart);
+}
+
+.post .post-content blockquote:hover {
+  border-left-color: var(--link-hover-color);
+}
+
+/* -----------------------------------------------------------------------------
+   Table Row Hover States
+   ----------------------------------------------------------------------------- */
+
+.post .post-content tr {
+  transition: background-color var(--duration-normal) var(--ease-out-quart);
+}
+
+.post .post-content tbody tr:hover {
+  background-color: var(--tag-hover-bg);
+}
+
+/* -----------------------------------------------------------------------------
+   Mobile Touch States
+
+   Specific hover replacements for touch devices.
+   ----------------------------------------------------------------------------- */
+
+@media (hover: none) and (pointer: coarse) {
+  /* Disable hover animations on touch devices to prevent sticky states */
+  .gallery-grid a:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .gallery-grid a:hover img {
+    transform: none;
+  }
+
+  .sidebar .social-links a:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .sidebar .social-links a:hover i {
+    transform: none;
+  }
+
+  .tag:hover,
+  .category:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* Keep active states for touch feedback */
+  .gallery-grid a:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+
+  .sidebar .social-links a:active {
+    transform: scale(0.95);
+    opacity: 0.9;
+  }
+
+  .tag:active,
+  .category:active {
+    transform: scale(0.95);
+  }
+
+  /* Pagination touch feedback */
+  .pagination a:active {
+    transform: scale(0.95);
+    background-color: var(--tag-hover-bg);
+  }
+}

@@ -1,0 +1,13 @@
+source_dir: /home/adam/Media/2019/dogwood bonsai project
+destination: projects/dogwood_bonsai
+prefix: dogwood
+images:
+- src: 2019-03-26_17.23.59.mp4
+  name: dogwood_01.mp4
+  caption: ''
+- src: 2019-03-26_22.12.51.jpg
+  name: dogwood_02.jpg
+  caption: ''
+- src: 2019-04-05_22.37.39.jpg
+  name: dogwood_03.jpg
+  caption: ''

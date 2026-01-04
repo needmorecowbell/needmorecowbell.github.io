@@ -1,5 +1,5 @@
 ---
-title: "Puerto Morelos Unam University Lab Trip"
+title: "Puerto Morelos UNAM University Lab Trip"
 tags: ["biology","coral", "mexico","travel","penn state"]
 date: 2017-05-01
 draft: false
@@ -7,43 +7,4 @@ draft: false
 
 ## Puerto Morelos 2017
 
-  <div ID="gallery-travel-pm2017" data-nanogallery2='{
-      "itemsBaseURL": "{{<s3cdn>}}/img/gallery/travel/puerto_morelos_2017/",
-      "thumbnailWidth": "250",
-      "thumbnailHeight": "250",
-      "thumbnailBorderVertical": 1,
-      "thumbnailBorderHorizontal": 1,
-      "thumbnailLabel": {
-        "position": "overImageOnBottom",
-        "displayDescription": true
-      },
-      "thumbnailHoverEffect2": "labelAppear75|descriptionSlideUp",
-      "galleryDisplayMode": "pagination",
-      "galleryMaxRows": 2,
-      "thumbnailAlignment": "center",
-      "thumbnailOpenImage": true,
-      "viewerTools":     {
-        "topLeft":    "pageCounter, label",
-        "topRight":   "playPauseButton, rotateLeft, rotateRight, fullscreenButton, closeButton"
-       }   
-    }'>
-    <a href="pm_08.jpg" data-ngthumb="pm_08.jpg" data-ngdesc="pm_08.jpg">pm_08.jpg</a>
-    <a href="pm_10.jpg" data-ngthumb="pm_10.jpg" data-ngdesc="pm_10.jpg">pm_10.jpg</a>
-    <a href="pm_03.jpg" data-ngthumb="pm_03.jpg" data-ngdesc="pm_03.jpg">pm_03.jpg</a>
-    <a href="pm_09.jpg" data-ngthumb="pm_09.jpg" data-ngdesc="pm_09.jpg">pm_09.jpg</a>
-    <a href="pm_06.jpg" data-ngthumb="pm_06.jpg" data-ngdesc="pm_06.jpg">pm_06.jpg</a>
-    <a href="pm_01.jpg" data-ngthumb="pm_01.jpg" data-ngdesc="pm_01.jpg">pm_01.jpg</a>
-    <a href="pm_18.jpg" data-ngthumb="pm_18.jpg" data-ngdesc="pm_18.jpg">pm_18.jpg</a>
-    <a href="pm_02.jpg" data-ngthumb="pm_02.jpg" data-ngdesc="pm_02.jpg">pm_02.jpg</a>
-    <a href="pm_16.jpg" data-ngthumb="pm_16.jpg" data-ngdesc="pm_16.jpg">pm_16.jpg</a>
-    <a href="pm_17.jpg" data-ngthumb="pm_17.jpg" data-ngdesc="pm_17.jpg">pm_17.jpg</a>
-    <a href="pm_05.jpg" data-ngthumb="pm_05.jpg" data-ngdesc="pm_05.jpg">pm_05.jpg</a>
-    <a href="pm_04.jpg" data-ngthumb="pm_04.jpg" data-ngdesc="pm_04.jpg">pm_04.jpg</a>
-    <a href="pm_11.jpg" data-ngthumb="pm_11.jpg" data-ngdesc="pm_11.jpg">pm_11.jpg</a>
-    <a href="pm_14.jpg" data-ngthumb="pm_14.jpg" data-ngdesc="pm_14.jpg">pm_14.jpg</a>
-    <a href="pm_12.jpg" data-ngthumb="pm_12.jpg" data-ngdesc="pm_12.jpg">pm_12.jpg</a>
-    <a href="pm_07.jpg" data-ngthumb="pm_07.jpg" data-ngdesc="pm_07.jpg">pm_07.jpg</a>
-    <a href="pm_13.jpg" data-ngthumb="pm_13.jpg" data-ngdesc="pm_13.jpg">pm_13.jpg</a>
-    <a href="pm_15.jpg" data-ngthumb="pm_15.jpg" data-ngdesc="pm_15.jpg">pm_15.jpg</a>
-  </div>
-
+{{< gallery path="img/gallery/travel/puerto_morelos_2017" images="2017-05-29_12.33.03.jpg, 2017-05-31_00.04.03.jpg, 2017-05-31_13.25.35.jpg, 2017-06-02_00.26.10.jpg, 2017-06-02_19.12.51.jpg, 2017-06-02_19.13.25.jpg, 2017-06-02_19.13.59.jpg, 2017-06-02_19.14.38.jpg, 2017-06-02_19.15.47.jpg, 2017-06-02_19.24.57.jpg, 2017-06-02_19.25.11.jpg, 2017-06-02_19.28.22.jpg, 2017-06-02_19.29.07.jpg, 2017-06-02_19.29.30.jpg, 2017-06-02_19.59.57.jpg, 2017-06-03_13.24.37.jpg, 2017-06-07_23.11.12.jpg, 2017-06-11_01.17.19.jpg, 2017-06-14_15.11.27.jpg, 2017-06-14_19.29.25.jpg, 2017-06-14_23.37.28.jpg, 2017-06-18_15.26.50.jpg, 2017-06-22_18.03.24.jpg, 20170623_110856.jpg, 2017-06-26_19.55.47.jpg" />}}

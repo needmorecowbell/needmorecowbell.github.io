@@ -7,36 +7,4 @@ draft: false
 
 ## Nova Scotia 2023
 
-  <div ID="gallery-travel-nova-scotia" data-nanogallery2='{
-      "itemsBaseURL": "{{<s3cdn>}}/img/gallery/travel/nova_scotia/",
-      "thumbnailWidth": "250",
-      "thumbnailHeight": "250",
-      "thumbnailBorderVertical": 1,
-      "thumbnailBorderHorizontal": 1,
-      "thumbnailLabel": {
-        "position": "overImageOnBottom",
-        "displayDescription": true
-      },
-      "thumbnailHoverEffect2": "labelAppear75|descriptionSlideUp",
-      "galleryDisplayMode": "pagination",
-      "galleryMaxRows": 2,
-      "thumbnailAlignment": "center",
-      "thumbnailOpenImage": true,
-      "viewerTools":     {
-        "topLeft":    "pageCounter, label",
-        "topRight":   "playPauseButton, rotateLeft, rotateRight, fullscreenButton, closeButton"
-       }   
-    }'>
-  <a href="nova_scotia_1.JPG" data-ngthumb="nova_scotia_1.JPG" data-ngdesc="Cabot Trail">Nova Scotia</a>
-  <a href="nova_scotia_2.JPG" data-ngthumb="nova_scotia_2.JPG" data-ngdesc="Cabot Trail">Nova Scotia 2</a>
-  <a href="nova_scotia_3.JPG" data-ngthumb="nova_scotia_3.JPG" data-ngdesc="">Nova Scotia</a>
-  <a href="nova_scotia_4.JPG" data-ngthumb="nova_scotia_4.JPG" data-ngdesc="">Nova Scotia</a>
-  <a href="nova_scotia_5.JPG" data-ngthumb="nova_scotia_5.JPG" data-ngdesc="">Nova Scotia</a>
-  <a href="nova_scotia_6.JPG" data-ngthumb="nova_scotia_6.JPG" data-ngdesc="">Nova Scotia</a>
-  <a href="nova_scotia_7.jpg" data-ngthumb="nova_scotia_7.jpg" data-ngdesc="">Nova Scotia</a>
-  <a href="nova_scotia_8.jpg" data-ngthumb="nova_scotia_8.jpg" data-ngdesc="">Nova Scotia</a>
-  <a href="nova_scotia_9.JPG" data-ngthumb="nova_scotia_9.JPG" data-ngdesc="">Nova Scotia</a>
-  <a href="nova_scotia_10.JPG" data-ngthumb="nova_scotia_10.JPG" data-ngdesc="">Nova Scotia</a>
-  <a href="nova_scotia_11.jpg" data-ngthumb="nova_scotia_11.jpg" data-ngdesc="">Nova Scotia</a>
-  </div>
-
+{{< gallery path="img/gallery/travel/nova_scotia/Cabot_Trail" images="20230426_092045.jpg, 20230426_092050.jpg, 20230426_102709.jpg, 20230426_102712.jpg, 20230426_102737.jpg, 20230426_102947.jpg, 20230426_102949.jpg, 20230426_103050.jpg, 20230426_103052.jpg, 20230426_103056.jpg, 20230426_103059.jpg, 20230426_105559.jpg, 20230426_105603.jpg, 20230426_105613.jpg, 20230426_110134.jpg, 20230426_110138.jpg, 20230426_141224.jpg, 20230426_164335.jpg, 20230426_164336.jpg, 20230426_164415.jpg" />}}
