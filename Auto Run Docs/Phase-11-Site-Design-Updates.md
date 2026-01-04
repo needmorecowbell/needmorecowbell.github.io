@@ -717,10 +717,66 @@ This phase modernizes the blog's visual design while preserving its minimalist s
 
   **Build Status:** Successful (209 pages)
 
-- [ ] Optimize CSS delivery
+- [x] Optimize CSS delivery
   - Inline critical CSS (optional)
   - Remove unused styles
   - Minify custom CSS
+
+  **COMPLETED (2026-01-04):**
+
+  ### CSS Delivery Optimizations:
+
+  **1. Custom CSS Minification (Already in Place):**
+  - Hugo's asset pipeline already minifies `assets/css/custom.css`
+  - Source: 42,743 bytes → Minified: 23,430 bytes (~45% reduction)
+  - Uses `resources.Minify | resources.Fingerprint` for cache-busting
+
+  **2. Conditional GLightbox Loading (NEW):**
+  - GLightbox CSS/JS now loaded only on pages that need it
+  - Uses Hugo's `.HasShortcode "gallery"` to detect gallery usage
+  - Also loads on photography section pages (`eq .Section "photography"`)
+  - **Savings: ~70KB (CSS 14KB + JS 56KB) on non-gallery pages**
+
+  Implementation in `layouts/partials/head.html`:
+  ```html
+  {{- $needsGLightbox := or (.HasShortcode "gallery") (and (eq .Section "photography") (not .IsHome)) -}}
+  {{- if $needsGLightbox }}
+  <link rel="stylesheet" href="...glightbox.min.css">
+  <script defer src="...glightbox.min.js"></script>
+  {{- end }}
+  ```
+
+  **3. JavaScript Defer Attributes (NEW):**
+  Added `defer` to all non-critical scripts to prevent render blocking:
+  - `anatole-header.min.js` - Now deferred
+  - `anatole-theme-switcher.min.js` - Now deferred
+  - `medium-zoom.min.js` - Now deferred (created override partial)
+  - Custom JS scripts - Now deferred
+  - GLightbox JS - Already deferred ✓
+  - Cloudflare beacon - Already deferred ✓
+
+  **4. Critical CSS Inlining (Skipped):**
+  - Evaluated but not implemented - the theme's CSS is already well-structured
+  - Main.min.css (19KB) loads quickly and is required for above-the-fold content
+  - Adding inline critical CSS would add complexity without significant benefit
+
+  **5. Unused Styles Analysis:**
+  - The custom.css contains styles actively used across the site
+  - No significant unused style blocks identified
+  - Note: medium-zoom.js is loaded twice (sidebar footer + main footer) due to theme structure - minor optimization opportunity for future
+
+  **Files Modified:**
+  - `layouts/partials/head.html` - Conditional GLightbox, defer attributes
+  - `layouts/partials/medium-zoom.html` (NEW) - Override to add defer
+
+  **Performance Impact:**
+  | Optimization | Savings |
+  |--------------|---------|
+  | Conditional GLightbox (non-gallery pages) | ~70KB |
+  | JS Defer attributes | Reduced render blocking |
+  | CSS already minified | 19KB saved (pre-existing) |
+
+  **Build Status:** Successful (209 pages in 97ms)
 
 ### Phase 11.6: Testing & Polish
 

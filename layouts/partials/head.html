@@ -152,11 +152,15 @@
     src="{{ $secureHeaderJS.RelPermalink }}"
     integrity="{{ $secureHeaderJS.Data.Integrity }}"
     crossorigin="anonymous"
+    defer
   ></script>
 
-  <!-- GLightbox - lightweight gallery lightbox -->
+  <!-- GLightbox - conditionally loaded only on pages with galleries -->
+  {{- $needsGLightbox := or (.HasShortcode "gallery") (and (eq .Section "photography") (not .IsHome)) -}}
+  {{- if $needsGLightbox }}
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox@3.3.1/dist/css/glightbox.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/glightbox@3.3.1/dist/js/glightbox.min.js"></script>
+  {{- end }}
   {{ if not .Site.Params.disableThemeSwitcher }}
     {{ $anatoleThemeSwitcher := resources.Get "js/anatole-theme-switcher.js" }}
     {{ $secureThemeSwitcherJS := $anatoleThemeSwitcher |  resources.Minify | resources.Fingerprint }}
@@ -165,6 +169,7 @@
       src="{{ $secureThemeSwitcherJS.RelPermalink }}"
       integrity="{{ $secureThemeSwitcherJS.Data.Integrity }}"
       crossorigin="anonymous"
+      defer
     ></script>
 
   {{ end }}
@@ -203,6 +208,7 @@
       src="{{ $secureJS.RelPermalink }}"
       integrity="{{ $secureJS.Data.Integrity }}"
       crossorigin="anonymous"
+      defer
     ></script>
 
   {{- end -}}
