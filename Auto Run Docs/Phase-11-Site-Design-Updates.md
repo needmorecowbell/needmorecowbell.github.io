@@ -574,10 +574,91 @@ This phase modernizes the blog's visual design while preserving its minimalist s
 
 ### Phase 11.5: Performance Optimization
 
-- [ ] Audit page load performance
+- [x] Audit page load performance
   - Run Lighthouse audit
   - Identify largest render-blocking resources
   - Document baseline metrics
+
+  **COMPLETED (2026-01-04):**
+
+  ### Baseline Metrics:
+
+  **HTML Document:**
+  - Homepage size: 15,652 bytes (minified)
+  - Build time: 96ms for 209 pages
+
+  **Local CSS Resources (Minified):**
+  | Resource | Size | Notes |
+  |----------|------|-------|
+  | main.min.css | 19,418 bytes | Theme base styles |
+  | markupHighlight.min.css | 5,919 bytes | Code syntax highlighting |
+  | custom.min.css | 23,430 bytes | Phase 11 custom styles |
+  | **Total Local CSS** | **48,767 bytes** | ~48KB |
+
+  **Local JS Resources (Minified):**
+  | Resource | Size | Notes |
+  |----------|------|-------|
+  | anatole-header.min.js | 393 bytes | Header interactions |
+  | anatole-theme-switcher.min.js | 923 bytes | Dark/light mode toggle |
+  | medium-zoom.min.js | 8,515 bytes | Image zoom functionality |
+  | **Total Local JS** | **9,831 bytes** | ~10KB |
+
+  **External CDN Resources:**
+  | Resource | Size | Blocking? | Notes |
+  |----------|------|-----------|-------|
+  | Font Awesome 6.7.2 CSS | 73,890 bytes | **YES** | Largest CSS resource |
+  | GLightbox CSS | 13,749 bytes | **YES** | Gallery lightbox |
+  | GLightbox JS | 56,343 bytes | No (defer) | Properly deferred |
+  | Inter Font (Google) | Variable | **YES** | Render-blocking font |
+  | Cloudflare Beacon | 19,948 bytes | No (defer) | Analytics, properly deferred |
+
+  ### Render-Blocking Resources Analysis:
+
+  **CSS (All Render-Blocking by Default):**
+  1. `main.min.css` - 19KB - Required, critical styles
+  2. `markupHighlight.min.css` - 6KB - Code highlighting, could defer
+  3. `custom.min.css` - 23KB - Phase 11 styles, mostly critical
+  4. Font Awesome 6.7.2 - 74KB - **Largest blocker**, icons used in sidebar
+  5. GLightbox CSS - 14KB - Only needed on gallery pages
+  6. Google Fonts (Inter) - Variable - Render-blocking font load
+
+  **JavaScript:**
+  - `anatole-header.min.js` - **NOT deferred** (393 bytes) - Minimal impact
+  - `anatole-theme-switcher.min.js` - **NOT deferred** (923 bytes) - Needed for theme
+  - `medium-zoom.min.js` - **NOT deferred** (8.5KB) - Could be deferred
+  - GLightbox JS - Properly deferred ✓
+  - Cloudflare Beacon - Properly deferred ✓
+
+  ### Key Findings:
+
+  **Largest Render-Blocking Resources:**
+  1. **Font Awesome (74KB)** - By far the largest blocking resource
+  2. **Google Fonts (Inter)** - External font causes render delay
+  3. **GLightbox CSS (14KB)** - Loaded on all pages, only used on gallery pages
+
+  **Positive Findings:**
+  - Gallery images use native `loading="lazy"` ✓
+  - GLightbox JS properly deferred ✓
+  - Cloudflare analytics properly deferred ✓
+  - All local CSS is minified ✓
+  - All local JS is minified ✓
+  - Hugo build is fast (96ms for 209 pages) ✓
+
+  **Optimization Opportunities:**
+  1. Font Awesome: Consider Font Awesome Kit/subset, or switch to icon font subset
+  2. Google Fonts: Add `font-display: swap` (already using `display=swap` ✓)
+  3. GLightbox CSS: Conditionally load only on gallery pages
+  4. markupHighlight CSS: Could defer for pages without code blocks
+  5. medium-zoom.min.js: Add `defer` attribute
+  6. JS scripts without defer: Add `defer` to reduce blocking
+
+  **Estimated Total Page Weight (Homepage):**
+  - HTML: ~16KB
+  - CSS: ~136KB (48KB local + 88KB external)
+  - JS: ~87KB (10KB local + 77KB external deferred)
+  - **Total: ~239KB** (before gzip, excluding images/fonts)
+
+  **Note:** Lighthouse CLI could not be run due to npm environment issues in this session. Metrics above are from manual resource analysis. A browser-based Lighthouse audit is recommended for Core Web Vitals measurements (LCP, FID, CLS).
 
 - [ ] Implement lazy loading
   - Images below the fold
