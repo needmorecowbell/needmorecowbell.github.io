@@ -45,8 +45,8 @@ S3CDN = "https://s3cdn.617a.net/amblog/assets"
 mediaBasePath = "amblog/assets"
 keywords = ""
 favicon = "favicons/"
-# example ["css/custom.css"]
-#customCss = ['css/style.css']
+# Custom CSS for site-specific style overrides
+customCss = ["css/custom.css"]
 # example ["js/custom.js"]
 customJs = [] 
 mainSections = ["post","projects","photography"]

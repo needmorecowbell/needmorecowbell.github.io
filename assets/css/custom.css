@@ -1,0 +1,263 @@
+/* =============================================================================
+   Custom CSS Overrides - Phase 11.3 Sidebar Design Improvements
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   Profile Picture Enhancements
+   ----------------------------------------------------------------------------- */
+
+.sidebar .logo-title .title img {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  border: 3px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.sidebar .logo-title .title img:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+html[data-theme='dark'] .sidebar .logo-title .title img {
+  border-color: var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme='dark'] .sidebar .logo-title .title img:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* -----------------------------------------------------------------------------
+   Social Icons Styling
+   ----------------------------------------------------------------------------- */
+
+.sidebar .social-links {
+  margin-top: 1.5rem;
+  padding: 0;
+}
+
+.sidebar .social-links li {
+  display: inline-block;
+  padding: 0 8px;
+}
+
+.sidebar .social-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  color: var(--heading-color);
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  transition: all 0.25s ease;
+}
+
+.sidebar .social-links a:hover {
+  color: var(--link-color);
+  border-color: var(--link-color);
+  background-color: rgba(3, 102, 215, 0.08);
+  transform: translateY(-2px);
+}
+
+html[data-theme='dark'] .sidebar .social-links a:hover {
+  background-color: rgba(88, 166, 254, 0.1);
+}
+
+.sidebar .social-links a i {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+/* -----------------------------------------------------------------------------
+   Sidebar Content Spacing & Layout
+   ----------------------------------------------------------------------------- */
+
+.sidebar .logo-title {
+  padding: 0 1rem;
+}
+
+.sidebar .logo-title .description {
+  font-size: 1.5rem;
+  line-height: 1.6;
+  color: var(--body-color);
+  margin: 1rem 0.5rem;
+  opacity: 0.85;
+}
+
+.sidebar .logo-title .title h3 {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  margin: 1.25rem 0.5rem;
+}
+
+.sidebar .logo-title .title a {
+  font-size: 2rem;
+  transition: color 0.2s ease;
+}
+
+.sidebar .logo-title .title a:hover {
+  color: var(--link-color);
+}
+
+/* -----------------------------------------------------------------------------
+   Sidebar Footer Enhancement
+   ----------------------------------------------------------------------------- */
+
+.footer--sidebar {
+  padding: 1rem 0 1.5rem;
+  border-top: 1px solid var(--border-color);
+  margin-top: auto;
+}
+
+.footer--sidebar .footer__list {
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+/* -----------------------------------------------------------------------------
+   Mobile Sidebar Improvements (< 960px)
+   ----------------------------------------------------------------------------- */
+
+@media screen and (max-width: 960px) {
+  .sidebar {
+    padding-bottom: 1.5rem;
+  }
+
+  .sidebar .logo-title {
+    padding-top: 100px;
+  }
+
+  .sidebar .logo-title .title img {
+    width: 120px;
+    height: 120px;
+  }
+
+  .sidebar .logo-title .title h3 {
+    font-size: 1.8rem;
+  }
+
+  .sidebar .logo-title .description {
+    font-size: 1.4rem;
+    margin: 0.75rem 1rem;
+  }
+
+  .sidebar .social-links {
+    margin-top: 1rem;
+  }
+
+  .sidebar .social-links a {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   Desktop Sidebar Improvements (> 960px)
+   ----------------------------------------------------------------------------- */
+
+@media screen and (min-width: 961px) {
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .sidebar__content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    flex-grow: 1;
+    padding: 2rem 0;
+  }
+
+  .sidebar .logo-title .title img {
+    width: 150px;
+    height: 150px;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   Navigation Clarity Improvements
+   ----------------------------------------------------------------------------- */
+
+header .nav__list a {
+  transition: color 0.2s ease;
+  position: relative;
+}
+
+header .nav__list a.current {
+  color: var(--link-color);
+  border-bottom-color: var(--link-color);
+}
+
+header .nav__list a:hover {
+  color: var(--link-color);
+}
+
+/* Add subtle underline animation on hover */
+header .nav__list .nav__links a::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--link-color);
+  transition: width 0.25s ease;
+}
+
+header .nav__list .nav__links a:hover::after {
+  width: 100%;
+}
+
+header .nav__list .nav__links a.current::after {
+  width: 100%;
+}
+
+/* Mobile navigation improvements */
+@media screen and (max-width: 960px) {
+  header .nav__list {
+    border-radius: 0 0 8px 8px;
+  }
+
+  header .nav__list li {
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  header .nav__list li:last-child {
+    border-bottom: none;
+  }
+
+  header .nav__list a.current {
+    color: var(--link-color);
+    font-weight: 600;
+    padding-bottom: inherit;
+    border-bottom: none;
+  }
+
+  .navbar-burger {
+    z-index: 10;
+  }
+
+  .navbar-burger span {
+    transition: all 0.2s ease;
+  }
+}
+
+/* Theme toggle button enhancement */
+.theme-switch {
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.theme-switch:hover {
+  background-color: var(--secondary-bg-color);
+}

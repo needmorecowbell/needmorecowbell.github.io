@@ -259,11 +259,50 @@ This phase modernizes the blog's visual design while preserving its minimalist s
 
 ### Phase 11.3: Layout Refinements
 
-- [ ] Review sidebar design
+- [x] Review sidebar design
   - Profile picture sizing and shape
   - Social icon styling
   - Navigation clarity
   - Mobile collapse behavior
+
+  **COMPLETED (2026-01-04):**
+
+  ### Sidebar Design Improvements:
+
+  Created `assets/css/custom.css` with comprehensive sidebar enhancements:
+
+  **Profile Picture:**
+  - Increased size from 127px to 140px (desktop: 150px)
+  - Added subtle border (3px solid, using theme border-color variable)
+  - Added box-shadow for depth (0 4px 12px rgba(0,0,0,0.1))
+  - Added hover effect: scale(1.02) + enhanced shadow
+  - Dark mode compatible with adjusted shadow intensity
+
+  **Social Icons:**
+  - Redesigned as circular bordered buttons (42px circles)
+  - Added smooth hover transitions (color, border, background, transform)
+  - Hover effect: lift animation (-2px translateY), link color highlight
+  - Improved spacing between icons (8px padding)
+  - Dark mode compatible with adjusted hover backgrounds
+
+  **Navigation Clarity:**
+  - Added underline animation on nav link hover (width 0 to 100%)
+  - Current page indicator uses link color with persistent underline
+  - Improved mobile navigation with border separators between items
+  - Theme toggle button gets hover background for better visibility
+
+  **Mobile Improvements (< 960px):**
+  - Reduced profile picture to 120px for better proportions
+  - Adjusted description font size and margins
+  - Larger touch targets for social icons (44px)
+  - Navigation items have border separators for clarity
+  - Rounded bottom corners on mobile dropdown menu
+
+  **Files Modified:**
+  - `assets/css/custom.css` (NEW) - Custom CSS overrides
+  - `config/_default/params.toml` - Enabled customCss parameter
+
+  **Build Status:** 209 pages in 91ms
 
 - [ ] Improve content area
   - Reading width optimization
