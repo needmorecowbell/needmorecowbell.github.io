@@ -54,8 +54,8 @@ images = ["img/site-feature-image.png"]
 doNotLoadAnimations = false
 # Form Spree Contact Form
 #contactFormAction = "https://formspree.io/f/your-form-hash-here"
-# Google Fonts
-#googleFonts = ["Indie+Flower", "Roboto:ital,wght@0,100;0,400;0,700;1,400"]
+# Google Fonts - Inter for modern, screen-optimized typography
+googleFonts = ["Inter:wght@400;500;600;700"]
 # Google Site Verify
 #googleSiteVerify = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 singleDateFormat = ":date_full"

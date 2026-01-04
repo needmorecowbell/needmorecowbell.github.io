@@ -416,10 +416,62 @@ This phase modernizes the blog's visual design while preserving its minimalist s
 
 ### Phase 11.4: Typography & Color Updates
 
-- [ ] Select modern font stack
+- [x] Select modern font stack
   - Consider: Inter, Source Sans Pro, or system fonts
   - Ensure good readability at all sizes
   - Test with actual content
+
+  **COMPLETED (2026-01-04):**
+
+  ### Font Stack Selection: Inter + System Fallback
+
+  **Chosen Solution:** Inter as primary with comprehensive system font fallback
+
+  **Why Inter:**
+  - Designed specifically for computer screens by Rasmus Andersson
+  - Excellent readability at all sizes (optimized for UI/text)
+  - Variable font support for efficient loading
+  - Modern, clean aesthetic matching minimalist design goals
+  - Active development and wide adoption
+
+  **Implementation Details:**
+
+  **Google Fonts Configuration (`config/_default/params.toml`):**
+  ```toml
+  googleFonts = ["Inter:wght@400;500;600;700"]
+  ```
+  Loading weights: 400 (regular), 500 (medium), 600 (semibold), 700 (bold)
+
+  **CSS Custom Properties (`assets/css/custom.css`):**
+  ```css
+  :root {
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+      'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji',
+      'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas,
+      'Liberation Mono', 'Courier New', monospace;
+  }
+  ```
+
+  **Fallback Strategy:**
+  - macOS/iOS: -apple-system, BlinkMacSystemFont (SF Pro)
+  - Windows: Segoe UI
+  - Android: Roboto
+  - Linux: System defaults (Ubuntu, Cantarell)
+  - Emoji support included for all platforms
+
+  **Typography Enhancements:**
+  - Applied `font-feature-settings: 'liga' 1, 'kern' 1` for ligatures and kerning
+  - Added `-webkit-font-smoothing: antialiased` for crisp rendering
+  - Set `text-rendering: optimizeLegibility` for better glyph rendering
+  - Headings use weight 600 with slight negative letter-spacing (-0.01em)
+  - Monospace stack for code blocks uses modern `ui-monospace` with fallbacks
+
+  **Files Modified:**
+  - `config/_default/params.toml` - Added googleFonts parameter
+  - `assets/css/custom.css` - Added typography section with font variables and refinements
+
+  **Build Status:** Successful (209 pages in 137ms)
 
 - [ ] Update CSS color variables
   - Subtle refinements to current scheme

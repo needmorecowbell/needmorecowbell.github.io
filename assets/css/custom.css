@@ -1,6 +1,134 @@
 /* =============================================================================
-   Custom CSS Overrides - Phase 11.3 Sidebar Design Improvements
+   Custom CSS Overrides - Phase 11 Site Design Updates
    ============================================================================= */
+
+/* =============================================================================
+   Typography - Modern Font Stack (Phase 11.4)
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   Font Family Definitions
+
+   Primary: Inter - A modern, screen-optimized typeface designed for readability
+   Fallbacks: System UI fonts for instant loading if Inter fails
+
+   The system font stack ensures native look on each platform:
+   - macOS/iOS: -apple-system, BlinkMacSystemFont, SF Pro
+   - Windows: Segoe UI
+   - Android: Roboto
+   - Linux: Ubuntu, Cantarell, etc.
+   ----------------------------------------------------------------------------- */
+
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas,
+    'Liberation Mono', 'Courier New', monospace;
+}
+
+/* Base font application */
+body {
+  font-family: var(--font-sans);
+  font-feature-settings: 'liga' 1, 'kern' 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Headings - slightly heavier for better hierarchy */
+h1, h2, h3, h4, h5, h6,
+.post .post-title h1,
+.post .post-title h2,
+.post .post-title h3,
+.sidebar .logo-title .title h3,
+.list-with-title .listing-title {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Body text optimization */
+p, li, td, th, label, input, textarea, select, button {
+  font-family: var(--font-sans);
+}
+
+/* Code blocks use monospace stack */
+code, pre, kbd, samp,
+.post .post-content code,
+.post .post-content pre {
+  font-family: var(--font-mono);
+}
+
+/* Navigation uses same font family */
+header .nav__list,
+.sidebar .social-links,
+.breadcrumbs,
+.pagination {
+  font-family: var(--font-sans);
+}
+
+/* Footer text */
+.footer,
+.footer a {
+  font-family: var(--font-sans);
+}
+
+/* Form elements */
+.form-style input,
+.form-style textarea,
+.form-style button {
+  font-family: var(--font-sans);
+}
+
+/* Tags and categories */
+.tag, .category {
+  font-family: var(--font-sans);
+}
+
+/* -----------------------------------------------------------------------------
+   Font Size & Line Height Refinements
+
+   Using a modular scale for consistent typography:
+   - Base: 1.5rem (15px at 62.5% html)
+   - Scale ratio: ~1.2 (minor third)
+   ----------------------------------------------------------------------------- */
+
+/* Base body text */
+body {
+  font-size: 1.5rem;
+  line-height: 1.6;
+}
+
+/* Paragraphs - optimized for reading */
+p {
+  font-size: 1.5rem;
+  line-height: 1.75;
+  font-weight: 400;
+}
+
+/* Post content - slightly larger for comfortable reading */
+.post .post-content p,
+.post .post-content li {
+  font-size: 1.55rem;
+  line-height: 1.8;
+}
+
+/* Smaller text elements */
+.post .post-footer .meta .info,
+.list-with-title .listing .listing-post .post-time,
+.breadcrumbs,
+.tag, .category {
+  font-size: 1.3rem;
+  line-height: 1.5;
+}
+
+/* Medium text */
+.sidebar .logo-title .description,
+.read_more {
+  font-size: 1.4rem;
+  line-height: 1.6;
+}
 
 /* -----------------------------------------------------------------------------
    Profile Picture Enhancements
