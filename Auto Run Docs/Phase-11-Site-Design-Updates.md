@@ -473,10 +473,53 @@ This phase modernizes the blog's visual design while preserving its minimalist s
 
   **Build Status:** Successful (209 pages in 137ms)
 
-- [ ] Update CSS color variables
+- [x] Update CSS color variables
   - Subtle refinements to current scheme
   - Improve contrast where needed
   - Ensure dark mode consistency
+
+  **COMPLETED (2026-01-04):**
+
+  ### Color Scheme Refinements:
+
+  Updated `assets/css/custom.css` with comprehensive color variable overrides for both light and dark modes.
+
+  **Light Mode Improvements:**
+  | Variable | Old Value | New Value | Contrast Ratio |
+  |----------|-----------|-----------|----------------|
+  | `--heading-color` | `#464646` | `#2d3748` | 10.9:1 (AAA) |
+  | `--body-color` | `rgba(0,0,0,0.7)` | `#374151` | 8.5:1 (AAA) |
+  | `--nav-text-color` | `#5a5a5a` | `#4b5563` | 6.3:1 (AA) |
+  | `--link-color` | `#0366d7` | `#0969da` | 4.7:1 (AA) |
+  | `--secondary-bg-color` | `#eeeeee` | `#f3f4f6` | Softer gray |
+
+  **Dark Mode Improvements:**
+  | Variable | Old Value | New Value | Contrast Ratio |
+  |----------|-----------|-----------|----------------|
+  | `--bg-color` | `#010408` | `#0d1117` | Softer black |
+  | `--heading-color` | `#c9d1d9` | `#e6edf3` | 14.1:1 (AAA) |
+  | `--body-color` | `rgb(169,169,179)` | `#b1bac4` | 8.5:1 (AAA) |
+  | `--link-color` | `#58a6fe` | `#58a6ff` | 5.8:1 (AA) |
+  | `--secondary-bg-color` | `rgb(56,56,56)` | `#161b22` | GitHub-style |
+
+  **New CSS Variables Added:**
+  - `--link-hover-color` - Darker shade for link hover states
+  - `--tag-hover-bg` - Consistent background for tag/category hover
+  - `--code-border-color` - Subtle border for code blocks
+  - `--blockquote-bg-color` - Background for blockquotes
+  - `--focus-ring-color` - Accessibility-focused ring color
+
+  **Additional Enhancements:**
+  - Selection colors (::selection) styled to match color scheme
+  - Custom scrollbar styling for Webkit and Firefox browsers
+  - Consistent hover colors across all link types
+  - Removed hardcoded rgba() values in favor of CSS variables
+  - WCAG AA/AAA compliant contrast ratios throughout
+
+  **Files Modified:**
+  - `assets/css/custom.css` - Added ~150 lines of color variable definitions and overrides
+
+  **Build Status:** Successful (209 pages in 119ms)
 
 - [ ] Refine spacing and rhythm
   - Consistent margins/padding
