@@ -13,7 +13,7 @@
   >
     <div class="post-content">
       {{ if .Params.thumbnail }}
-        <img class="post-thumbnail" src="{{ .Params.thumbnail | relURL }}" alt="Thumbnail image" />
+        <img class="post-thumbnail" src="{{ .Params.thumbnail | relURL }}" alt="Thumbnail image" loading="lazy" />
 
       {{ end }}
       <div class="post-title">

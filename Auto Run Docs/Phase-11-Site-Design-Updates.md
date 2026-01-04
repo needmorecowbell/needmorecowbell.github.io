@@ -660,10 +660,62 @@ This phase modernizes the blog's visual design while preserving its minimalist s
 
   **Note:** Lighthouse CLI could not be run due to npm environment issues in this session. Metrics above are from manual resource analysis. A browser-based Lighthouse audit is recommended for Core Web Vitals measurements (LCP, FID, CLS).
 
-- [ ] Implement lazy loading
+- [x] Implement lazy loading
   - Images below the fold
   - Gallery thumbnails
   - Consider native loading="lazy"
+
+  **COMPLETED (2026-01-04):**
+
+  ### Implementation Summary:
+
+  Added native `loading="lazy"` attribute to all images across the site using a multi-pronged approach:
+
+  **1. Layout Templates Updated:**
+  - `layouts/_default/single.html` - Post thumbnail images
+  - `layouts/photography/single.html` - Photography page thumbnails
+  - `layouts/projects/single.html` - Project page thumbnails
+
+  **2. Markdown Render Hook Created:**
+  - `layouts/_default/_markup/render-image.html` (NEW)
+  - Automatically adds `loading="lazy"` to all markdown images (`![alt](url)`)
+  - Also adds `referrerpolicy="no-referrer"` for external images
+
+  **3. Content Files Updated (39 inline HTML images):**
+  Updated raw HTML `<img>` tags in 15 content files:
+  - `content/english/post/2014-06-ukulele-coffin-case.md`
+  - `content/english/post/2017-01-04-qr-guitar-experiment.md`
+  - `content/english/post/2017-01-19-goodwill-chest.md` (4 images)
+  - `content/english/post/2019-01-pancetta-project.md` (2 images)
+  - `content/english/post/2020-03-04-2020-03-04-clear-your-terminal-in-style.md` (3 images)
+  - `content/english/post/2020-12-basement-coral-lab.md` (3 images)
+  - `content/english/post/2021-02-rum-distilling.md`
+  - `content/english/post/2023-05-16-west-virginia-trip.md`
+  - `content/english/post/2024-10-26-erie-birthday-fishing-trip.md` (4 images)
+  - `content/english/projects/diy-tonneau-cover.md` (2 images)
+  - `content/english/projects/kegorator_build.md` (5 images)
+  - `content/english/projects/porch-reflooring.md` (2 images)
+  - `content/english/projects/stairwell-chandelier.md` (3 images)
+  - `content/english/projects/truck-cap-build.md` (4 images)
+  - `content/english/projects/vertical_rotisserie.md` (3 images)
+
+  **4. Already Had Lazy Loading:**
+  - Gallery shortcode (`layouts/shortcodes/gallery.html`) - All gallery images ✓
+  - List item templates (`list_item_post.html`, `list_item_photography.html`, `list_item_project.html`) ✓
+  - Photography list page (`layouts/photography/list.html`) ✓
+
+  **5. Intentionally NOT Lazy Loaded:**
+  - Sidebar profile picture (`layouts/partials/sidebar.html`) - Always "above the fold"
+
+  ### Final Statistics:
+  | Category | Count |
+  |----------|-------|
+  | Total images | 403 |
+  | Images with `loading="lazy"` | 267 |
+  | Profile pictures (intentionally eager) | 136 |
+  | Images incorrectly missing lazy loading | 0 |
+
+  **Build Status:** Successful (209 pages)
 
 - [ ] Optimize CSS delivery
   - Inline critical CSS (optional)

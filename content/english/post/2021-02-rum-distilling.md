@@ -1,19 +1,19 @@
 ---
 layout: post
 title: "The 2021 Rum Run"
-subtitle: "Home distilling with friends at Hickman House"
+subtitle: "Home distilling with friends"
 author: "Adam Musciano"
 date: "2021-02-21"
 tags: ["cooking", "distilling", "project", "friends"]
-description: "A collaborative rum distilling project - brewing and distilling both spiced and raw rum with Oscar, Ammar, and Alex."
+description: "A collaborative rum distilling project - brewing and distilling both spiced and raw rum with friends."
 headerimg: "projects/2021_rum_run/21-02-21_20-33-58_1096.jpg"
 ---
 
-In February 2021, a few of us got together at the Hickman House for what we dubbed "The Rum Run" - an ambitious project to brew and distill our own rum from scratch. Oscar, Ammar, Alex, and I spent the weekend turning molasses into something considerably more interesting.
+In February 2021, a few of us got together for what we dubbed "The Rum Run" - an ambitious project to brew and distill our own rum from scratch. We spent the weekend turning molasses into something considerably more interesting.
 
 ## The Crew
 
-This was very much a collaborative effort. Oscar brought the equipment knowledge, Ammar helped with the fermentation science, Alex kept things organized (and entertaining), and I provided the space and enthusiasm. There's something special about learning a craft alongside friends - everyone brings different skills to the table, and the inevitable mistakes become shared memories rather than personal failures.
+This was very much a collaborative effort. Everyone brought different skills to the table - equipment knowledge, fermentation science, organization, and enthusiasm. There's something special about learning a craft alongside friends - the inevitable mistakes become shared memories rather than personal failures.
 
 ## The Process
 
@@ -32,7 +32,7 @@ We ran the still carefully, collecting the hearts - the good stuff - in mason ja
 We ended up with two varieties: raw white rum and a spiced version we infused with vanilla, cinnamon, and other spices. The raw rum had a clean, slightly sweet character with that unmistakable molasses backbone. The spiced version was immediately drinkable - warm and complex.
 
 <div style="text-align:center">
-    <img src="{{<s3cdn>}}/projects/2021_rum_run/21-02-21_20-33-58_1096.jpg" style="max-width: 600px;">
+    <img src="{{<s3cdn>}}/projects/2021_rum_run/21-02-21_20-33-58_1096.jpg" style="max-width: 600px;" loading="lazy">
     <p><em>The fruits of our labor - mason jars of fresh-distilled rum alongside a Cape May growler. The golden color comes from the molasses character of the rum.</em></p>
 </div>
 

@@ -26,7 +26,7 @@ I started with a nice slab of pork belly from a local butcher. The cure was a si
 After the initial cure, I rinsed off the excess salt, dried the belly, and rolled it up tightly with the skin on the outside. The key is getting it as tight as possible to avoid air pockets. I tied it up with butcher's twine in a classic roast pattern.
 
 <div style="text-align:center">
-    <img src="{{<s3cdn>}}/projects/2019_pancetta/2019-01-07_23.02.19.jpg" style="max-width: 600px;">
+    <img src="{{<s3cdn>}}/projects/2019_pancetta/2019-01-07_23.02.19.jpg" style="max-width: 600px;" loading="lazy">
     <p><em>Fresh from the cure - you can see the herb mixture in the spiral and the tight roll wrapped in cheesecloth.</em></p>
 </div>
 
@@ -39,7 +39,7 @@ The rolled pancetta went into a cool, humid spot to hang for about three weeks. 
 After three weeks of patient waiting, I finally got to slice into it. The texture was perfect - firm enough to slice thin, with beautiful marbling throughout.
 
 <div style="text-align:center">
-    <img src="{{<s3cdn>}}/projects/2019_pancetta/2019-01-31_23.26.45.jpg" style="max-width: 600px;">
+    <img src="{{<s3cdn>}}/projects/2019_pancetta/2019-01-31_23.26.45.jpg" style="max-width: 600px;" loading="lazy">
     <p><em>The finished pancetta after three weeks of curing. That deep red color and the marbled fat layers are exactly what you want.</em></p>
 </div>
 

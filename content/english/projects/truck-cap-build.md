@@ -12,7 +12,7 @@ content_type: project
 A multi-month project to convert a standard truck cap into a functional camper shell for my 2014 Ford F-150. The build includes a raised sleeping platform with under-bed storage, wood paneling throughout, reflective insulation on the windows, and a custom recessed LED lighting system powered by 12V.
 
 <div style="text-align:center">
-    <img src="{{<s3cdn>}}/projects/truck_cap_build/truck_with_cap.jpg" style="max-width: 600px;">
+    <img src="{{<s3cdn>}}/projects/truck_cap_build/truck_with_cap.jpg" style="max-width: 600px;" loading="lazy">
     <p><em>The F-150 with the truck cap installed, ready for the interior conversion.</em></p>
 </div>
 
@@ -23,7 +23,7 @@ A multi-month project to convert a standard truck cap into a functional camper s
 The first major component was building a raised sleeping platform that maximizes storage underneath. The platform was constructed from plywood, with the rear section sized to accommodate a full-length mattress.
 
 <div style="text-align:center">
-    <img src="{{<s3cdn>}}/projects/truck_cap_build/bed_platform.jpg" style="max-width: 600px;">
+    <img src="{{<s3cdn>}}/projects/truck_cap_build/bed_platform.jpg" style="max-width: 600px;" loading="lazy">
     <p><em>The sleeping platform with plywood construction, storage compartments on the right, and insulated windows.</em></p>
 </div>
 
@@ -38,7 +38,7 @@ Key features of the platform:
 Rather than using stick-on LED strips, I opted for a proper recessed lighting system using small puck lights. The lights were wired in parallel and installed into holes cut in a ceiling panel.
 
 <div style="text-align:center">
-    <img src="{{<s3cdn>}}/projects/truck_cap_build/lighting_panel.jpg" style="max-width: 600px;">
+    <img src="{{<s3cdn>}}/projects/truck_cap_build/lighting_panel.jpg" style="max-width: 600px;" loading="lazy">
     <p><em>The ceiling lighting panel during assembly, with seven recessed LED puck lights wired and tested.</em></p>
 </div>
 
@@ -54,7 +54,7 @@ The completed interior features:
 - Window coverings for privacy and insulation
 
 <div style="text-align:center">
-    <img src="{{<s3cdn>}}/projects/truck_cap_build/interior_finished.jpg" style="max-width: 600px;">
+    <img src="{{<s3cdn>}}/projects/truck_cap_build/interior_finished.jpg" style="max-width: 600px;" loading="lazy">
     <p><em>The finished interior showing the wood paneling, recessed lighting, and storage compartments.</em></p>
 </div>
 

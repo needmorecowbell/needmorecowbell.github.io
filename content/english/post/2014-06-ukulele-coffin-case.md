@@ -16,7 +16,7 @@ After building a couple of [electric ukuleles](/projects/making_ukuleles/) in 20
 I spent some time sketching out the plans on graph paper, working out the dimensions to fit the ukulele body snugly while maintaining that classic coffin silhouette. The main body would be about 72cm tall, 35cm wide at the shoulders, tapering down to 17cm at the foot.
 
 <div style="text-align:center">
-    <img src="{{<s3cdn>}}/projects/uke_coffin/coffin.jpg" style="max-width: 600px;">
+    <img src="{{<s3cdn>}}/projects/uke_coffin/coffin.jpg" style="max-width: 600px;" loading="lazy">
     <p><em>The blueprint for the coffin case, showing exterior dimensions, lid detail, and interior layout with the ukulele placement.</em></p>
 </div>
 

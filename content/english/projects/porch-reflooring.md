@@ -19,12 +19,12 @@ This project involved properly waterproofing and reflooring the front porch. The
 - Deck screws and fasteners
 
 <div style="text-align:center">
-    <img src="{{<s3cdn>}}/projects/porch_reflooring/materials_weatherlock.jpg" style="max-width: 600px;">
+    <img src="{{<s3cdn>}}/projects/porch_reflooring/materials_weatherlock.jpg" style="max-width: 600px;" loading="lazy">
     <p><em>Owens Corning WeatherLock Granular - ice and water barrier for waterproofing.</em></p>
 </div>
 
 <div style="text-align:center">
-    <img src="{{<s3cdn>}}/projects/porch_reflooring/materials_felt.jpg" style="max-width: 600px;">
+    <img src="{{<s3cdn>}}/projects/porch_reflooring/materials_felt.jpg" style="max-width: 600px;" loading="lazy">
     <p><em>APOC #30 roofing felt provides an additional moisture barrier layer.</em></p>
 </div>
 

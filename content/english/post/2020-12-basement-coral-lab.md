@@ -16,7 +16,7 @@ In late 2020, I set up a small coral frag tank in the basement of the Hickman Ho
 The lab was decidedly low-budget and experimental. I used clear plastic storage containers as tanks - not the prettiest solution, but functional and easy to modify. They sat on a metal shelf rack against the cinder block basement wall, giving the whole setup a distinctly DIY science-experiment vibe.
 
 <div style="text-align:center">
-    <img src="{{<s3cdn>}}/projects/basement_coral_lab/20-12-27_12-43-07_0968.jpg" style="max-width: 600px;">
+    <img src="{{<s3cdn>}}/projects/basement_coral_lab/20-12-27_12-43-07_0968.jpg" style="max-width: 600px;" loading="lazy">
     <p><em>The main frag tank - a clear storage container with bulkhead fittings for water flow. Simple but effective.</em></p>
 </div>
 
@@ -25,7 +25,7 @@ The lighting was critical since that was the whole point of the project. I used 
 ## The Science Side
 
 <div style="text-align:center">
-    <img src="{{<s3cdn>}}/projects/basement_coral_lab/20-12-27_12-43-14_0969.jpg" style="max-width: 600px;">
+    <img src="{{<s3cdn>}}/projects/basement_coral_lab/20-12-27_12-43-14_0969.jpg" style="max-width: 600px;" loading="lazy">
     <p><em>The full setup - frag tank illuminated with a laptop running monitoring software nearby.</em></p>
 </div>
 
@@ -36,7 +36,7 @@ I had a laptop set up next to the tank running monitoring and analysis software.
 Coral is fascinating from both a biological and optical perspective. The calcium carbonate skeletons have complex branching structures that scatter light in unpredictable ways. The living polyps add another layer of complexity with their translucent tissues. And the symbiotic algae (zooxanthellae) that live inside the coral tissue fluoresce under certain wavelengths, creating even more interesting optical effects.
 
 <div style="text-align:center">
-    <img src="{{<s3cdn>}}/projects/basement_coral_lab/20-12-27_12-43-18_0970.jpg" style="max-width: 600px;">
+    <img src="{{<s3cdn>}}/projects/basement_coral_lab/20-12-27_12-43-18_0970.jpg" style="max-width: 600px;" loading="lazy">
     <p><em>Another angle showing the dual-tank setup and the laptop monitoring station.</em></p>
 </div>
 
@@ -50,4 +50,4 @@ The project taught me a lot about both coral husbandry and optics. While I never
 
 The basement coral lab eventually moved on to other projects, but the fascination with light refraction and natural optical phenomena stuck with me. Sometimes the best experiments are the ones that raise more questions than they answer.
 
-{{< gallery folder="projects/basement_coral_lab" >}}
+{{< gallery path="projects/basement_coral_lab" images="20-12-27_12-43-07_0968.jpg, 20-12-27_12-43-14_0969.jpg, 20-12-27_12-43-18_0970.jpg, 20-12-27_12-39-29_0967.mp4" />}}

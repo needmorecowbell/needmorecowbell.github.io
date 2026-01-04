@@ -21,7 +21,7 @@ A custom pendant light for the stairwell, assembled from thrifted and budget com
 | **Total** | **$30** |
 
 <div style="text-align:center">
-    <img src="{{<s3cdn>}}/projects/stairwell_chandelier/bulb_unlit.jpg" style="max-width: 600px;">
+    <img src="{{<s3cdn>}}/projects/stairwell_chandelier/bulb_unlit.jpg" style="max-width: 600px;" loading="lazy">
     <p><em>The assembled pendant light before installation, showing the glass dome and hardware.</em></p>
 </div>
 
@@ -36,7 +36,7 @@ This was a straightforward assembly project:
 5. **Testing** - Verified the bulb lit properly before installation
 
 <div style="text-align:center">
-    <img src="{{<s3cdn>}}/projects/stairwell_chandelier/bulb_lit.jpg" style="max-width: 600px;">
+    <img src="{{<s3cdn>}}/projects/stairwell_chandelier/bulb_lit.jpg" style="max-width: 600px;" loading="lazy">
     <p><em>The spiral filament creates a warm glow inside the glass cylinder.</em></p>
 </div>
 
@@ -45,7 +45,7 @@ This was a straightforward assembly project:
 The finished chandelier provides warm ambient lighting for the stairwell. The tall glass cylinder and spiral filament bulb create an interesting visual effect, and the total cost of under $30 made this a satisfying budget project.
 
 <div style="text-align:center">
-    <img src="{{<s3cdn>}}/projects/stairwell_chandelier/finished_chandelier.jpg" style="max-width: 600px;">
+    <img src="{{<s3cdn>}}/projects/stairwell_chandelier/finished_chandelier.jpg" style="max-width: 600px;" loading="lazy">
     <p><em>The completed pendant light ready for installation.</em></p>
 </div>
 

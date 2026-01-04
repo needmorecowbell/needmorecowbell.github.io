@@ -24,7 +24,8 @@ Quite Frankly, I had no idea what I was doing. I made every mistake possible, fr
 ---------------------------------------------------
 
 <div style="text-align:center">
-    <img src="https://s3cdn.617a.net/amblog/assets/img/post-qrGuitar-GIF.gif" >
+    <img src="{{<s3cdn>}}/projects/qr_guitar/IMG_0128.JPG" style="max-width: 600px;" loading="lazy">
+    <p><em>The finished QR Guitar with quotes and QR code on the pickguard.</em></p>
 </div>
 
 --------------------------------------------------

@@ -1,0 +1,6 @@
+{{- /* Render hook for markdown images - adds lazy loading */ -}}
+<img src="{{ .Destination | safeURL }}"
+     alt="{{ .Text }}"
+     {{- with .Title }} title="{{ . }}"{{- end }}
+     loading="lazy"
+     {{- if strings.HasPrefix .Destination "http" }} referrerpolicy="no-referrer"{{- end }} />

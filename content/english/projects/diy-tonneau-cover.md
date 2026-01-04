@@ -12,7 +12,7 @@ content_type: project
 A quick and practical project to create a DIY soft tonneau cover for my 2014 Ford F-150. Rather than spending hundreds on a commercial tonneau cover, I built a simple but effective solution using a heavy-duty tarp and basic mounting hardware.
 
 <div style="text-align:center">
-    <img src="{{<s3cdn>}}/projects/diy_tonneau_cover/tonneau_side_view.jpg" style="max-width: 600px;">
+    <img src="{{<s3cdn>}}/projects/diy_tonneau_cover/tonneau_side_view.jpg" style="max-width: 600px;" loading="lazy">
     <p><em>The DIY tonneau cover installed on the truck bed, viewed from the side.</em></p>
 </div>
 
@@ -27,7 +27,7 @@ Key features of this DIY approach:
 - Fraction of the cost of commercial tonneau covers
 
 <div style="text-align:center">
-    <img src="{{<s3cdn>}}/projects/diy_tonneau_cover/tonneau_rear_view.jpg" style="max-width: 600px;">
+    <img src="{{<s3cdn>}}/projects/diy_tonneau_cover/tonneau_rear_view.jpg" style="max-width: 600px;" loading="lazy">
     <p><em>Rear view showing the tonneau cover stretched across the entire bed.</em></p>
 </div>
 
