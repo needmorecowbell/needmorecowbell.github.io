@@ -677,3 +677,339 @@ html[data-theme='dark'] .category:hover {
     font-size: 1.25rem;
   }
 }
+
+/* =============================================================================
+   Navigation Enhancements - Phase 11.3
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   Active State Visibility - Desktop
+   ----------------------------------------------------------------------------- */
+
+/* Enhanced current page indicator */
+header .nav__list .nav__links a.current {
+  color: var(--link-color);
+  font-weight: 600;
+  position: relative;
+}
+
+/* Remove default border-bottom from theme, use custom underline */
+header .nav__list a.current {
+  border-bottom: none;
+  padding-bottom: 20px;
+}
+
+/* Stronger underline for active nav item */
+header .nav__list .nav__links a.current::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: var(--link-color);
+  border-radius: 2px;
+}
+
+/* Hover state matches active state preview */
+header .nav__list .nav__links a:hover {
+  color: var(--link-color);
+}
+
+header .nav__list .nav__links a:hover::after {
+  width: 100%;
+  height: 2px;
+}
+
+/* Focus state for keyboard navigation */
+header .nav__list .nav__links a:focus {
+  outline: 2px solid var(--link-color);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+header .nav__list .nav__links a:focus:not(:focus-visible) {
+  outline: none;
+}
+
+header .nav__list .nav__links a:focus-visible {
+  outline: 2px solid var(--link-color);
+  outline-offset: 4px;
+}
+
+/* -----------------------------------------------------------------------------
+   Mobile Menu Improvements
+   ----------------------------------------------------------------------------- */
+
+/* Hamburger menu button enhancement */
+.navbar-burger {
+  display: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.navbar-burger:hover {
+  background-color: var(--secondary-bg-color);
+}
+
+.navbar-burger:focus {
+  outline: 2px solid var(--link-color);
+  outline-offset: 2px;
+}
+
+.navbar-burger:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Hamburger lines styling */
+.navbar-burger span {
+  background-color: var(--heading-color);
+  height: 2px;
+  width: 18px;
+  left: calc(50% - 9px);
+  transition: all 0.25s ease;
+  border-radius: 1px;
+}
+
+/* Hamburger animation when menu is open */
+.navbar-burger.is-active span:nth-child(1) {
+  transform: translateY(5px) rotate(45deg);
+}
+
+.navbar-burger.is-active span:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.navbar-burger.is-active span:nth-child(3) {
+  transform: translateY(-5px) rotate(-45deg);
+}
+
+@media screen and (max-width: 960px) {
+  /* Show hamburger on mobile */
+  .navbar-burger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 8px;
+  }
+
+  /* Fixed header on mobile for better navigation */
+  header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background-color: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
+    padding: 8px 0;
+  }
+
+  /* Page top container */
+  header .page-top {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 12px;
+  }
+
+  /* Mobile nav dropdown styling */
+  header nav {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-10px);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.25s ease;
+  }
+
+  header nav.is-active {
+    display: block;
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* Mobile nav list container */
+  header .nav__list {
+    background-color: var(--bg-color);
+    padding: 0.75rem 0;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  /* Mobile nav links container */
+  header .nav__list .nav__links {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+  }
+
+  /* Mobile nav items */
+  header .nav__list li {
+    display: block;
+    padding: 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  header .nav__list li:last-child {
+    border-bottom: none;
+  }
+
+  /* Mobile nav links */
+  header .nav__list .nav__links a {
+    display: block;
+    padding: 1rem 1.5rem;
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: var(--heading-color);
+    text-transform: none;
+    letter-spacing: 0.5px;
+    transition: all 0.2s ease;
+  }
+
+  header .nav__list .nav__links a:hover {
+    background-color: var(--secondary-bg-color);
+    color: var(--link-color);
+  }
+
+  /* Active state on mobile */
+  header .nav__list .nav__links a.current {
+    color: var(--link-color);
+    background-color: rgba(3, 102, 215, 0.05);
+    font-weight: 600;
+    border-left: 3px solid var(--link-color);
+    padding-left: calc(1.5rem - 3px);
+  }
+
+  html[data-theme='dark'] header .nav__list .nav__links a.current {
+    background-color: rgba(88, 166, 254, 0.08);
+  }
+
+  /* Remove desktop underline effect on mobile */
+  header .nav__list .nav__links a::after {
+    display: none;
+  }
+
+  /* Theme toggle in mobile menu */
+  header .nav__list .theme-switch {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    margin: 0.5rem 1rem;
+    border-radius: 8px;
+    background-color: var(--secondary-bg-color);
+  }
+
+  header .nav__list .theme-switch:hover {
+    background-color: var(--border-color);
+  }
+
+  /* Language picker on mobile */
+  header .nav__list .sl-nav {
+    padding: 0.75rem 1.5rem;
+  }
+
+  header .nav__list .sl-nav li label {
+    color: var(--heading-color);
+    font-weight: 500;
+  }
+}
+
+/* Dark mode adjustments */
+html[data-theme='dark'] .navbar-burger:hover {
+  background-color: var(--secondary-bg-color);
+}
+
+html[data-theme='dark'] header nav {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* -----------------------------------------------------------------------------
+   Breadcrumbs for Nested Content
+   ----------------------------------------------------------------------------- */
+
+.breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 30px 1rem 30px;
+  padding: 0.75rem 0;
+  font-size: 1.3rem;
+  color: var(--nav-text-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.breadcrumbs a {
+  color: var(--nav-text-color);
+  text-decoration: none;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.breadcrumbs a:hover {
+  color: var(--link-color);
+}
+
+.breadcrumbs .separator {
+  color: var(--border-color);
+  font-size: 1rem;
+  margin: 0 0.25rem;
+}
+
+.breadcrumbs .current {
+  color: var(--heading-color);
+  font-weight: 500;
+}
+
+/* Home icon in breadcrumbs */
+.breadcrumbs .home-icon {
+  font-size: 1.1rem;
+  opacity: 0.8;
+}
+
+.breadcrumbs a:hover .home-icon {
+  opacity: 1;
+}
+
+/* Mobile breadcrumbs */
+@media screen and (max-width: 960px) {
+  .breadcrumbs {
+    margin: 0 20px 1rem 20px;
+    font-size: 1.2rem;
+    padding: 0.5rem 0;
+  }
+
+  /* Hide home text on mobile, show only icon */
+  .breadcrumbs .home-text {
+    display: none;
+  }
+}
+
+/* Breadcrumbs focus states for accessibility */
+.breadcrumbs a:focus {
+  outline: 2px solid var(--link-color);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.breadcrumbs a:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.breadcrumbs a:focus-visible {
+  outline: 2px solid var(--link-color);
+  outline-offset: 2px;
+}

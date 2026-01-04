@@ -1,4 +1,7 @@
 {{ define "main" }}
+  {{/* Breadcrumbs for nested content navigation */}}
+  {{- partial "breadcrumbs.html" . -}}
+
   <div
     class="archive {{ with .Site.Params.doNotLoadAnimations }}
       .

@@ -1,4 +1,7 @@
 {{ define "main" }}
+  {{/* Breadcrumbs for nested content navigation */}}
+  {{- partial "breadcrumbs.html" . -}}
+
   <div
     class="archive {{ with .Site.Params.doNotLoadAnimations }}
       .
@@ -8,29 +11,30 @@
 
     {{ end }}"
   >
+  {{/* Featured photos preview using GLightbox */}}
   <div class="favorites-preview">
-    <div ID="gallery-favorites" data-nanogallery2='{
-      "itemsBaseURL": "{{.Page.Site.Params.S3CDN}}/img/favorites/",
-      "thumbnailWidth": "250",
-      "thumbnailHeight": "250",
-      "thumbnailBorderVertical": 1,
-      "thumbnailBorderHorizontal": 1,
-      "thumbnailLabel": {
-        "position": "overImageOnBottom",
-        "displayDescription": true
-      },
-      "thumbnailHoverEffect2": "labelAppear75|descriptionSlideUp",
-      "galleryDisplayMode": "pagination",
-      "galleryMaxRows": 2,
-      "thumbnailAlignment": "center",
-      "thumbnailOpenImage": true
-    }'>
-  <a href="san_juan_1.JPG" data-ngthumb="san_juan_1.JPG" data-ngdesc="Flight over San Juan Islands">San Juan Islands</a>
-  <a href="san_juan_2.JPG" data-ngthumb="san_juan_2.JPG" data-ngdesc="Flight over San Juan Islands">San Juan Islands</a>
-  <a href="colorado_01.jpg" data-ngthumb="colorado_01.jpg" data-ngdesc="Flight over Colorado">Colorado</a>
-  <a href="maine-trip-01.jpg" data-ngthumb="maine-trip-01.jpg" data-ngdesc="Maine Hike, Acadia National Park">Acadia, Maine</a>
-  </div>
-
+    <div class="gallery-grid" id="gallery-favorites">
+      {{ $baseURL := .Page.Site.Params.S3CDN }}
+      <a href="{{ $baseURL }}/img/favorites/IMG_1606.JPG" class="glightbox" data-gallery="favorites" data-description="Crater Lake, Oregon">
+        <img src="{{ $baseURL }}/img/favorites/IMG_1606.JPG" alt="Crater Lake" loading="lazy" />
+      </a>
+      <a href="{{ $baseURL }}/img/favorites/IMG_1608.JPG" class="glightbox" data-gallery="favorites" data-description="Crater Lake, Oregon">
+        <img src="{{ $baseURL }}/img/favorites/IMG_1608.JPG" alt="Crater Lake" loading="lazy" />
+      </a>
+      <a href="{{ $baseURL }}/img/favorites/20230426_092045.jpg" class="glightbox" data-gallery="favorites" data-description="Cabot Trail, Nova Scotia">
+        <img src="{{ $baseURL }}/img/favorites/20230426_092045.jpg" alt="Nova Scotia" loading="lazy" />
+      </a>
+      <a href="{{ $baseURL }}/img/favorites/20230426_172633.jpg" class="glightbox" data-gallery="favorites" data-description="Cabot Trail, Nova Scotia">
+        <img src="{{ $baseURL }}/img/favorites/20230426_172633.jpg" alt="Nova Scotia" loading="lazy" />
+      </a>
+    </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        if (typeof GLightbox !== 'undefined') {
+          GLightbox({ selector: '#gallery-favorites .glightbox' });
+        }
+      });
+    </script>
   </div>
   <hr>
     <ul class="list-with-title">

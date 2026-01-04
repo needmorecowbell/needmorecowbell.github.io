@@ -1,0 +1,30 @@
+{{/*
+  Breadcrumbs partial for nested content navigation
+  Shows: Home > Section > Page Title
+
+  Only displays for pages that are nested (have a parent section)
+  Excludes homepage and top-level sections
+*/}}
+
+{{ if and (not .IsHome) (gt (len .Ancestors) 0) }}
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    {{/* Home link */}}
+    <a href="{{ .Site.BaseURL | relURL }}" title="Home">
+      <i class="fas fa-home home-icon" aria-hidden="true"></i>
+      <span class="home-text">Home</span>
+    </a>
+
+    {{/* Iterate through ancestors in reverse (root first) */}}
+    {{ $ancestors := .Ancestors.Reverse }}
+    {{ range $ancestors }}
+      {{ if and .Title (ne .Kind "home") }}
+        <span class="separator" aria-hidden="true">›</span>
+        <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+      {{ end }}
+    {{ end }}
+
+    {{/* Current page */}}
+    <span class="separator" aria-hidden="true">›</span>
+    <span class="current" aria-current="page">{{ .Title }}</span>
+  </nav>
+{{ end }}

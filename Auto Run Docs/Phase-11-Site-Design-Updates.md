@@ -353,10 +353,66 @@ This phase modernizes the blog's visual design while preserving its minimalist s
 
   **Build Status:** 209 pages in 88ms
 
-- [ ] Enhance navigation
+- [x] Enhance navigation
   - Active state visibility
   - Mobile menu improvements
   - Breadcrumbs for nested content (optional)
+
+  **COMPLETED (2026-01-04):**
+
+  ### Navigation Enhancements:
+
+  Extended `assets/css/custom.css` with comprehensive navigation improvements:
+
+  **Active State Visibility (Desktop):**
+  - Enhanced `.current` class with link color and bold font-weight (600)
+  - Added 3px underline indicator with border-radius
+  - Smooth hover transitions that preview the active state
+  - Focus states for keyboard navigation with visible outlines
+  - Focus-visible support for modern browsers
+
+  **Mobile Menu Improvements:**
+  - Redesigned hamburger button: 48x48px touch target, rounded corners, hover effect
+  - Added hamburger-to-X animation when menu opens (transform rotate)
+  - Fixed header on mobile for persistent navigation access
+  - Mobile nav dropdown with slide-down animation (opacity + transform)
+  - Nav links styled as full-width blocks with 1rem padding for easy tapping
+  - Active state on mobile: left border accent + subtle background highlight
+  - Theme toggle button styled as centered block in mobile menu
+  - Dark mode adjustments for all mobile elements
+
+  **Breadcrumbs Implementation:**
+  - Created `layouts/partials/breadcrumbs.html` partial
+  - Shows: Home (icon) > Section > Page Title
+  - Home link includes Font Awesome icon (`fas fa-home`)
+  - "›" separator between breadcrumb items
+  - Current page highlighted with bold weight
+  - Accessible: uses `nav` element with `aria-label="Breadcrumb"`
+  - Current page has `aria-current="page"` attribute
+  - Focus states for keyboard navigation
+  - Mobile: home text hidden, only icon shown
+  - Added breadcrumbs to all layout types:
+    - `layouts/_default/single.html`
+    - `layouts/_default/list.html`
+    - `layouts/photography/single.html`
+    - `layouts/photography/list.html`
+    - `layouts/projects/single.html`
+    - `layouts/projects/list.html`
+
+  **Additional Fixes:**
+  - Updated `layouts/photography/list.html` to use GLightbox (was still using nanogallery2)
+
+  **Files Modified:**
+  - `assets/css/custom.css` - Added ~330 lines of navigation CSS
+  - `layouts/partials/breadcrumbs.html` (NEW) - Breadcrumbs partial
+  - `layouts/_default/single.html` - Added breadcrumbs partial
+  - `layouts/_default/list.html` - Added breadcrumbs partial
+  - `layouts/photography/single.html` - Added breadcrumbs partial
+  - `layouts/photography/list.html` - Added breadcrumbs + fixed GLightbox
+  - `layouts/projects/single.html` - Added breadcrumbs partial
+  - `layouts/projects/list.html` - Added breadcrumbs partial
+
+  **Build Status:** Successful (99ms)
 
 ### Phase 11.4: Typography & Color Updates
 
