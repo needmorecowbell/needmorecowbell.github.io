@@ -521,10 +521,56 @@ This phase modernizes the blog's visual design while preserving its minimalist s
 
   **Build Status:** Successful (209 pages in 119ms)
 
-- [ ] Refine spacing and rhythm
+- [x] Refine spacing and rhythm
   - Consistent margins/padding
   - Better heading hierarchy
   - Improved list styling
+
+  **COMPLETED (2026-01-04):**
+
+  ### Spacing & Rhythm Refinements:
+
+  Extended `assets/css/custom.css` with comprehensive spacing and rhythm improvements (~450 lines).
+
+  **Base Spacing Scale (CSS Custom Properties):**
+  - Introduced consistent spacing variables: `--space-xs` (4px) through `--space-3xl` (64px)
+  - Enables predictable vertical rhythm throughout the site
+  - Mobile-responsive with adjusted values for smaller screens
+
+  **Heading Hierarchy:**
+  - Clear visual progression: h1 (2.8rem) → h2 (2.2rem) → h3 (1.9rem) → h4 (1.6rem) → h5/h6 (1.4rem/1.3rem)
+  - Consistent margin-top/margin-bottom using spacing scale
+  - h2 sections get subtle bottom border for visual separation
+  - h5/h6 use uppercase with letter-spacing for distinction
+  - Smart spacing: reduced margins when headings follow headings
+  - Mobile: scaled-down sizes (e.g., h1: 2.2rem on mobile)
+
+  **List Styling Improvements:**
+  - Unordered lists: proper disc markers with `--space-xl` indent
+  - Ordered lists: decimal markers with matching indent
+  - Nested lists: circle → square progression for deeper levels
+  - Consistent item spacing: `--space-sm` between items
+  - Definition lists: styled `<dt>` with bold weight, `<dd>` with left margin
+  - Task lists: checkbox positioning with absolute placement
+  - Mobile: reduced indentation for better fit
+
+  **Block Element Spacing:**
+  - Images/figures: consistent top/bottom margins with centered figcaptions
+  - Code blocks: uniform padding and margins
+  - Blockquotes: proper spacing with nested quote support
+  - Tables: zebra striping, header background, consistent cell padding
+  - Horizontal rules: generous vertical space (3rem)
+
+  **Section/Container Spacing:**
+  - Posts, lists, about/links pages: consistent `--space-xl` margins
+  - Pagination: proper spacing with bottom padding
+  - Comments section: matching spacing pattern
+  - Mobile: reduced outer margins (30px → 20px)
+
+  **Files Modified:**
+  - `assets/css/custom.css` - Added ~450 lines of spacing/rhythm CSS
+
+  **Build Status:** Successful (209 pages in 111ms)
 
 ### Phase 11.5: Performance Optimization
 

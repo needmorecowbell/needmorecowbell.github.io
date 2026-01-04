@@ -1253,6 +1253,457 @@ html[data-theme='dark'] header nav {
 }
 
 /* =============================================================================
+   Spacing & Rhythm Refinements - Phase 11.4
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   Base Spacing Scale
+
+   Using a consistent spacing scale for vertical rhythm:
+   --space-xs:  0.25rem (4px)
+   --space-sm:  0.5rem  (8px)
+   --space-md:  1rem    (16px)
+   --space-lg:  1.5rem  (24px)
+   --space-xl:  2rem    (32px)
+   --space-2xl: 3rem    (48px)
+   --space-3xl: 4rem    (64px)
+   ----------------------------------------------------------------------------- */
+
+:root {
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+}
+
+/* -----------------------------------------------------------------------------
+   Heading Hierarchy
+
+   Clear visual hierarchy with consistent spacing above and below headings.
+   Using a modular scale for font sizes to create natural progression.
+   ----------------------------------------------------------------------------- */
+
+/* Reset all headings for consistent baseline */
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 0;
+  margin-bottom: var(--space-md);
+  color: var(--heading-color);
+  line-height: 1.3;
+}
+
+/* Main page/post title (h1) */
+.post .post-title h1,
+.post .post-content h1 {
+  font-size: 2.8rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-top: 0;
+  margin-bottom: var(--space-lg);
+}
+
+/* Section headings (h2) - primary content divisions */
+.post .post-content h2 {
+  font-size: 2.2rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-top: var(--space-2xl);
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* First h2 after title doesn't need as much top margin */
+.post .post-content > h2:first-child {
+  margin-top: var(--space-lg);
+}
+
+/* Subsection headings (h3) */
+.post .post-content h3 {
+  font-size: 1.9rem;
+  font-weight: 600;
+  margin-top: var(--space-xl);
+  margin-bottom: var(--space-sm);
+}
+
+/* Minor headings (h4) */
+.post .post-content h4 {
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin-top: var(--space-lg);
+  margin-bottom: var(--space-sm);
+}
+
+/* Smallest headings (h5, h6) */
+.post .post-content h5 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-top: var(--space-lg);
+  margin-bottom: var(--space-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.post .post-content h6 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-top: var(--space-md);
+  margin-bottom: var(--space-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--nav-text-color);
+}
+
+/* Heading immediately after heading - reduce double spacing */
+.post .post-content h2 + h3,
+.post .post-content h3 + h4,
+.post .post-content h4 + h5,
+.post .post-content h5 + h6 {
+  margin-top: var(--space-md);
+}
+
+/* Archive/list page headings */
+.list-with-title .listing-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-sm);
+}
+
+/* About page and other content pages */
+.about h3,
+.links h3 {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: var(--space-md);
+}
+
+/* -----------------------------------------------------------------------------
+   Paragraph Spacing
+
+   Consistent vertical rhythm for body text with proper spacing
+   ----------------------------------------------------------------------------- */
+
+/* Base paragraph styling */
+.post .post-content p {
+  margin-top: 0;
+  margin-bottom: var(--space-lg);
+  line-height: 1.8;
+}
+
+/* Last paragraph in section doesn't need bottom margin */
+.post .post-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Paragraph after heading should have less top space */
+.post .post-content h2 + p,
+.post .post-content h3 + p,
+.post .post-content h4 + p,
+.post .post-content h5 + p,
+.post .post-content h6 + p {
+  margin-top: 0;
+}
+
+/* Lead paragraph (first paragraph in content) */
+.post .post-content > p:first-of-type {
+  font-size: 1.6rem;
+  line-height: 1.75;
+}
+
+/* -----------------------------------------------------------------------------
+   List Styling
+
+   Improved list styling with proper indentation, spacing, and markers
+   ----------------------------------------------------------------------------- */
+
+/* Unordered lists */
+.post .post-content ul {
+  margin-top: 0;
+  margin-bottom: var(--space-lg);
+  padding-left: var(--space-xl);
+  list-style-type: disc;
+}
+
+/* Ordered lists */
+.post .post-content ol {
+  margin-top: 0;
+  margin-bottom: var(--space-lg);
+  padding-left: var(--space-xl);
+  list-style-type: decimal;
+}
+
+/* List items */
+.post .post-content li {
+  margin-bottom: var(--space-sm);
+  line-height: 1.75;
+  padding-left: var(--space-sm);
+}
+
+/* Last item doesn't need bottom margin */
+.post .post-content li:last-child {
+  margin-bottom: 0;
+}
+
+/* Nested lists */
+.post .post-content ul ul,
+.post .post-content ol ol,
+.post .post-content ul ol,
+.post .post-content ol ul {
+  margin-top: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+/* Different markers for nested unordered lists */
+.post .post-content ul ul {
+  list-style-type: circle;
+}
+
+.post .post-content ul ul ul {
+  list-style-type: square;
+}
+
+/* Tighter spacing for nested list items */
+.post .post-content ul ul li,
+.post .post-content ol ol li,
+.post .post-content ul ol li,
+.post .post-content ol ul li {
+  margin-bottom: var(--space-xs);
+}
+
+/* Definition lists */
+.post .post-content dl {
+  margin-top: 0;
+  margin-bottom: var(--space-lg);
+}
+
+.post .post-content dt {
+  font-weight: 600;
+  color: var(--heading-color);
+  margin-bottom: var(--space-xs);
+}
+
+.post .post-content dd {
+  margin-left: var(--space-xl);
+  margin-bottom: var(--space-md);
+}
+
+/* Task lists (checkboxes) */
+.post .post-content ul.task-list,
+.post .post-content .task-list {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.post .post-content .task-list li {
+  padding-left: var(--space-lg);
+  position: relative;
+}
+
+.post .post-content .task-list input[type="checkbox"] {
+  position: absolute;
+  left: 0;
+  top: 0.35em;
+  margin: 0;
+}
+
+/* -----------------------------------------------------------------------------
+   Block Element Spacing
+
+   Consistent spacing for block-level elements like images, code blocks, etc.
+   ----------------------------------------------------------------------------- */
+
+/* Images */
+.post .post-content img {
+  margin-top: var(--space-md);
+  margin-bottom: var(--space-md);
+  display: block;
+}
+
+/* Figures */
+.post .post-content figure {
+  margin: var(--space-xl) 0;
+}
+
+.post .post-content figcaption {
+  font-size: 1.3rem;
+  color: var(--nav-text-color);
+  text-align: center;
+  margin-top: var(--space-sm);
+  font-style: italic;
+}
+
+/* Code blocks */
+.post .post-content pre {
+  margin-top: var(--space-lg);
+  margin-bottom: var(--space-lg);
+  padding: var(--space-md);
+}
+
+/* Blockquotes */
+.post .post-content blockquote {
+  margin-top: var(--space-lg);
+  margin-bottom: var(--space-lg);
+  padding: var(--space-md) var(--space-lg);
+}
+
+/* Nested blockquotes */
+.post .post-content blockquote blockquote {
+  margin-top: var(--space-md);
+  margin-bottom: 0;
+}
+
+/* Paragraphs inside blockquotes */
+.post .post-content blockquote p {
+  margin-bottom: var(--space-sm);
+}
+
+.post .post-content blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* Tables */
+.post .post-content table {
+  margin-top: var(--space-lg);
+  margin-bottom: var(--space-lg);
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.post .post-content th,
+.post .post-content td {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border-color);
+  text-align: left;
+}
+
+.post .post-content th {
+  background-color: var(--secondary-bg-color);
+  font-weight: 600;
+  color: var(--heading-color);
+}
+
+.post .post-content tr:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+html[data-theme='dark'] .post .post-content tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* Horizontal rules */
+.post .post-content hr {
+  margin: var(--space-2xl) 0;
+  border: none;
+  border-top: 1px solid var(--border-color);
+}
+
+/* -----------------------------------------------------------------------------
+   Section/Container Spacing
+
+   Consistent outer spacing for major page sections
+   ----------------------------------------------------------------------------- */
+
+/* Post container */
+.post {
+  margin: var(--space-xl) 30px;
+  padding-bottom: var(--space-lg);
+}
+
+/* Content area */
+.content {
+  margin-top: 80px;
+  padding-bottom: var(--space-xl);
+}
+
+/* Archive/list sections */
+.list-with-title {
+  margin: var(--space-xl) 30px;
+  padding: 0;
+}
+
+/* About/links pages */
+.about,
+.links {
+  margin: var(--space-xl) 30px;
+}
+
+/* Pagination */
+.pagination {
+  margin: var(--space-xl) 30px;
+  padding: 0 0 var(--space-2xl) 0;
+}
+
+/* Share buttons */
+.share {
+  margin: 0 30px var(--space-xl) 30px;
+}
+
+/* Comments section */
+#disqus_thread {
+  margin: var(--space-xl) 30px;
+  padding-bottom: var(--space-xl);
+}
+
+/* -----------------------------------------------------------------------------
+   Mobile Spacing Adjustments
+   ----------------------------------------------------------------------------- */
+
+@media screen and (max-width: 960px) {
+  :root {
+    /* Slightly reduce spacing on mobile */
+    --space-lg: 1.25rem;
+    --space-xl: 1.5rem;
+    --space-2xl: 2rem;
+    --space-3xl: 3rem;
+  }
+
+  /* Reduce outer margins on mobile */
+  .post,
+  .list-with-title,
+  .about,
+  .links,
+  .pagination,
+  .share,
+  #disqus_thread {
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+
+  /* Smaller headings on mobile */
+  .post .post-title h1,
+  .post .post-content h1 {
+    font-size: 2.2rem;
+  }
+
+  .post .post-content h2 {
+    font-size: 1.9rem;
+    margin-top: var(--space-xl);
+  }
+
+  .post .post-content h3 {
+    font-size: 1.7rem;
+  }
+
+  .post .post-content h4 {
+    font-size: 1.5rem;
+  }
+
+  /* Reduce list indentation on mobile */
+  .post .post-content ul,
+  .post .post-content ol {
+    padding-left: var(--space-lg);
+  }
+
+  /* Lead paragraph size adjustment */
+  .post .post-content > p:first-of-type {
+    font-size: 1.5rem;
+  }
+}
+
+/* =============================================================================
    Color Application Overrides - Phase 11.4
    ============================================================================= */
 
