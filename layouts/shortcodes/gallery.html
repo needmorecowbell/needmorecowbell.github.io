@@ -1,37 +1,102 @@
 {{- $baseURL := .Page.Site.Params.S3CDN -}}
-{{- $id := .Get "id" | default "gallery" -}}
+{{- $id := .Get "id" | default (printf "gallery-%d" (index (seq 1 1) 0)) -}}
 {{- $path := .Get "path" | default "" -}}
-{{- $maxRows := .Get "maxRows" | default 2 -}}
-{{- $thumbnailWidth := .Get "thumbnailWidth" | default "250" -}}
-{{- $thumbnailHeight := .Get "thumbnailHeight" | default "250" -}}
+{{- $thumbnailSize := .Get "thumbnailSize" | default "250" -}}
+{{- $images := .Get "images" | default "" -}}
 
-{{- /* Build the itemsBaseURL from S3CDN and path */ -}}
+{{- /* Build the base URL from S3CDN and path */ -}}
 {{- $itemsBaseURL := $baseURL -}}
 {{- if $path -}}
   {{- $itemsBaseURL = printf "%s/%s" $baseURL (strings.TrimSuffix "/" $path) -}}
 {{- end -}}
-{{- /* Ensure trailing slash for nanogallery2 */ -}}
-{{- $itemsBaseURL = printf "%s/" (strings.TrimSuffix "/" $itemsBaseURL) -}}
 
-<div id="{{ $id }}" data-nanogallery2='{
-    "itemsBaseURL": "{{ $itemsBaseURL }}",
-    "thumbnailWidth": "{{ $thumbnailWidth }}",
-    "thumbnailHeight": "{{ $thumbnailHeight }}",
-    "thumbnailBorderVertical": 1,
-    "thumbnailBorderHorizontal": 1,
-    "thumbnailLabel": {
-        "position": "overImageOnBottom",
-        "displayDescription": true
-    },
-    "thumbnailHoverEffect2": "labelAppear75|descriptionSlideUp",
-    "galleryDisplayMode": "pagination",
-    "galleryMaxRows": {{ $maxRows }},
-    "thumbnailAlignment": "center",
-    "thumbnailOpenImage": true,
-    "viewerTools": {
-        "topLeft": "pageCounter, label",
-        "topRight": "playPauseButton, rotateLeft, rotateRight, fullscreenButton, closeButton"
-    }
-}'>
-{{ .Inner }}
+<style>
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax({{ $thumbnailSize }}px, 1fr));
+  gap: 8px;
+  margin: 1rem 0;
+}
+.gallery-grid a {
+  display: block;
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--secondary-bg-color, #eee);
+}
+.gallery-grid a img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+.gallery-grid a:hover img {
+  transform: scale(1.05);
+}
+.gallery-grid a.video-item::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50px;
+  height: 50px;
+  background: rgba(0,0,0,0.6);
+  border-radius: 50%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E");
+  background-size: 24px;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+</style>
+
+<div class="gallery-grid" id="{{ $id }}">
+{{- if $images -}}
+  {{- range $index, $imgName := split $images "," -}}
+    {{- $img := strings.TrimSpace $imgName -}}
+    {{- /* Check if this is a video file */ -}}
+    {{- $isVideo := or (strings.HasSuffix $img ".mp4") (strings.HasSuffix $img ".MP4") (strings.HasSuffix $img ".mov") (strings.HasSuffix $img ".MOV") (strings.HasSuffix $img ".webm") (strings.HasSuffix $img ".avi") -}}
+    {{- /* For videos, use .thumb.jpg as thumbnail */ -}}
+    {{- $thumb := $img -}}
+    {{- $ext := path.Ext $img -}}
+    {{- if $isVideo -}}
+      {{- $thumb = printf "%s.thumb.jpg" (strings.TrimSuffix $ext $img) -}}
+    {{- end -}}
+    {{- $fullURL := printf "%s/%s" $itemsBaseURL $img -}}
+    {{- $thumbURL := printf "%s/%s" $itemsBaseURL $thumb -}}
+    {{- if $isVideo -}}
+    <a href="{{ $fullURL }}"
+       class="glightbox video-item"
+       data-gallery="{{ $id }}"
+       data-type="video">
+      <img src="{{ $thumbURL }}" alt="" loading="lazy">
+    </a>
+    {{- else -}}
+    <a href="{{ $fullURL }}"
+       class="glightbox"
+       data-gallery="{{ $id }}">
+      <img src="{{ $thumbURL }}" alt="" loading="lazy">
+    </a>
+    {{- end -}}
+  {{- end -}}
+{{- else -}}
+  {{- /* Support for inner content (legacy format) */ -}}
+  {{ .Inner }}
+{{- end -}}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof GLightbox !== 'undefined') {
+    GLightbox({
+      selector: '#{{ $id }} .glightbox',
+      loop: true,
+      touchNavigation: true,
+      keyboardNavigation: true,
+      closeOnOutsideClick: true
+    });
+  }
+});
+</script>

@@ -204,16 +204,58 @@ This phase modernizes the blog's visual design while preserving its minimalist s
   - Add GLightbox: +11KB
   - **Net savings: ~309KB**
 
-- [ ] Implement chosen gallery solution
+- [x] Implement chosen gallery solution
   - Update gallery shortcode
   - Ensure video thumbnail support preserved
   - Test all gallery pages
   - Verify mobile experience
 
-- [ ] Remove jQuery if no longer needed
+  **COMPLETED (2026-01-04):**
+
+  ### Implementation Details:
+
+  **Replaced nanogallery2 with GLightbox:**
+  - Added GLightbox 3.3.1 from jsDelivr CDN to `layouts/partials/head.html`
+  - Removed jQuery 3.6.1, nanogallery2 CSS/JS from head.html
+  - Removed unused `static/js/side_collapse.js` (was jQuery-dependent, sidebar collapse is already commented out)
+
+  **Rewrote gallery shortcode (`layouts/shortcodes/gallery.html`):**
+  - Uses CSS Grid for responsive thumbnail layout (auto-fill, minmax 250px)
+  - Native `loading="lazy"` for all images
+  - Video support preserved: detects .mp4/.mov/.webm/.avi and uses `.thumb.jpg` thumbnails
+  - Play button overlay via CSS pseudo-element for video items
+  - GLightbox initialized per-gallery with keyboard/touch navigation, loop enabled
+  - Data attributes: `data-gallery` for grouping, `data-type="video"` for videos
+
+  **Files Modified:**
+  - `layouts/partials/head.html` - Replaced jQuery+nanogallery2 with GLightbox
+  - `layouts/shortcodes/gallery.html` - Complete rewrite for GLightbox + CSS Grid
+
+  **Files Removed:**
+  - `static/js/side_collapse.js` - No longer needed (was jQuery, sidebar collapse commented out)
+
+  **Tested Gallery Pages:**
+  - `/projects/vertical_rotisserie/` - 7 items (3 images + 4 videos) ✓
+  - `/photography/2023_nova_scotia/` - 20 images ✓
+  - `/gallery/` - Multiple galleries ✓
+  - Build successful: 209 pages in 86ms
+
+  **Bundle Size Savings:**
+  - Removed jQuery 3.6.1: ~90KB
+  - Removed nanogallery2: ~230KB (JS + CSS)
+  - Added GLightbox 3.3.1: ~11KB (JS) + ~15KB (CSS)
+  - **Net savings: ~294KB** (representing a 92% reduction in gallery-related dependencies)
+
+- [x] Remove jQuery if no longer needed
   - Check side_collapse.js can be converted to vanilla JS
   - Update any remaining jQuery code
   - Remove jQuery CDN reference
+
+  **COMPLETED (2026-01-04):**
+  - jQuery removed as part of GLightbox implementation above
+  - `side_collapse.js` deleted (was only jQuery usage, sidebar collapse feature commented out)
+  - No remaining jQuery dependencies in the codebase
+  - Site is now fully jQuery-free
 
 ### Phase 11.3: Layout Refinements
 
