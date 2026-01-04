@@ -88,10 +88,19 @@ This phase modernizes the blog's visual design while preserving its minimalist s
   - Removing duplicate jQuery: **~90KB**
   - **Total immediate savings: ~150KB**
 
-- [ ] Remove or replace Bootstrap
+- [x] Remove or replace Bootstrap
   - Check what Bootstrap features are actually used
   - Replace with minimal custom CSS if needed
   - Test all pages after removal
+
+  **COMPLETED (2026-01-04):**
+  - Removed Bootstrap JS (5.2.2) from `layouts/partials/head.html` - confirmed zero usage
+  - Also removed duplicate jQuery reference (3.3.1 from jsdelivr) - was loading jQuery twice
+  - Kept jQuery 3.6.1 from cdnjs (required by nanogallery2)
+  - Site builds successfully (209 pages in 87ms)
+  - Verified no Bootstrap references in output HTML
+  - Verified only one jQuery reference in output HTML
+  - **Savings: ~150KB** (60KB Bootstrap + 90KB duplicate jQuery)
 
 - [ ] Update Font Awesome to 6.x
   - Update CDN links
