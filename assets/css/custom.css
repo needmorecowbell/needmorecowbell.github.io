@@ -261,3 +261,419 @@ header .nav__list .nav__links a.current::after {
 .theme-switch:hover {
   background-color: var(--secondary-bg-color);
 }
+
+/* =============================================================================
+   Content Area Improvements - Phase 11.3
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   Reading Width Optimization
+   Optimal line length is 45-75 characters for comfortable reading
+   ----------------------------------------------------------------------------- */
+
+.post .post-content {
+  max-width: 70ch;
+}
+
+.post .post-content p,
+.post .post-content li {
+  font-size: 1.5rem;
+  line-height: 1.8;
+  letter-spacing: 0.01em;
+}
+
+.post .post-content h2 {
+  font-size: 2.2rem;
+  font-weight: 600;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  color: var(--heading-color);
+  letter-spacing: 0.5px;
+}
+
+.post .post-content h3 {
+  font-size: 1.9rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  color: var(--heading-color);
+}
+
+.post .post-content h4 {
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--heading-color);
+}
+
+/* Improved paragraph spacing */
+.post .post-content p {
+  margin-bottom: 1.5rem;
+}
+
+/* Better blockquote styling */
+.post .post-content blockquote {
+  margin: 1.5rem 0;
+  padding: 1rem 1.5rem;
+  border-left: 4px solid var(--link-color);
+  background-color: var(--secondary-bg-color);
+  border-radius: 0 4px 4px 0;
+}
+
+.post .post-content blockquote p {
+  margin-bottom: 0;
+  font-style: italic;
+}
+
+/* Code blocks improvements */
+.post .post-content pre {
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  overflow-x: auto;
+}
+
+.post .post-content code {
+  font-size: 0.9em;
+  padding: 0.2em 0.4em;
+  background-color: var(--secondary-bg-color);
+  border-radius: 3px;
+}
+
+.post .post-content pre code {
+  padding: 0;
+  background-color: transparent;
+}
+
+/* -----------------------------------------------------------------------------
+   Post List Styling (Homepage and Archive)
+   ----------------------------------------------------------------------------- */
+
+/* Post cards on homepage */
+.post {
+  margin: 2rem 30px;
+  padding-bottom: 1.5rem;
+}
+
+.post:not(:last-child) {
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Post title styling */
+.post .post-title h3 {
+  font-size: 2rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+  line-height: 1.4;
+}
+
+.post .post-title h3 a {
+  color: var(--heading-color);
+  transition: color 0.2s ease;
+}
+
+.post .post-title h3 a:hover {
+  color: var(--link-color);
+  text-decoration: none;
+}
+
+/* Post summary/excerpt */
+.post .post-content .p_part {
+  color: var(--body-color);
+  margin-bottom: 1rem;
+}
+
+.post .post-content .p_part p {
+  margin-bottom: 0.75rem;
+}
+
+/* Read more link */
+.post .post-content .read_more {
+  display: inline-block;
+  color: var(--link-color);
+  font-weight: 500;
+  font-size: 1.4rem;
+  transition: color 0.2s ease;
+}
+
+.post .post-content .read_more:hover {
+  color: var(--heading-color);
+}
+
+.post .post-content .read_more::after {
+  content: ' →';
+  transition: transform 0.2s ease;
+}
+
+/* Post thumbnail improvements */
+.post .post-thumbnail {
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.post .post-thumbnail img {
+  border-radius: 8px;
+  transition: transform 0.3s ease;
+}
+
+.post .post-thumbnail:hover img {
+  transform: scale(1.02);
+}
+
+/* Archive list styling */
+.list-with-title {
+  margin: 2rem 30px;
+}
+
+.list-with-title .listing-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--heading-color);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.list-with-title .listing {
+  padding: 0;
+  margin: 0;
+}
+
+.list-with-title .listing .listing-post {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  transition: background-color 0.2s ease;
+}
+
+html[data-theme='dark'] .list-with-title .listing .listing-post {
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.list-with-title .listing .listing-post:hover {
+  background-color: var(--secondary-bg-color);
+  margin: 0 -0.5rem;
+  padding: 0.6rem 0.5rem;
+  border-radius: 4px;
+}
+
+.list-with-title .listing .listing-post a {
+  font-size: 1.5rem;
+  color: var(--body-color);
+  transition: color 0.2s ease;
+  flex: 1;
+  padding-right: 1rem;
+}
+
+.list-with-title .listing .listing-post a:hover {
+  color: var(--link-color);
+}
+
+.list-with-title .listing .listing-post .post-time {
+  font-size: 1.3rem;
+  color: var(--nav-text-color);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* -----------------------------------------------------------------------------
+   Date/Metadata Display Enhancements
+   ----------------------------------------------------------------------------- */
+
+/* Post metadata in list view */
+.post .post-footer {
+  padding: 0.75rem 0;
+  margin-top: 0.5rem;
+}
+
+.post .post-footer .meta .info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.3rem;
+  color: var(--nav-text-color);
+}
+
+.post .post-footer .meta .info i {
+  font-size: 1.1rem;
+  opacity: 0.7;
+}
+
+.post .post-footer .meta .info .date {
+  margin-right: 0.5rem;
+}
+
+/* Single post metadata */
+.post .post-title .info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.35rem;
+  color: var(--nav-text-color);
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.post .post-title .info i {
+  opacity: 0.7;
+}
+
+.post .post-title .info .date,
+.post .post-title .info .reading-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Single post title */
+.post .post-title h1 {
+  font-size: 2.8rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 0.5rem;
+  color: var(--heading-color);
+  letter-spacing: 0.5px;
+}
+
+/* -----------------------------------------------------------------------------
+   Tag Styling Improvements
+   ----------------------------------------------------------------------------- */
+
+.tag,
+.category {
+  display: inline-block;
+  font-size: 1.3rem;
+  line-height: 1;
+  margin: 4px 6px 4px 0;
+  padding: 5px 10px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.tag {
+  color: var(--nav-text-color);
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+}
+
+.tag:hover {
+  color: var(--link-color);
+  border-color: var(--link-color);
+  background-color: rgba(3, 102, 215, 0.05);
+}
+
+html[data-theme='dark'] .tag:hover {
+  background-color: rgba(88, 166, 254, 0.1);
+}
+
+.tag::before {
+  content: '#';
+  opacity: 0.5;
+  margin-right: 2px;
+}
+
+.category {
+  color: var(--link-color);
+  background-color: rgba(3, 102, 215, 0.08);
+  border: 1px solid rgba(3, 102, 215, 0.2);
+}
+
+.category:hover {
+  background-color: rgba(3, 102, 215, 0.15);
+  border-color: rgba(3, 102, 215, 0.3);
+}
+
+html[data-theme='dark'] .category {
+  background-color: rgba(88, 166, 254, 0.1);
+  border-color: rgba(88, 166, 254, 0.2);
+}
+
+html[data-theme='dark'] .category:hover {
+  background-color: rgba(88, 166, 254, 0.2);
+  border-color: rgba(88, 166, 254, 0.3);
+}
+
+/* Post footer tags section */
+.post .post-footer .info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.5rem 0;
+}
+
+/* Separator styling in metadata */
+.post .post-footer .info .separator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.post .post-footer .info .separator::before {
+  content: '·';
+  margin: 0 0.5rem;
+  color: var(--border-color);
+}
+
+.post .post-footer .info .separator:first-child::before {
+  display: none;
+}
+
+/* -----------------------------------------------------------------------------
+   Mobile Content Area Adjustments
+   ----------------------------------------------------------------------------- */
+
+@media screen and (max-width: 960px) {
+  .post {
+    margin: 1.5rem 20px;
+  }
+
+  .post .post-title h1 {
+    font-size: 2.2rem;
+  }
+
+  .post .post-title h3 {
+    font-size: 1.8rem;
+  }
+
+  .post .post-content {
+    max-width: 100%;
+  }
+
+  .post .post-content p,
+  .post .post-content li {
+    font-size: 1.45rem;
+  }
+
+  .list-with-title {
+    margin: 1.5rem 20px;
+  }
+
+  .list-with-title .listing .listing-post {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .list-with-title .listing .listing-post a {
+    width: 100%;
+    padding-right: 0;
+  }
+
+  .list-with-title .listing .listing-post .post-time {
+    font-size: 1.2rem;
+  }
+
+  .post .post-title .info {
+    gap: 0.75rem;
+    font-size: 1.25rem;
+  }
+}
