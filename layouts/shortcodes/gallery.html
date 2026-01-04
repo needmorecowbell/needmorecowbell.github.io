@@ -20,16 +20,34 @@
 .gallery-grid a {
   display: block;
   position: relative;
+  /* Fallback for browsers without aspect-ratio support */
+  padding-bottom: 100%;
+  height: 0;
   aspect-ratio: 1;
   overflow: hidden;
   border-radius: 4px;
   background: var(--secondary-bg-color, #eee);
 }
+/* Reset padding when aspect-ratio is supported */
+@supports (aspect-ratio: 1) {
+  .gallery-grid a {
+    padding-bottom: 0;
+    height: auto;
+  }
+}
 .gallery-grid a img {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   transition: transform 0.3s ease;
+}
+@supports (aspect-ratio: 1) {
+  .gallery-grid a img {
+    position: static;
+  }
 }
 .gallery-grid a:hover img {
   transform: scale(1.05);
