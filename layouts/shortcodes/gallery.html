@@ -3,6 +3,7 @@
 {{- $path := .Get "path" | default "" -}}
 {{- $thumbnailSize := .Get "thumbnailSize" | default "250" -}}
 {{- $images := .Get "images" | default "" -}}
+{{- $galleryTitle := .Get "title" | default "Photo gallery" -}}
 
 {{- /* Build the base URL from S3CDN and path */ -}}
 {{- $itemsBaseURL := $baseURL -}}
@@ -70,7 +71,7 @@
 }
 </style>
 
-<div class="gallery-grid" id="{{ $id }}">
+<div class="gallery-grid" id="{{ $id }}" role="region" aria-label="{{ $galleryTitle }}">
 {{- if $images -}}
   {{- range $index, $imgName := split $images "," -}}
     {{- $img := strings.TrimSpace $imgName -}}
@@ -84,18 +85,23 @@
     {{- end -}}
     {{- $fullURL := printf "%s/%s" $itemsBaseURL $img -}}
     {{- $thumbURL := printf "%s/%s" $itemsBaseURL $thumb -}}
+    {{- /* Generate accessible alt text */ -}}
+    {{- $altBase := path.Base $img | strings.TrimSuffix $ext -}}
+    {{- $altText := replace $altBase "_" " " | replace "-" " " -}}
     {{- if $isVideo -}}
     <a href="{{ $fullURL }}"
        class="glightbox video-item"
        data-gallery="{{ $id }}"
-       data-type="video">
-      <img src="{{ $thumbURL }}" alt="" loading="lazy">
+       data-type="video"
+       aria-label="Play video: {{ $altText }}">
+      <img src="{{ $thumbURL }}" alt="Video thumbnail: {{ $altText }}" loading="lazy">
     </a>
     {{- else -}}
     <a href="{{ $fullURL }}"
        class="glightbox"
-       data-gallery="{{ $id }}">
-      <img src="{{ $thumbURL }}" alt="" loading="lazy">
+       data-gallery="{{ $id }}"
+       aria-label="View image: {{ $altText }}">
+      <img src="{{ $thumbURL }}" alt="Gallery image: {{ $altText }}" loading="lazy">
     </a>
     {{- end -}}
   {{- end -}}

@@ -1,0 +1,95 @@
+<div
+  class="page-top {{ with .Site.Params.doNotLoadAnimations }}
+    .
+
+  {{ else }}
+    animated fadeInDown
+
+  {{ end }}"
+>
+  <button
+    type="button"
+    class="navbar-burger"
+    data-target="navMenu"
+    aria-label="Toggle navigation menu"
+    aria-expanded="false"
+    aria-controls="navMenu"
+  >
+    <span aria-hidden="true"></span>
+    <span aria-hidden="true"></span>
+    <span aria-hidden="true"></span>
+  </button>
+  <nav aria-label="Main navigation">
+    <ul class="nav__list" id="navMenu">
+      <div class="nav__links" role="list">
+        {{ $url := .RelPermalink }}
+        {{ range .Site.Menus.main }}
+          {{ $active := eq $url .URL }}
+          <li role="listitem">
+            <a
+              {{ if $active }}
+                class="current"
+                aria-current="page"
+
+              {{ end }}
+              href="{{ .URL }}"
+              {{ if strings.HasPrefix .URL "http" }}
+                target="_blank" rel="noopener noreferrer"
+
+              {{ end }}
+              title="{{ .Title }}"
+              >{{ .Name }}</a
+            >
+          </li>
+
+        {{ end }}
+      </div>
+      <ul>
+        {{ if and .IsTranslated .Site.IsMultiLingual }}
+          <li>
+            <ul class="sl-nav" aria-label="Language switcher">
+              <li>
+                <input type="checkbox" id="languagepicker" aria-label="Switch language" hidden />
+                <label for="languagepicker">{{ .Site.Language.LanguageName }}</label>
+                <label for="languagepicker"><i class="fa fa-angle-down" aria-hidden="true"></i></label>
+                <div class="triangle"></div>
+
+                <ul class="dropdown" role="menu">
+                  {{ range $.Translations }}
+
+                    <li role="menuitem">
+                      <a href="{{ .RelPermalink }}" title="{{ .Language.LanguageName }}"
+                        ><span
+                          {{ if eq . $.Site.Language }}
+                            class="active"
+
+                          {{ end }}
+                          >{{ .Language.LanguageName }}</span
+                        ></a
+                      >
+                    </li>
+
+                  {{ end }}
+                </ul>
+              </li>
+            </ul>
+          </li>
+
+        {{ end }}
+        {{ if not .Site.Params.disableThemeSwitcher }}
+          <li>
+            <button
+              type="button"
+              class="theme-switch"
+              aria-label="Toggle dark mode"
+              title="Toggle dark mode"
+            >
+              <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </button>
+          </li>
+
+        {{ end }}
+      </ul>
+    </ul>
+  </nav>
+</div>
