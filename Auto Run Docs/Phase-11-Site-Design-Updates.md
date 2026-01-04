@@ -121,11 +121,88 @@ This phase modernizes the blog's visual design while preserving its minimalist s
 
 ### Phase 11.2: Gallery Modernization
 
-- [ ] Evaluate gallery alternatives
+- [x] Evaluate gallery alternatives
   - Option A: CSS Grid gallery with native `<dialog>` lightbox
   - Option B: Lighter library (GLightbox, Parvus)
   - Option C: Keep nanogallery2 but optimize loading
   - Document decision and rationale
+
+  **EVALUATION COMPLETED (2026-01-04):**
+
+  ### Current State: nanogallery2
+  - **Bundle Size:** ~200KB JS + ~30KB CSS + jQuery (~90KB) = **~320KB total**
+  - **Pros:** Full-featured, handles videos, thumbnails, pagination, lightbox
+  - **Cons:** Heavy, requires jQuery, actively maintained but complex
+
+  ### Option A: CSS Grid + Native `<dialog>` (Custom Implementation)
+  | Aspect | Assessment |
+  |--------|------------|
+  | Bundle Size | ~5-10KB (custom JS + CSS) |
+  | jQuery Required | No |
+  | Video Support | Would need custom implementation |
+  | Accessibility | Native `<dialog>` is accessible by default |
+  | Maintenance | High - must maintain custom code |
+  | Features | Must build: navigation, zoom, gestures, thumbnails |
+
+  **Verdict:** Most lightweight, but significant development effort. Would need to implement video player integration, keyboard navigation, touch gestures, and gallery pagination from scratch. Risk of bugs and maintenance burden.
+
+  ### Option B: GLightbox (Recommended)
+  | Aspect | Assessment |
+  |--------|------------|
+  | Bundle Size | ~11KB gzipped (JS only) |
+  | jQuery Required | **No** - pure JavaScript |
+  | Video Support | **Yes** - YouTube, Vimeo, self-hosted with autoplay |
+  | Accessibility | Keyboard and touch navigation |
+  | Community | 2.4k GitHub stars, 6,300+ dependents |
+  | Features | Zoom, drag, galleries, responsive, touch-friendly |
+
+  **Additional research:**
+  - GitHub: https://github.com/biati-digital/glightbox
+  - Demo: https://biati-digital.github.io/glightbox/
+  - CDN available via jsDelivr
+
+  ### Option B Alternative: Parvus
+  | Aspect | Assessment |
+  |--------|------------|
+  | Bundle Size | ~6KB gzipped |
+  | jQuery Required | No |
+  | Video Support | **No** - images only |
+  | Accessibility | Core design goal, uses native `<dialog>` |
+  | Features | Galleries, srcset support, swipe gestures |
+
+  **Verdict:** Excellent for images but **lacks video support** which is required for this site (see `galleries/*.gallery.yaml` with .mp4 files).
+
+  ### Option C: Keep nanogallery2 + Optimize
+  | Aspect | Assessment |
+  |--------|------------|
+  | Optimization Options | Lazy load script, conditional load only on gallery pages |
+  | Savings Potential | Moderate - could defer ~320KB |
+  | jQuery Removal | Not possible - nanogallery2 requires it |
+
+  **Verdict:** Still requires jQuery, limits future modernization.
+
+  ### Recommendation: **GLightbox (Option B)**
+
+  **Rationale:**
+  1. **11KB vs 320KB** - ~97% reduction in gallery-related JavaScript
+  2. **Removes jQuery dependency** - enables removal of ~90KB jQuery from entire site
+  3. **Video support** - critical for existing galleries with .mp4 files
+  4. **Pure JavaScript** - aligns with Phase 11 goal of removing jQuery
+  5. **Active maintenance** - well-supported, large community
+  6. **Feature parity** - provides lightbox, galleries, responsive design, touch support
+  7. **CDN available** - easy integration via jsDelivr
+
+  **What will change:**
+  - Gallery shortcode will need rewrite for GLightbox's simpler API
+  - Will use CSS Grid for thumbnail layout (more control, simpler markup)
+  - Video thumbnails (`.thumb.jpg`) already exist - can continue using these
+  - Pagination handled by CSS Grid rows or infinite scroll
+
+  **Estimated total savings after implementation:**
+  - Remove jQuery: ~90KB
+  - Remove nanogallery2: ~230KB
+  - Add GLightbox: +11KB
+  - **Net savings: ~309KB**
 
 - [ ] Implement chosen gallery solution
   - Update gallery shortcode
