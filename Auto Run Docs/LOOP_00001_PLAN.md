@@ -2,7 +2,8 @@
 
 ## Summary
 - **Total Candidates:** 4
-- **PENDING (auto-implement):** 1
+- **PENDING (auto-implement):** 0
+- **IMPLEMENTED:** 2
 - **PENDING - MANUAL REVIEW:** 0
 - **WON'T DO:** 0
 
@@ -11,7 +12,7 @@
 | # | Candidate | Risk | Benefit | Status |
 |---|-----------|------|---------|--------|
 | 1 | Identical projects/single.html and photography/single.html | LOW | HIGH | IMPLEMENTED |
-| 2 | Identical _default/list.html and projects/list.html | LOW | HIGH | PENDING |
+| 2 | Identical _default/list.html and projects/list.html | LOW | HIGH | IMPLEMENTED |
 
 ## Detailed Evaluations
 
@@ -48,7 +49,7 @@
 - **Category:** Duplication
 - **Risk:** LOW
 - **Benefit:** HIGH
-- **Status:** PENDING
+- **Status:** IMPLEMENTED
 - **Risk Rationale:**
   - Internal-only change affecting template files
   - No API changes or exported interfaces

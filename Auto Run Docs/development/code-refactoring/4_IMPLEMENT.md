@@ -26,7 +26,9 @@ Implement ONE refactoring candidate from `/home/adam/Dev/blog/needmorecowbell.gi
 
 ## Task
 
-- [ ] **Implement one PENDING refactor (or skip if none)**: Read /home/adam/Dev/blog/needmorecowbell.github.io/Auto Run Docs/LOOP_00001_PLAN.md. If the file doesn't exist OR contains no items with status exactly `PENDING` that also have LOW risk AND HIGH/VERY HIGH benefit, mark this task complete without changes. Otherwise, find ONE item that meets all criteria, implement the refactoring, log to /home/adam/Dev/blog/needmorecowbell.github.io/Auto Run Docs/REFACTOR_LOG_blog_ui_cleanup_2026-01-06.md, and mark as IMPLEMENTED in /home/adam/Dev/blog/needmorecowbell.github.io/Auto Run Docs/LOOP_00001_PLAN.md.
+- [x] **Implement one PENDING refactor (or skip if none)**: Read /home/adam/Dev/blog/needmorecowbell.github.io/Auto Run Docs/LOOP_00001_PLAN.md. If the file doesn't exist OR contains no items with status exactly `PENDING` that also have LOW risk AND HIGH/VERY HIGH benefit, mark this task complete without changes. Otherwise, find ONE item that meets all criteria, implement the refactoring, log to /home/adam/Dev/blog/needmorecowbell.github.io/Auto Run Docs/REFACTOR_LOG_blog_ui_cleanup_2026-01-06.md, and mark as IMPLEMENTED in /home/adam/Dev/blog/needmorecowbell.github.io/Auto Run Docs/LOOP_00001_PLAN.md.
+
+  **Completed 2026-01-06:** Deleted duplicate `layouts/projects/list.html` (55 lines identical to `_default/list.html`). Hugo will now use the fallback `_default/list.html` template for the projects section list view. This was the last PENDING refactor candidate - all 2 qualifying refactors from the plan have now been implemented, removing a total of 287 lines of duplicate code.
 
 ## Implementation Checklist
 
