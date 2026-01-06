@@ -22,8 +22,7 @@ Evaluate each refactoring candidate with **risk and benefit ratings** to determi
 
 ## Evaluation Checklist
 
-- [x] **Evaluate one candidate (or skip if empty)**: Read /home/adam/Dev/blog/needmorecowbell.github.io/Auto Run Docs/LOOP_00001_CANDIDATES.md. If it contains no findings OR all findings have already been evaluated in LOOP_00001_PLAN.md, mark this task complete without changes. Otherwise, pick one unevaluated candidate, assess risk/benefit, and append to /home/adam/Dev/blog/needmorecowbell.github.io/Auto Run Docs/LOOP_00001_PLAN.md.
-  - **Completed:** Evaluated Finding 1 (Identical projects/single.html and photography/single.html) with Risk: LOW, Benefit: HIGH, Status: PENDING. Created LOOP_00001_PLAN.md with detailed evaluation including risk/benefit rationale and refactoring approach.
+- [ ] **Evaluate one candidate (or skip if empty)**: Read /home/adam/Dev/blog/needmorecowbell.github.io/Auto Run Docs/LOOP_00001_CANDIDATES.md. If it contains no findings OR all findings have already been evaluated in LOOP_00001_PLAN.md, mark this task complete without changes. Otherwise, pick one unevaluated candidate, assess risk/benefit, and append to /home/adam/Dev/blog/needmorecowbell.github.io/Auto Run Docs/LOOP_00001_PLAN.md.
 
 ## Risk Assessment Criteria
 

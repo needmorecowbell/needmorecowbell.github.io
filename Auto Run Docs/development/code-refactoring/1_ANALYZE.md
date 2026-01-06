@@ -24,14 +24,7 @@ Analyze the codebase to identify **categories of refactoring opportunities** and
 
 ## Analysis Checklist
 
-- [x] **Survey codebase (if needed)**: First check if `/home/adam/Dev/blog/needmorecowbell.github.io/Auto Run Docs/LOOP_00001_GAME_PLAN.md` already exists with at least one tactic defined. If it does, skip the survey and mark this task complete—the game plan is already in place. If it doesn't exist, examine project structure, find largest files, identify patterns. Note file size distribution and any obvious organizational issues.
-
-  **Completed:** Surveyed codebase structure and created game plan with 7 tactical refactoring opportunities. Key findings:
-  - Identified ~70 source files across layouts/, scripts/, and assets/
-  - Found significant template duplication (3 nearly-identical single.html files, 2 identical list.html, 2 identical baseof.html)
-  - Located inline CSS duplication in gallery shortcode and photography list
-  - Documented largest files: publish.py (2538 LOC), custom.css (2868 LOC)
-  - Output: `/home/adam/Dev/blog/needmorecowbell.github.io/Auto Run Docs/LOOP_00001_GAME_PLAN.md`
+- [ ] **Survey codebase (if needed)**: First check if `/home/adam/Dev/blog/needmorecowbell.github.io/Auto Run Docs/LOOP_00001_GAME_PLAN.md` already exists with at least one tactic defined. If it does, skip the survey and mark this task complete—the game plan is already in place. If it doesn't exist, examine project structure, find largest files, identify patterns. Note file size distribution and any obvious organizational issues.
 
 ## Output Format
 

@@ -21,8 +21,7 @@ Execute ONE tactic from `/home/adam/Dev/blog/needmorecowbell.github.io/Auto Run 
 
 ## Task
 
-- [x] **Execute one tactic (or mark exhausted)**: Read /home/adam/Dev/blog/needmorecowbell.github.io/Auto Run Docs/LOOP_00001_GAME_PLAN.md and check for unexecuted tactics. If ALL tactics are already marked `[EXECUTED]`, append a section `## ALL_TACTICS_EXHAUSTED` to /home/adam/Dev/blog/needmorecowbell.github.io/Auto Run Docs/LOOP_00001_CANDIDATES.md and mark this task complete. Otherwise, pick one unexecuted tactic, search the codebase for matching issues, append findings to /home/adam/Dev/blog/needmorecowbell.github.io/Auto Run Docs/LOOP_00001_CANDIDATES.md, and mark the tactic as `[EXECUTED]` in the game plan.
-  - **Completed 2026-01-06**: Executed Tactic 1 (Duplicate Template Files). Found 3 duplicate file issues: (1) `photography/single.html` and `projects/single.html` are 100% identical to each other and differ from `_default/single.html` only on line 82 (Disqus shortname access pattern); (2) `_default/list.html` and `projects/list.html` are 100% identical. Documented findings in LOOP_00001_CANDIDATES.md with proposed deletions that would eliminate ~287 lines of duplicate code.
+- [ ] **Execute one tactic (or mark exhausted)**: Read /home/adam/Dev/blog/needmorecowbell.github.io/Auto Run Docs/LOOP_00001_GAME_PLAN.md and check for unexecuted tactics. If ALL tactics are already marked `[EXECUTED]`, append a section `## ALL_TACTICS_EXHAUSTED` to /home/adam/Dev/blog/needmorecowbell.github.io/Auto Run Docs/LOOP_00001_CANDIDATES.md and mark this task complete. Otherwise, pick one unexecuted tactic, search the codebase for matching issues, append findings to /home/adam/Dev/blog/needmorecowbell.github.io/Auto Run Docs/LOOP_00001_CANDIDATES.md, and mark the tactic as `[EXECUTED]` in the game plan.
 
 ## Output Format
 
