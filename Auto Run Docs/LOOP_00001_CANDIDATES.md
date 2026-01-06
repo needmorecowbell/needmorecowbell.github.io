@@ -76,3 +76,58 @@ This document tracks refactoring opportunities discovered by executing tactics f
   - `layouts/projects/list.html` (duplicate - can be deleted)
 - **Potential Line Reduction:** ~286 LOC (116 + 116 + 55 = 287 lines in duplicate files)
 - **Status:** EXECUTED
+
+---
+
+## Tactic 2: Duplicate baseof.html Templates - Executed 2026-01-06 16:30
+
+### Finding 1: Identical _default/baseof.html and photography/baseof.html
+
+- **Category:** Duplication
+- **Location:** `layouts/_default/baseof.html:1-30` and `layouts/photography/baseof.html:1-31`
+- **Current State:** Both files are **functionally 100% identical**. The only difference is whitespace: `photography/baseof.html` has an extra blank line (line 28) before the `{{- end -}}` closing tag. This is a trivial whitespace difference with no functional impact.
+- **Proposed Change:** Delete `layouts/photography/baseof.html` entirely. Hugo will automatically fall back to `_default/baseof.html` for the photography section. No functionality will change.
+- **Code Context:**
+  ```html
+  {{/* Both files have identical structure */}}
+  <!DOCTYPE html>
+  <html
+    dir="{{ .Site.Language.LanguageDirection | default "ltr" }}"
+    lang="{{- site.Language.Lang -}}"
+    data-theme="{{- .Site.Params.displayMode -}}"
+  >
+    {{- partial "head.html" . -}}
+    <body>
+      <header role="banner">{{ partial "navbar.html" . }}</header>
+      <div class="wrapper">
+        <aside role="complementary" aria-label="Site information">
+          {{- partial "sidebar.html" . -}}
+        </aside>
+        <main id="main-content" role="main" tabindex="-1">
+          <div class="autopagerize_page_element">
+            <div class="content">
+              {{- block "main" . }}{{- end }}
+            </div>
+          </div>
+        </main>
+      </div>
+
+      {{- partial "footer.html" (dict "context" . "footerClassModifier" "base") -}}
+
+      {{- if (eq .Site.Params.simpleAnalytics.enable true) -}}
+        {{- partial "analytics/simpleanalytics.html" . -}}
+      {{/* photography/baseof.html has one extra blank line here */}}
+      {{- end -}}
+    </body>
+  </html>
+  ```
+- **Notes:** The photography section does not require any special base template behavior. Hugo's template lookup order means `_default/baseof.html` will be used automatically when the section-specific one is removed.
+
+### Tactic Summary
+
+- **Issues Found:** 1 (identical baseof.html files with only whitespace difference)
+- **Files Affected:** 2 files total
+  - `layouts/_default/baseof.html` (reference implementation - 30 LOC)
+  - `layouts/photography/baseof.html` (duplicate - can be deleted - 31 LOC)
+- **Potential Line Reduction:** 31 LOC
+- **Status:** EXECUTED

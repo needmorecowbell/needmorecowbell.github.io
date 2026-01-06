@@ -40,7 +40,7 @@ Each tactic is a specific, actionable search pattern for finding refactoring opp
 - **Why It Matters:** All three `single.html` files are nearly identical (only 1 line difference: `site.Config.Services.Disqus.Shortname` vs `.Site.DisqusShortname`). The `_default/list.html` and `projects/list.html` are 100% identical. This creates maintenance burden and inconsistency risk.
 - **Recommendation:** Delete redundant section-specific files and rely on `_default/` templates, or extract common logic into a partial.
 
-### Tactic 2: Duplicate baseof.html Templates
+### [EXECUTED] Tactic 2: Duplicate baseof.html Templates
 - **Target:** Identical base template files
 - **Search Pattern:** Compare `layouts/*/baseof.html` files
 - **Files to Check:**
