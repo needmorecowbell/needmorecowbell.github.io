@@ -176,14 +176,36 @@ The audit revealed that the GLightbox implementation is **already working correc
 
 ### 2.3 Fix GLightbox Initialization Issues
 
-- [ ] Audit `layouts/partials/head.html` GLightbox initialization code (lines 158-186)
-- [ ] Verify the conditional `$needsGLightbox` logic correctly detects all gallery pages:
+- [x] Audit `layouts/partials/head.html` GLightbox initialization code (lines 158-186)
+- [x] Verify the conditional `$needsGLightbox` logic correctly detects all gallery pages:
   - Pages using `{{< gallery >}}` shortcode
   - Photography section pages
   - Any page with `.glightbox` class elements
-- [ ] Fix: If GLightbox not initializing, ensure script loads before initialization runs
-- [ ] Fix: Add fallback initialization that re-checks after a delay for dynamic content
-- [ ] Run `npm run test:ui -- gallery.spec.ts` to validate GLightbox opens
+- [x] Fix: If GLightbox not initializing, ensure script loads before initialization runs
+- [x] Fix: Add fallback initialization that re-checks after a delay for dynamic content
+- [x] Run `npm run test:ui -- gallery.spec.ts` to validate GLightbox opens
+
+#### 2.3 Audit Results (2026-01-07)
+
+**All items verified - no fixes needed. GLightbox initialization is already correct.**
+
+1. **head.html audit (lines 158-186):** ✅ GLightbox CSS and JS are loaded via CDN with proper version pinning (3.3.1). Initialization code uses `DOMContentLoaded` event listener.
+
+2. **`$needsGLightbox` conditional logic:** ✅ Line 159 correctly detects:
+   - Pages with `{{< gallery >}}` shortcode via `.HasShortcode "gallery"`
+   - Photography section pages via `eq .Section "photography"`
+   - The `.glightbox` selector in init handles all elements with that class
+
+3. **Script loading order:** ✅ Already correct. The script tag uses `defer`, and initialization waits for `DOMContentLoaded`. No fix needed.
+
+4. **Fallback initialization:** ✅ Not needed. Hugo generates static HTML, so all gallery elements exist at DOM ready. No dynamic content loading occurs.
+
+5. **Test validation:** ✅ Ran `npm run test:ui -- gallery.spec.ts` with 32 tests passing on Chromium and Firefox. All core functionality tests pass including:
+   - GLightbox overlay opens on thumbnail click
+   - Full-resolution images display in lightbox
+   - Keyboard navigation (arrows, ESC) works
+   - Close button and click-outside-to-close work
+   - Accessibility attributes present
 
 ### 2.3 Fix Full-Screen Image Expansion
 
