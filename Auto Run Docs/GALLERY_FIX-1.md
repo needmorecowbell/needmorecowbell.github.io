@@ -64,14 +64,16 @@ Manual testing is error-prone and changes can silently break functionality. We n
 
 ### 1.4 Create Visual Regression Tests
 
-- [ ] Create `tests/ui/visual-regression.spec.ts` for screenshot comparisons:
+- [x] Create `tests/ui/visual-regression.spec.ts` for screenshot comparisons:
   - Test: Gallery grid layout matches baseline screenshot
   - Test: Lightbox overlay appearance matches baseline (light mode)
   - Test: Lightbox overlay appearance matches baseline (dark mode)
   - Test: Mobile gallery grid layout matches baseline
   - Test: Mobile lightbox appearance matches baseline
-- [ ] Create `.gitignore` entries for Playwright artifacts (but keep baseline screenshots)
-- [ ] Document process for updating baseline screenshots when intentional changes are made
+- [x] Create `.gitignore` entries for Playwright artifacts (but keep baseline screenshots)
+- [x] Document process for updating baseline screenshots
+
+> **Completed:** Created comprehensive `tests/ui/visual-regression.spec.ts` with 9 tests across 4 test suites: Gallery Grid (2 tests), Lightbox (2 tests for light/dark mode), Mobile (2 tests - run only on mobile projects), and Component Details (3 tests for hover state and navigation controls). Updated `.gitignore` to exclude temporary diff/actual comparison images while keeping baseline screenshots committed. Created `tests/ui/README.md` with full documentation on running tests and updating baselines. Generated baseline screenshots for chromium and mobile-chrome projects (16 baseline images total). All tests pass on both desktop and mobile viewports.
 
 ### 1.5 Create Photography Section Tests
 

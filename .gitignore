@@ -27,7 +27,14 @@ __pycache__/
 # Node.js
 node_modules/
 
-# Playwright test artifacts
+# Playwright test artifacts (generated during test runs)
 playwright-report/
 test-results/
 playwright/.cache/
+
+# Playwright visual regression - exclude comparison outputs but KEEP baseline screenshots
+# Baseline screenshots are stored in tests/ui/*.spec.ts-snapshots/ and MUST be committed
+# DO NOT add tests/ui/*.spec.ts-snapshots/ to gitignore - these are the baselines!
+# The following are temporary diff images generated during failed comparisons:
+*-diff.png
+*-actual.png
