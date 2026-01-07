@@ -478,11 +478,46 @@ Created comprehensive dark mode test suite (`tests/ui/gallery-dark-mode.spec.ts`
 
 ### 2.9 Fix Photography Favorites Gallery
 
-- [ ] Audit `/photography/` list page favorites gallery specifically
-- [ ] Check if favorites images are using full URLs (not thumbnails) in lightbox
-- [ ] Verify all 4 favorite images load and expand properly
-- [ ] Ensure favorites gallery has same behavior as content page galleries
-- [ ] Add `data-type="image"` attribute if missing for consistency
+- [x] Audit `/photography/` list page favorites gallery specifically
+- [x] Check if favorites images are using full URLs (not thumbnails) in lightbox
+- [x] Verify all 4 favorite images load and expand properly
+- [x] Ensure favorites gallery has same behavior as content page galleries
+- [x] Add `data-type="image"` attribute if missing for consistency
+
+#### 2.9 Implementation Notes (2026-01-07)
+
+**Summary:** Added `data-type="image"` and `aria-label` attributes to the favorites gallery links to match the shortcode gallery implementation. Also improved alt text to include location descriptions.
+
+**Key Findings:**
+1. Favorites gallery was already functionally working correctly
+2. Images correctly use full URLs (not thumbnails) for both `href` and `src` - this is intentional since there are only 4 hero images
+3. All 4 images load and expand properly in lightbox (91-97% viewport fill)
+4. Missing `data-type="image"` attribute was the only inconsistency with shortcode galleries
+
+**Changes Made:**
+
+1. **`layouts/photography/list.html`** (lines 18-29): Updated all 4 favorites gallery links to include:
+   - `data-type="image"` - matches shortcode gallery pattern for GLightbox
+   - `aria-label="View image: [location]"` - matches shortcode accessibility pattern
+   - Improved `alt` text to match `data-description` values (e.g., "Crater Lake, Oregon" instead of just "Crater Lake")
+
+2. **Created `tests/ui/gallery-favorites.spec.ts`**: New comprehensive test file with 14 tests covering:
+   - Thumbnail count (4 images)
+   - `data-gallery="favorites"` attribute
+   - `data-type="image"` attribute (the fix)
+   - Full URL usage (no .thumb.jpg)
+   - Lightbox opening and display
+   - Viewport fill (>80% in at least one dimension)
+   - Keyboard navigation (arrow keys, ESC)
+   - Lazy loading attribute
+   - `data-description` captions
+   - Alt text on images
+   - `.gallery-grid` class for unified styling
+   - `.favorites-preview` wrapper structure
+
+**Test Results:**
+- gallery-favorites.spec.ts: 14 passed (Chromium), 14 passed (Firefox)
+- Full gallery suite: 64 passed, 12 skipped (mobile tests only run on mobile project)
 
 ### 2.10 Accessibility Fixes
 
