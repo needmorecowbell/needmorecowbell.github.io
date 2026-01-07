@@ -37,11 +37,13 @@ Manual testing is error-prone and changes can silently break functionality. We n
 
 ### 1.2 Create Test Infrastructure Scripts
 
-- [ ] Add npm script `test:ui` to run Playwright tests
-- [ ] Add npm script `test:ui:headed` to run tests in visible browser mode for debugging
-- [ ] Add npm script `test:ui:report` to view HTML test reports
-- [ ] Add npm script `dev` to start Hugo dev server (port 1313)
-- [ ] Create `tests/ui/fixtures.ts` with shared test fixtures (page setup, navigation helpers)
+- [x] Add npm script `test:ui` to run Playwright tests
+- [x] Add npm script `test:ui:headed` to run tests in visible browser mode for debugging
+- [x] Add npm script `test:ui:report` to view HTML test reports
+- [x] Add npm script `dev` to start Hugo dev server (port 1313)
+- [x] Create `tests/ui/fixtures.ts` with shared test fixtures (page setup, navigation helpers)
+
+> **Completed:** All infrastructure scripts were created during phase 1.1 setup. The `package.json` includes: `test:ui` (runs `playwright test`), `test:ui:headed` (runs tests with `--headed` flag), `test:ui:report` (runs `playwright show-report`), and `dev` (runs Hugo server on port 1313). Additionally includes `test:ui:debug` for debugging and `test:ui:update-snapshots` for updating baseline screenshots. The `tests/ui/fixtures.ts` file contains comprehensive helpers: `waitForGlightbox()`, `openLightbox()`, `closeLightbox()`, `getLightboxImage()`, `lightboxNext()`, `lightboxPrev()`, `getLightboxCounter()`, `countGalleryThumbnails()`, and `checkNoConsoleErrors()`.
 
 ### 1.3 Create Gallery Test Suite
 
