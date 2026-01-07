@@ -1,14 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { waitForGlightbox, openLightbox, countGalleryThumbnails } from './fixtures';
+import { waitForGlightbox, openLightbox, countGalleryThumbnails, S3CDN_PATTERN } from './fixtures';
 
 /**
  * Photography section specific tests.
  * Tests the photography list page, favorites gallery, individual galleries,
  * and S3CDN URL patterns.
  */
-
-// Expected S3CDN URL pattern
-const S3CDN_PATTERN = /^https:\/\/cdn\.414d\.net\/amblog\/assets\//;
 
 test.describe('Photography List Page', () => {
   test.beforeEach(async ({ page }) => {

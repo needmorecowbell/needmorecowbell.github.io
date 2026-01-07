@@ -131,3 +131,27 @@ export async function checkNoConsoleErrors(page: Page): Promise<string[]> {
 
   return errors;
 }
+
+/**
+ * S3CDN URL pattern that works in both development (MinIO) and production (CDN) environments.
+ * - Development: http://10.0.0.20:9000/amblog/assets/
+ * - Production: https://cdn.414d.net/amblog/assets/
+ */
+export const S3CDN_PATTERN = /^https?:\/\/(cdn\.414d\.net|10\.0\.0\.20:9000)\/amblog\/assets\//;
+
+/**
+ * Helper to check if a URL is a valid S3CDN URL (either dev MinIO or production CDN).
+ */
+export function isValidS3CDNUrl(url: string | null): boolean {
+  if (!url) return false;
+  return S3CDN_PATTERN.test(url);
+}
+
+/**
+ * Helper to check if a URL is NOT a local path (should be S3CDN-hosted).
+ */
+export function isNotLocalPath(url: string | null): boolean {
+  if (!url) return false;
+  // Should not be a relative path
+  return !url.startsWith('/') && !url.startsWith('./') && !url.startsWith('../');
+}
