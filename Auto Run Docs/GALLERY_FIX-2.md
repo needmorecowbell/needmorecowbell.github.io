@@ -584,11 +584,70 @@ Created comprehensive dark mode test suite (`tests/ui/gallery-dark-mode.spec.ts`
 
 ### 2.11 Performance Validation
 
-- [ ] Verify thumbnails are actually smaller files than full images
-- [ ] Check that `.thumb.jpg` files exist for all gallery images on S3CDN
-- [ ] Ensure lazy loading prevents loading all images at once
-- [ ] Measure Largest Contentful Paint on gallery-heavy pages
-- [ ] Add preconnect hint for S3CDN domain if not present
+- [x] Verify thumbnails are actually smaller files than full images
+- [x] Check that `.thumb.jpg` files exist for all gallery images on S3CDN
+- [x] Ensure lazy loading prevents loading all images at once
+- [x] Measure Largest Contentful Paint on gallery-heavy pages
+- [x] Add preconnect hint for S3CDN domain if not present
+
+#### 2.11 Implementation Notes (2026-01-07)
+
+**Summary:** Created comprehensive performance validation test suite and added S3CDN preconnect hint to improve gallery image loading performance.
+
+**Changes Made:**
+
+1. **`layouts/partials/head.html`** (lines 122-129): Added S3CDN preconnect and dns-prefetch hints:
+   ```html
+   <!-- S3CDN Preconnect - improves gallery image loading performance -->
+   {{- with .Site.Params.S3CDN }}
+     {{- $s3cdnURL := . }}
+     {{- $parsedURL := urls.Parse $s3cdnURL }}
+     {{- $s3cdnOrigin := printf "%s://%s" $parsedURL.Scheme $parsedURL.Host }}
+     <link rel="preconnect" href="{{ $s3cdnOrigin }}" crossorigin />
+     <link rel="dns-prefetch" href="{{ $s3cdnOrigin }}" />
+   {{- end }}
+   ```
+   - Dynamically extracts origin from S3CDN URL (works for both production CDN and dev MinIO)
+   - Uses `crossorigin` attribute for CORS image requests
+   - Adds both preconnect (TCP+TLS) and dns-prefetch (DNS only) for maximum compatibility
+
+2. **Created `tests/ui/gallery-performance.spec.ts`:** New comprehensive test file with 18 tests covering:
+   - **Thumbnail vs Full Image Size (3 tests):**
+     - Thumbnail dimensions are smaller than lightbox images
+     - Thumbnails use `.thumb.jpg` extension pattern
+     - Full images in lightbox do not use `.thumb.jpg`
+   - **Thumbnail File Existence (4 tests):**
+     - `.thumb.jpg` files exist and are accessible
+     - URLs are properly formed with S3CDN base
+     - Project gallery thumbnails exist
+     - Video thumbnail files exist (`.thumb.jpg` for videos)
+   - **Lazy Loading Behavior (4 tests):**
+     - All images have `loading="lazy"` attribute
+     - Lazy loading attribute is correctly configured
+     - Scrolling triggers more images to load
+     - Favorites gallery uses lazy loading
+   - **LCP Measurement (3 tests):**
+     - Gallery page LCP under 4000ms (actual: 196-752ms)
+     - Photography list page LCP under 4000ms
+     - Project gallery page LCP under 4000ms
+   - **S3CDN Preconnect Hint (3 tests):**
+     - Preconnect hint exists for S3CDN domain
+     - DNS-prefetch hint exists for S3CDN domain
+     - Preconnect with crossorigin attribute
+   - **Image Compression (1 test):**
+     - Thumbnail file sizes are reasonably small (<150KB)
+
+**Performance Results:**
+- **LCP (Largest Contentful Paint):**
+  - Nova Scotia gallery: **196-544ms** (Excellent - target <2500ms for "Good")
+  - Photography list: **648-752ms** (Excellent)
+  - Project gallery: **436-684ms** (Excellent)
+- **Thumbnail size:** ~42KB average (well under 150KB threshold)
+- **All gallery images:** Correctly use `loading="lazy"` attribute
+
+**Test Results:**
+- gallery-performance.spec.ts: 18 passed (Chromium)
+- All gallery tests: 120 passed, 1 failed (pre-existing S3CDN URL pattern issue - dev uses MinIO), 13 skipped
 
 ### 2.12 Final Validation (PATH A)
 

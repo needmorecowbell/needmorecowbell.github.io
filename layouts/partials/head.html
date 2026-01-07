@@ -119,6 +119,14 @@
 
   {{- end -}}
 
+  <!-- S3CDN Preconnect - improves gallery image loading performance -->
+  {{- with .Site.Params.S3CDN }}
+    {{- $s3cdnURL := . }}
+    {{- $parsedURL := urls.Parse $s3cdnURL }}
+    {{- $s3cdnOrigin := printf "%s://%s" $parsedURL.Scheme $parsedURL.Host }}
+    <link rel="preconnect" href="{{ $s3cdnOrigin }}" crossorigin />
+    <link rel="dns-prefetch" href="{{ $s3cdnOrigin }}" />
+  {{- end }}
 
   <!-- Favicons -->
   <link rel="shortcut icon" href="{{ .Site.Params.favicon | relURL }}favicon.ico" type="image/x-icon" />
