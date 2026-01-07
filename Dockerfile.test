@@ -1,0 +1,32 @@
+# Dockerfile for running Playwright UI tests in a consistent environment
+# Based on the official Playwright Docker image with Hugo extended added
+
+FROM mcr.microsoft.com/playwright:v1.50.0-noble
+
+# Install Hugo extended version
+ARG HUGO_VERSION=0.140.2
+RUN apt-get update && \
+    apt-get install -y wget && \
+    wget -q https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.deb && \
+    dpkg -i hugo_extended_${HUGO_VERSION}_linux-amd64.deb && \
+    rm hugo_extended_${HUGO_VERSION}_linux-amd64.deb && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files first for better layer caching
+COPY package.json package-lock.json ./
+
+# Install npm dependencies
+RUN npm ci
+
+# Copy project files
+COPY . .
+
+# Expose Hugo server port
+EXPOSE 1313
+
+# Default command runs tests
+CMD ["npm", "run", "test:ui"]

@@ -1,0 +1,49 @@
+# Docker Compose configuration for running UI tests
+# Usage:
+#   docker-compose -f docker-compose.test.yml up --build
+#   docker-compose -f docker-compose.test.yml run playwright npm run test:ui:headed
+
+services:
+  # Hugo development server
+  hugo-server:
+    image: klakegg/hugo:ext-alpine
+    container_name: hugo-test-server
+    command: server -D --port 1313 --bind 0.0.0.0
+    volumes:
+      - .:/src:ro
+    ports:
+      - "1313:1313"
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:1313"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+
+  # Playwright test runner
+  playwright:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: playwright-tests
+    depends_on:
+      hugo-server:
+        condition: service_healthy
+    environment:
+      - CI=true
+      - PLAYWRIGHT_BASE_URL=http://hugo-server:1313
+    volumes:
+      # Mount test results and reports for viewing after tests complete
+      - ./playwright-report:/app/playwright-report
+      - ./test-results:/app/test-results
+      # Mount tests directory so changes are reflected without rebuild
+      - ./tests:/app/tests:ro
+    networks:
+      - test-network
+    command: npx playwright test --config=playwright.docker.config.ts
+
+networks:
+  test-network:
+    driver: bridge

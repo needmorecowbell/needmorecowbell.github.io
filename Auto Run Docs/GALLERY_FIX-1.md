@@ -113,16 +113,28 @@ Manual testing is error-prone and changes can silently break functionality. We n
 
 ### 1.7 Docker Development Environment (Optional but Recommended)
 
-- [ ] Create `Dockerfile.test` for consistent test environment:
+- [x] Create `Dockerfile.test` for consistent test environment:
   - Base: `mcr.microsoft.com/playwright:v1.40.0-jammy`
   - Install Hugo extended version
   - Copy project files
   - Install npm dependencies
-- [ ] Create `docker-compose.test.yml` for easy test execution:
+- [x] Create `docker-compose.test.yml` for easy test execution:
   - Service: `hugo-server` - runs Hugo dev server
   - Service: `playwright` - runs UI tests against Hugo server
   - Shared network for container communication
-- [ ] Add npm script `test:ui:docker` to run tests in Docker
+- [x] Add npm script `test:ui:docker` to run tests in Docker
+
+> **Completed:** Created Docker development environment for consistent UI test execution:
+> - **`Dockerfile.test`:** Based on `mcr.microsoft.com/playwright:v1.50.0-noble` (updated from v1.40.0-jammy for latest Playwright compatibility). Installs Hugo extended v0.140.2, copies project files, and runs `npm ci` for dependency installation.
+> - **`docker-compose.test.yml`:** Defines two services:
+>   - `hugo-server`: Uses `klakegg/hugo:ext-alpine` to run Hugo dev server on port 1313 with health checks
+>   - `playwright`: Builds from Dockerfile.test, depends on hugo-server health, runs tests against `http://hugo-server:1313`
+>   - Shared `test-network` bridge for container communication
+>   - Volume mounts for test results and reports to persist after container exit
+> - **`playwright.docker.config.ts`:** Docker-specific Playwright config that uses container networking (no webServer config since Hugo runs in separate container).
+> - **npm scripts:** Added `test:ui:docker` (runs full test suite in Docker) and `test:ui:docker:down` (cleans up containers/volumes).
+>
+> Configuration validated with `docker-compose config` - all settings correct. Users need Docker group permissions to run (`sudo usermod -aG docker $USER` or use `sudo`).
 
 ### 1.8 CI Integration Preparation
 
@@ -154,6 +166,7 @@ Manual testing is error-prone and changes can silently break functionality. We n
 ```
 package.json
 playwright.config.ts
+playwright.docker.config.ts    (Docker-specific config)
 tests/
   ui/
     fixtures.ts
@@ -162,8 +175,8 @@ tests/
     photography.spec.ts
     cross-browser.spec.ts
     __screenshots__/        (baseline images)
-Dockerfile.test            (optional)
-docker-compose.test.yml    (optional)
+Dockerfile.test            (created)
+docker-compose.test.yml    (created)
 .github/workflows/ui-tests.yml
 ```
 

@@ -10,7 +10,9 @@
     "test:ui:headed": "playwright test --headed",
     "test:ui:report": "playwright show-report",
     "test:ui:debug": "playwright test --debug",
-    "test:ui:update-snapshots": "playwright test --update-snapshots"
+    "test:ui:update-snapshots": "playwright test --update-snapshots",
+    "test:ui:docker": "docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit",
+    "test:ui:docker:down": "docker-compose -f docker-compose.test.yml down -v"
   },
   "keywords": [
     "hugo",
