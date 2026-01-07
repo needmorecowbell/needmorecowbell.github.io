@@ -160,6 +160,54 @@
   {{- if $needsGLightbox }}
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox@3.3.1/dist/css/glightbox.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/glightbox@3.3.1/dist/js/glightbox.min.js"></script>
+  <script>
+    // Global GLightbox initialization - runs after DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      if (typeof GLightbox !== 'undefined') {
+        // Initialize GLightbox for all .glightbox elements on the page
+        var lightbox = GLightbox({
+          selector: '.glightbox',
+          loop: true,
+          touchNavigation: true,
+          keyboardNavigation: true,
+          closeOnOutsideClick: true
+        });
+
+        // Accessibility fixes when lightbox opens
+        lightbox.on('open', function() {
+          // Fix aria-hidden conflict: remove aria-hidden from wrapper
+          var wrapper = document.querySelector('.wrapper');
+          if (wrapper) {
+            wrapper.removeAttribute('aria-hidden');
+          }
+
+          // Add role="dialog" and aria-modal to lightbox container for screen readers
+          var container = document.querySelector('.glightbox-container');
+          if (container) {
+            container.setAttribute('role', 'dialog');
+            container.setAttribute('aria-modal', 'true');
+            container.setAttribute('aria-label', 'Image lightbox');
+          }
+
+          // Mark close button with accessible label
+          var closeBtn = document.querySelector('.gclose');
+          if (closeBtn && !closeBtn.hasAttribute('aria-label')) {
+            closeBtn.setAttribute('aria-label', 'Close lightbox');
+          }
+
+          // Mark navigation buttons with accessible labels
+          var prevBtn = document.querySelector('.gprev');
+          if (prevBtn && !prevBtn.hasAttribute('aria-label')) {
+            prevBtn.setAttribute('aria-label', 'Previous image');
+          }
+          var nextBtn = document.querySelector('.gnext');
+          if (nextBtn && !nextBtn.hasAttribute('aria-label')) {
+            nextBtn.setAttribute('aria-label', 'Next image');
+          }
+        });
+      }
+    });
+  </script>
   {{- end }}
   {{ if not .Site.Params.disableThemeSwitcher }}
     {{ $anatoleThemeSwitcher := resources.Get "js/anatole-theme-switcher.js" }}

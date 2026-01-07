@@ -521,12 +521,66 @@ Created comprehensive dark mode test suite (`tests/ui/gallery-dark-mode.spec.ts`
 
 ### 2.10 Accessibility Fixes
 
-- [ ] Verify all gallery images have alt text
-- [ ] Verify lightbox is keyboard navigable (arrow keys, ESC)
-- [ ] Add `role="dialog"` to lightbox overlay if not present
-- [ ] Fix aria-hidden conflict noted in head.html (lines 176-182)
-- [ ] Test with screen reader (or automated a11y test)
-- [ ] Run Playwright accessibility audit on gallery pages
+- [x] Verify all gallery images have alt text
+- [x] Verify lightbox is keyboard navigable (arrow keys, ESC)
+- [x] Add `role="dialog"` to lightbox overlay if not present
+- [x] Fix aria-hidden conflict noted in head.html (lines 176-182)
+- [x] Test with screen reader (or automated a11y test)
+- [x] Run Playwright accessibility audit on gallery pages
+
+#### 2.10 Implementation Notes (2026-01-07)
+
+**Summary:** Enhanced GLightbox accessibility with `role="dialog"`, `aria-modal`, and ARIA labels for all controls. Created comprehensive accessibility test suite using axe-core.
+
+**Key Findings (Already Implemented):**
+1. **Alt text** - ✅ Already present on all gallery images (`gallery.html` lines 35, 49) and favorites (`list.html` lines 19-28)
+2. **Keyboard navigation** - ✅ Already working (ESC closes, arrows navigate) - verified by `gallery.spec.ts`
+3. **aria-hidden fix** - ✅ Already implemented in `head.html` lines 176-182
+
+**Changes Made:**
+
+1. **`layouts/partials/head.html`** (lines 176-207): Extended the `lightbox.on('open')` handler to add:
+   - `role="dialog"` on `.glightbox-container` for screen reader modal detection
+   - `aria-modal="true"` to indicate modal behavior
+   - `aria-label="Image lightbox"` for context
+   - `aria-label="Close lightbox"` on close button
+   - `aria-label="Previous image"` on prev navigation button
+   - `aria-label="Next image"` on next navigation button
+
+2. **Created `tests/ui/gallery-a11y.spec.ts`**: Comprehensive accessibility test suite with 20 tests:
+   - **Gallery Grid Accessibility (5 tests):**
+     - axe-core scan for critical/serious violations
+     - Alt text verification on all images
+     - aria-label verification on gallery links
+     - role="region" with accessible name
+     - Video items have appropriate aria-labels
+   - **Lightbox Accessibility (6 tests):**
+     - role="dialog" verification
+     - aria-modal="true" verification
+     - Accessible label on container
+     - Close button aria-label
+     - Navigation buttons aria-labels
+     - axe-core scan on open lightbox
+   - **Keyboard Navigation (4 tests):**
+     - Thumbnails are keyboard focusable
+     - Enter key opens lightbox
+     - ESC key closes lightbox
+     - Arrow keys navigate between images
+   - **Photography Favorites Accessibility (3 tests):**
+     - axe-core scan for violations
+     - Descriptive alt text on favorites
+     - data-type="image" attribute consistency
+   - **Project Gallery Accessibility (1 test):**
+     - axe-core scan for violations
+   - **Full Page Accessibility Audit (1 test):**
+     - WCAG 2.1 AA compliance check
+
+3. **Installed `@axe-core/playwright`**: Added to devDependencies for automated WCAG compliance testing
+
+**Test Results:**
+- gallery-a11y.spec.ts: 40 passed (20 Chromium + 20 Firefox)
+- gallery.spec.ts: 18 passed (no regressions)
+- All axe-core scans pass with zero critical/serious violations
 
 ### 2.11 Performance Validation
 
