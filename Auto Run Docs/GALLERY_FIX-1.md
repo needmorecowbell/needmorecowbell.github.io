@@ -97,12 +97,19 @@ Manual testing is error-prone and changes can silently break functionality. We n
 
 ### 1.6 Create Cross-Browser Smoke Tests
 
-- [ ] Create `tests/ui/cross-browser.spec.ts` for browser compatibility:
+- [x] Create `tests/ui/cross-browser.spec.ts` for browser compatibility:
   - Test: Gallery renders in Chromium
   - Test: Gallery renders in Firefox
   - Test: Gallery renders in WebKit (Safari)
   - Test: Lightbox works in mobile viewport (touch simulation)
   - Test: No JavaScript console errors on gallery pages
+
+> **Completed:** Created comprehensive `tests/ui/cross-browser.spec.ts` with 9 tests across 3 test suites:
+> - **Cross-Browser Gallery Compatibility (4 tests):** Verifies gallery renders correctly, lightbox opens/displays images, lightbox closes properly, and keyboard navigation works. These tests run across all browser projects to ensure consistent behavior.
+> - **Mobile Gallery Support (2 tests):** Tests gallery rendering in mobile viewport and touch/click interaction for opening/closing lightbox. Includes mobile-specific detection for proper test behavior adaptation.
+> - **No JavaScript Console Errors (3 tests):** Verifies no application JavaScript errors occur on gallery page load, during lightbox interaction, or on photography list page. Includes filtering for expected third-party CORS/network errors from analytics scripts (Cloudflare Insights) that occur when testing against localhost.
+>
+> All 27 tests (9 tests × 3 available browser projects) pass on Chromium, Firefox, and mobile-Chrome. WebKit (Safari) and mobile-Safari tests are configured but require system dependencies (`libicu74`, `libxml2`, `libvpx9`, `libflite1`) to be installed via `sudo npx playwright install-deps` - this is an environment setup issue, not a test failure.
 
 ### 1.7 Docker Development Environment (Optional but Recommended)
 
