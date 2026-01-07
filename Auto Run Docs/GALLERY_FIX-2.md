@@ -144,7 +144,7 @@ Only non-gallery-related errors observed:
 Based on 2.1 audit results, make a go/no-go decision:
 
 - [x] If GLightbox issues are **configuration-only** (wrong options, missing init) → Proceed to 2.3-2.12 to fix GLightbox
-- [ ] ~~If GLightbox has **fundamental limitations** (can't do true full-screen, poor mobile) → Skip to 2.13 to replace library~~ N/A
+- [x] ~~If GLightbox has **fundamental limitations** (can't do true full-screen, poor mobile) → Skip to 2.13 to replace library~~ **SKIPPED - N/A per Decision Gate (PATH A chosen)**
 - [x] Document decision rationale in this file before proceeding
 
 **Decision:** **FIX GLIGHTBOX (Minor cleanup only)**
