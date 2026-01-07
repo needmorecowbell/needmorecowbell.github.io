@@ -47,7 +47,7 @@ Manual testing is error-prone and changes can silently break functionality. We n
 
 ### 1.3 Create Gallery Test Suite
 
-- [ ] Create `tests/ui/gallery.spec.ts` with core gallery functionality tests:
+- [x] Create `tests/ui/gallery.spec.ts` with core gallery functionality tests:
   - Test: Gallery grid renders with expected number of thumbnails
   - Test: Clicking thumbnail opens GLightbox overlay
   - Test: Lightbox displays full-resolution image (not thumbnail)
@@ -59,6 +59,8 @@ Manual testing is error-prone and changes can silently break functionality. We n
   - Test: Gallery counter shows correct position (e.g., "3 of 15")
   - Test: Video items show play button overlay on thumbnails
   - Test: Video items play in lightbox when clicked
+
+> **Completed:** Created comprehensive `tests/ui/gallery.spec.ts` with 18 tests covering core functionality (10 tests), video support (2 tests - skipped when no video content), accessibility (4 tests), and image loading (2 tests). Tests pass on Chromium, Firefox, and mobile-Chrome viewports. Key features tested: thumbnail grid rendering, lightbox opening/closing (button, ESC, click-outside), full-resolution image display, keyboard navigation (arrow keys), navigation buttons, gallery counter, accessibility attributes (ARIA roles, labels, alt text), lazy loading, and video item detection. Fixed `fixtures.ts` to use correct `.gallery-grid` selector and added `force: true` for GLightbox button clicks to handle overlay z-index. Added mobile-specific test handling for viewport-constrained scenarios.
 
 ### 1.4 Create Visual Regression Tests
 

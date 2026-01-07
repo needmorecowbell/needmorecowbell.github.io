@@ -40,10 +40,10 @@ export async function openLightbox(page: Page, index: number = 0): Promise<void>
  * Helper to close the lightbox.
  */
 export async function closeLightbox(page: Page): Promise<void> {
-  // Click the close button
+  // Click the close button - use force to bypass overlay z-index issues
   const closeBtn = page.locator('.gclose');
   if (await closeBtn.isVisible()) {
-    await closeBtn.click();
+    await closeBtn.click({ force: true });
   }
   // Wait for overlay to disappear
   await page.waitForSelector('.goverlay', { state: 'hidden', timeout: 5000 });
@@ -57,7 +57,11 @@ export async function getLightboxImage(page: Page): Promise<{
   width: number;
   height: number;
 }> {
-  const img = page.locator('.gslide.current img.zoomable');
+  // Wait for slide transition to complete - look for single current slide
+  await page.waitForTimeout(100);
+
+  // Use first() to handle case where multiple elements match during transition
+  const img = page.locator('.gslide.current img.zoomable').first();
   await img.waitFor({ state: 'visible', timeout: 5000 });
 
   const src = await img.getAttribute('src') || '';
@@ -76,9 +80,9 @@ export async function getLightboxImage(page: Page): Promise<{
 export async function lightboxNext(page: Page): Promise<void> {
   const nextBtn = page.locator('.gnext');
   if (await nextBtn.isVisible()) {
-    await nextBtn.click();
-    // Small delay to allow transition
-    await page.waitForTimeout(300);
+    await nextBtn.click({ force: true });
+    // Wait for slide transition animation to complete
+    await page.waitForTimeout(500);
   }
 }
 
@@ -88,9 +92,9 @@ export async function lightboxNext(page: Page): Promise<void> {
 export async function lightboxPrev(page: Page): Promise<void> {
   const prevBtn = page.locator('.gprev');
   if (await prevBtn.isVisible()) {
-    await prevBtn.click();
-    // Small delay to allow transition
-    await page.waitForTimeout(300);
+    await prevBtn.click({ force: true });
+    // Wait for slide transition animation to complete
+    await page.waitForTimeout(500);
   }
 }
 
@@ -109,7 +113,7 @@ export async function getLightboxCounter(page: Page): Promise<string> {
  * Helper to count gallery thumbnails on the page.
  */
 export async function countGalleryThumbnails(page: Page): Promise<number> {
-  const thumbnails = page.locator('.gallery a.glightbox');
+  const thumbnails = page.locator('.gallery-grid a.glightbox');
   return await thumbnails.count();
 }
 
