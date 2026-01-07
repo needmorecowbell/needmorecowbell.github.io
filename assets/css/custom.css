@@ -2206,6 +2206,7 @@ html[data-theme='dark'] ::selection {
   pointer-events: none;
 }
 
+
 /* =============================================================================
    Header Full-Width Fix - Phase 11
    ============================================================================= */
@@ -2647,7 +2648,14 @@ header .nav__list .nav__links a::after {
   }
 }
 
-/* Stop shimmer once image is loaded */
+/* Stop shimmer animation once image is loaded */
+.gallery-grid a:has(img.loaded) {
+  animation: none;
+  background-image: none;
+  background-color: var(--secondary-bg-color);
+}
+
+/* Image starts hidden, fades in when loaded */
 .gallery-grid a img {
   opacity: 0;
   transition: opacity var(--duration-slow) var(--ease-out-quart),
@@ -2721,6 +2729,33 @@ header .nav__list .nav__links a::after {
   font-size: 2rem;
   color: var(--nav-text-color);
   opacity: 0.5;
+  position: absolute;
+  top: calc(50% - 24px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Error text for gallery items */
+.gallery-grid a.image-error::after {
+  content: 'Image unavailable';
+  position: absolute;
+  top: calc(50% + 16px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  color: var(--nav-text-color);
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
+/* Video error shows different text */
+.gallery-grid a.video-item.image-error::after {
+  content: 'Video unavailable';
+}
+
+/* Hide broken image element on error */
+.gallery-grid a.image-error img {
+  display: none;
 }
 
 /* Post thumbnail error state */

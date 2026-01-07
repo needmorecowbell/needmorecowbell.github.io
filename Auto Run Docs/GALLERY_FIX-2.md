@@ -325,9 +325,9 @@ Created comprehensive dark mode test suite (`tests/ui/gallery-dark-mode.spec.ts`
 
 ### 2.6 Fix Thumbnail Loading & Error States
 
-- [ ] Audit current error handling in `gallery.html` shortcode (lines 118-143)
-- [ ] Add visible placeholder/skeleton while images load
-- [ ] Add visible error state when image fails to load:
+- [x] Audit current error handling in `gallery.html` shortcode (lines 118-143)
+- [x] Add visible placeholder/skeleton while images load
+- [x] Add visible error state when image fails to load:
   ```css
   .gallery-grid a.image-error {
     background: var(--error-bg, #fee);
@@ -337,8 +337,39 @@ Created comprehensive dark mode test suite (`tests/ui/gallery-dark-mode.spec.ts`
     /* styling */
   }
   ```
-- [ ] Test with intentionally broken image URL to verify error handling
-- [ ] Add loading="lazy" verification - ensure images below fold don't block page load
+- [x] Test with intentionally broken image URL to verify error handling
+- [x] Add loading="lazy" verification - ensure images below fold don't block page load
+
+#### 2.6 Implementation Notes (2026-01-07)
+
+**Summary:** Enhanced existing loading skeleton and error state CSS to provide visible feedback during image loading and on load failures.
+
+**Key Findings:**
+1. **Loading skeleton already existed** in Phase 11.6 (`custom.css` lines 2630-2668) with shimmer animation
+2. **Error handling already existed** in `gallery.html` (lines 59-85) with JavaScript that adds `.loaded` and `.image-error` classes
+3. **Error state CSS existed** but was incomplete (Phase 11.6 lines 2705-2725) - only showed ⚠ icon, no "Image unavailable" text
+
+**Changes Made:**
+
+1. **`assets/css/custom.css`:**
+   - Added `.gallery-grid a:has(img.loaded)` rule to stop shimmer animation when image loads (line 2652)
+   - Added `.gallery-grid a.image-error::after` rule with "Image unavailable" text (lines 2731-2742)
+   - Added `.gallery-grid a.video-item.image-error::after` for "Video unavailable" text (lines 2744-2746)
+   - Added `.gallery-grid a.image-error img { display: none }` to hide broken image element (lines 2749-2751)
+
+2. **`tests/ui/gallery-loading.spec.ts`:** Created new test file with 10 tests covering:
+   - Skeleton animation presence and stopping behavior
+   - Image fade-in effect when loaded
+   - `loading="lazy"` attribute verification
+   - Error state CSS classes and styling
+   - Error icon (⚠) via `::before` pseudo-element
+   - "Image unavailable" text via `::after` pseudo-element
+   - Hidden broken image element
+   - Dark mode error state
+
+**Test Results:**
+- gallery-loading.spec.ts: 10 passed (Chromium + Firefox)
+- gallery.spec.ts: 16 passed, 2 skipped (video tests - no videos on test pages)
 
 ### 2.7 Fix Video Gallery Items
 
