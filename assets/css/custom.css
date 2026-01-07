@@ -3002,4 +3002,12 @@ html[data-theme='dark'] .post .post-content pre:hover {
     transform: scale(0.95);
     background-color: var(--tag-hover-bg);
   }
+
+  /* GLightbox mobile tap targets - meet WCAG 44x44px minimum */
+  .gclose,
+  .gnext,
+  .gprev {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }
