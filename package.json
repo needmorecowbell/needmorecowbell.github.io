@@ -1,0 +1,27 @@
+{
+  "name": "needmorecowbell-blog",
+  "version": "1.0.0",
+  "description": "Personal blog with Hugo, GLightbox galleries, and automated UI testing",
+  "private": true,
+  "scripts": {
+    "dev": "hugo server -D --port 1313",
+    "build": "hugo --minify",
+    "test:ui": "playwright test",
+    "test:ui:headed": "playwright test --headed",
+    "test:ui:report": "playwright show-report",
+    "test:ui:debug": "playwright test --debug",
+    "test:ui:update-snapshots": "playwright test --update-snapshots"
+  },
+  "keywords": [
+    "hugo",
+    "blog",
+    "photography",
+    "glightbox",
+    "playwright"
+  ],
+  "author": "needmorecowbell",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.57.0"
+  }
+}
