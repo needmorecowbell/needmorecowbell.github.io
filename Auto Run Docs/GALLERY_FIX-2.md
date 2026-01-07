@@ -373,12 +373,53 @@ Created comprehensive dark mode test suite (`tests/ui/gallery-dark-mode.spec.ts`
 
 ### 2.7 Fix Video Gallery Items
 
-- [ ] Test video items in galleries (e.g., sumac-wine-project has video)
-- [ ] Verify video thumbnail shows play button overlay
-- [ ] Verify clicking video item plays video in GLightbox
-- [ ] Check video controls are visible in lightbox
-- [ ] Fix any video-specific issues found
-- [ ] Add test for video playback in gallery.spec.ts
+- [x] Test video items in galleries (e.g., sumac-wine-project has video)
+- [x] Verify video thumbnail shows play button overlay
+- [x] Verify clicking video item plays video in GLightbox
+- [x] Check video controls are visible in lightbox
+- [x] Fix any video-specific issues found
+- [x] Add test for video playback in gallery.spec.ts
+
+#### 2.7 Implementation Notes (2026-01-07)
+
+**Summary:** Created comprehensive video gallery tests and fixed existing tests that were being skipped due to testing pages without video content.
+
+**Key Findings:**
+1. Video gallery implementation in `gallery.html` was already working correctly
+2. The sumac-wine-project page (`/post/2023-08-14-sumac-wine-project/`) has 3 video items
+3. Videos correctly use:
+   - `.video-item` class for styling
+   - `data-type="video"` attribute for GLightbox
+   - `.thumb.jpg` thumbnails for video previews
+   - CSS `::after` pseudo-element for play button overlay
+
+**Changes Made:**
+
+1. **Created `tests/ui/gallery-video.spec.ts`:** New dedicated test file with 15 tests covering:
+   - Video item presence and count (3 videos on sumac-wine page)
+   - `.video-item` class assignment
+   - `data-type="video"` attribute
+   - `.glightbox` class integration
+   - `.thumb.jpg` thumbnail extension
+   - Video file extension validation (.mp4, .mov, .webm, .avi)
+   - Play button overlay visibility (CSS `::after` pseudo-element)
+   - GLightbox opening on click
+   - Video playback in lightbox
+   - Video controls visibility
+   - Lazy loading on thumbnails
+   - Accessibility: aria-label and alt text
+   - Navigation between videos (arrow keys)
+   - ESC key closes video lightbox
+
+2. **Updated `tests/ui/gallery.spec.ts`:** Fixed video tests (lines 274-305) to:
+   - Use `/post/2023-08-14-sumac-wine-project/` page directly (has videos)
+   - Remove skip logic that caused tests to be skipped
+   - Add explicit assertion for 3 videos on the page
+
+**Test Results:**
+- gallery-video.spec.ts: 15 passed (Chromium), 15 passed (Firefox)
+- gallery.spec.ts Video Support: 2 passed (no longer skipped)
+- Full gallery + video suite: 66 passed (Chromium + Firefox)
 
 ### 2.8 Mobile Gallery Experience
 

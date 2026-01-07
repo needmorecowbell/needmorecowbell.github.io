@@ -269,36 +269,22 @@ test.describe('Gallery Core Functionality', () => {
 
 /**
  * Video item tests for gallery.
+ * Uses sumac-wine-project page which has video content.
  */
 test.describe('Gallery Video Support', () => {
-  // Test requires a page with video items
-  // Skip if no video content available
+  const VIDEO_GALLERY_PAGE = '/post/2023-08-14-sumac-wine-project/';
 
   test('video items show play button overlay on thumbnails', async ({ page }) => {
-    // Navigate to a page and look for video items
-    await page.goto('/photography/');
+    await page.goto(VIDEO_GALLERY_PAGE);
     await page.waitForLoadState('networkidle');
 
-    // Check if there are any video items on this page or sub-pages
+    // The sumac wine project has 3 videos
     const videoItems = page.locator('.gallery-grid a.video-item');
     const videoCount = await videoItems.count();
+    expect(videoCount).toBe(3);
 
-    if (videoCount === 0) {
-      // No videos on this page, try the main gallery
-      await page.goto('/photography/2023_nova_scotia/');
-      await page.waitForLoadState('networkidle');
-      const novaScotiaVideos = page.locator('.gallery-grid a.video-item');
-      const novaScotiaVideoCount = await novaScotiaVideos.count();
-
-      if (novaScotiaVideoCount === 0) {
-        // Skip test if no video content exists
-        test.skip();
-        return;
-      }
-    }
-
-    // If we have videos, verify play button overlay via CSS
-    const firstVideo = page.locator('.gallery-grid a.video-item').first();
+    // Verify play button overlay via CSS
+    const firstVideo = videoItems.first();
     await expect(firstVideo).toBeVisible();
 
     // Verify the video-item class exists (which has ::after pseudo-element for play button)
@@ -306,17 +292,10 @@ test.describe('Gallery Video Support', () => {
   });
 
   test('video items have correct data attributes for GLightbox', async ({ page }) => {
-    await page.goto('/photography/');
+    await page.goto(VIDEO_GALLERY_PAGE);
     await page.waitForLoadState('networkidle');
 
     const videoItems = page.locator('.gallery-grid a.video-item');
-    const videoCount = await videoItems.count();
-
-    if (videoCount === 0) {
-      test.skip();
-      return;
-    }
-
     const firstVideo = videoItems.first();
 
     // Verify video has correct GLightbox attributes
