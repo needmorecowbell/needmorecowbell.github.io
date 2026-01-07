@@ -702,57 +702,52 @@ Created comprehensive dark mode test suite (`tests/ui/gallery-dark-mode.spec.ts`
 
 *Skip to here if Decision Gate (2.2) determined GLightbox cannot be fixed.*
 
+**STATUS: SKIPPED (N/A)** - Decision Gate 2.2 determined GLightbox works correctly and only needs minor fixes (PATH A). Library replacement is not required.
+
 ### 2.13 Evaluate Replacement Library
 
-- [ ] Test PhotoSwipe 5 in isolation (create test HTML page):
-  - Does it provide true full-screen viewing?
-  - Does pinch-to-zoom work on mobile?
-  - Does it handle videos?
-  - What's the bundle size impact?
-- [ ] If PhotoSwipe doesn't meet needs, test Lightgallery.js or Fancybox 5
-- [ ] Document chosen library and rationale
+- [x] ~~Test PhotoSwipe 5 in isolation (create test HTML page)~~ **SKIPPED - N/A per Decision Gate 2.2**
+- [x] ~~If PhotoSwipe doesn't meet needs, test Lightgallery.js or Fancybox 5~~ **SKIPPED - N/A**
+- [x] ~~Document chosen library and rationale~~ **SKIPPED - N/A**
 
 ### 2.14 Remove GLightbox
 
-- [ ] Remove GLightbox CDN links from `layouts/partials/head.html`
-- [ ] Remove GLightbox initialization script from `head.html`
-- [ ] Remove `.glightbox` class references from templates (but keep gallery grid markup)
-- [ ] Verify site builds without errors after removal
+- [x] ~~Remove GLightbox CDN links from `layouts/partials/head.html`~~ **SKIPPED - N/A**
+- [x] ~~Remove GLightbox initialization script from `head.html`~~ **SKIPPED - N/A**
+- [x] ~~Remove `.glightbox` class references from templates~~ **SKIPPED - N/A**
+- [x] ~~Verify site builds without errors after removal~~ **SKIPPED - N/A**
 
 ### 2.15 Implement New Library
 
-- [ ] Add new library CDN links to `head.html` (or install via npm)
-- [ ] Update `layouts/shortcodes/gallery.html`:
-  - Change class names to match new library requirements
-  - Add any required data attributes (e.g., PhotoSwipe needs dimensions)
-  - Keep thumbnail grid CSS (it's independent of lightbox library)
-- [ ] Update `layouts/photography/list.html` favorites gallery similarly
-- [ ] Add initialization script for new library
-- [ ] Test: clicking thumbnail opens full-screen lightbox
+- [x] ~~Add new library CDN links to `head.html`~~ **SKIPPED - N/A**
+- [x] ~~Update `layouts/shortcodes/gallery.html`~~ **SKIPPED - N/A**
+- [x] ~~Update `layouts/photography/list.html` favorites gallery similarly~~ **SKIPPED - N/A**
+- [x] ~~Add initialization script for new library~~ **SKIPPED - N/A**
+- [x] ~~Test: clicking thumbnail opens full-screen lightbox~~ **SKIPPED - N/A**
 
 ### 2.16 Configure New Library for Optimal UX
 
-- [ ] Enable full-screen mode / maximize image viewing area
-- [ ] Enable keyboard navigation (arrows, ESC)
-- [ ] Enable touch gestures (swipe, pinch-zoom)
-- [ ] Configure loop behavior for gallery navigation
-- [ ] Add loading indicators during image fetch
-- [ ] Configure dark overlay background
+- [x] ~~Enable full-screen mode / maximize image viewing area~~ **SKIPPED - N/A**
+- [x] ~~Enable keyboard navigation (arrows, ESC)~~ **SKIPPED - N/A**
+- [x] ~~Enable touch gestures (swipe, pinch-zoom)~~ **SKIPPED - N/A**
+- [x] ~~Configure loop behavior for gallery navigation~~ **SKIPPED - N/A**
+- [x] ~~Add loading indicators during image fetch~~ **SKIPPED - N/A**
+- [x] ~~Configure dark overlay background~~ **SKIPPED - N/A**
 
 ### 2.17 Video Support (New Library)
 
-- [ ] Test video playback in new library
-- [ ] If not supported natively, add video handling workaround
-- [ ] Verify video thumbnails still show play button overlay
+- [x] ~~Test video playback in new library~~ **SKIPPED - N/A**
+- [x] ~~If not supported natively, add video handling workaround~~ **SKIPPED - N/A**
+- [x] ~~Verify video thumbnails still show play button overlay~~ **SKIPPED - N/A**
 
 ### 2.18 Final Validation (PATH B)
 
-- [ ] Run full UI test suite: `npm run test:ui`
-- [ ] All gallery tests pass with new library
-- [ ] Visual regression baselines updated for new library appearance
-- [ ] No console errors on any gallery page
-- [ ] Manual spot-check on desktop and mobile
-- [ ] Document new library setup for future maintainers
+- [x] ~~Run full UI test suite: `npm run test:ui`~~ **SKIPPED - N/A**
+- [x] ~~All gallery tests pass with new library~~ **SKIPPED - N/A**
+- [x] ~~Visual regression baselines updated for new library appearance~~ **SKIPPED - N/A**
+- [x] ~~No console errors on any gallery page~~ **SKIPPED - N/A**
+- [x] ~~Manual spot-check on desktop and mobile~~ **SKIPPED - N/A**
+- [x] ~~Document new library setup for future maintainers~~ **SKIPPED - N/A**
 
 ---
 
@@ -785,3 +780,24 @@ assets/css/custom.css                   (shared gallery styles)
 - If S3CDN thumbnails are missing, may need to run thumbnail generation script
 - GLightbox documentation: https://biati-digital.github.io/glightbox/
 - Keep baseline screenshots updated as intentional visual changes are made
+
+---
+
+## Phase 2 Completion Summary (2026-01-07)
+
+**STATUS: COMPLETE**
+
+All tasks in Phase 2 have been completed or marked as N/A:
+- **PATH A (Tasks 2.1-2.12):** All completed - GLightbox fixed and validated
+- **PATH B (Tasks 2.13-2.18):** All marked SKIPPED/N/A - Not required per Decision Gate 2.2
+
+**Success Criteria Met:**
+1. ✅ Clicking any gallery thumbnail opens a full-screen lightbox view
+2. ✅ All gallery types have identical visual appearance (unified CSS in custom.css)
+3. ✅ Dark mode galleries fully functional with good contrast
+4. ✅ Mobile users can navigate galleries with touch gestures (44px tap targets added)
+5. ✅ Failed image loads show clear error state ("Image unavailable" text)
+6. ✅ All Phase 01 UI tests pass consistently (270 passed)
+7. ✅ No JavaScript console errors on gallery pages
+
+**Gallery Implementation Is Production-Ready.**
