@@ -138,7 +138,7 @@ Manual testing is error-prone and changes can silently break functionality. We n
 
 ### 1.8 CI Integration Preparation
 
-- [ ] Create `.github/workflows/ui-tests.yml` workflow file (template):
+- [x] Create `.github/workflows/ui-tests.yml` workflow file (template):
   - Trigger on push to develop/main
   - Trigger on pull requests
   - Install dependencies
@@ -146,7 +146,24 @@ Manual testing is error-prone and changes can silently break functionality. We n
   - Run Playwright tests
   - Upload test artifacts (screenshots, videos) on failure
   - Upload HTML report as artifact
-- [ ] Document manual CI setup steps if GitHub Actions not already configured
+- [x] Document manual CI setup steps if GitHub Actions not already configured
+
+> **Completed:** Created comprehensive GitHub Actions workflow for automated UI testing:
+> - **`.github/workflows/ui-tests.yml`:** Defines two parallel jobs:
+>   - `ui-tests`: Runs full Playwright suite on Chromium and Firefox with 30-minute timeout
+>   - `visual-regression`: Runs visual comparison tests separately on Chromium for clearer reporting
+>   - Both jobs install Hugo extended v0.140.2 via peaceiris/actions-hugo@v3
+>   - Playwright browsers installed with system dependencies (`--with-deps`)
+>   - Artifacts uploaded: HTML report (always), screenshots/videos (on failure), visual diffs (on failure)
+> - **Documentation:** Updated `tests/ui/README.md` with comprehensive CI Integration section covering:
+>   - Workflow overview and triggers
+>   - Artifact details
+>   - Manual CI setup steps (enabling Actions, workflow permissions)
+>   - Local CI simulation commands
+>   - Troubleshooting guide for common failures
+>   - Secrets/variables requirements
+> - **PR Template:** Updated `.github/PULL_REQUEST_TEMPLATE.md` checklist to include UI test verification
+> - YAML syntax validated successfully
 
 ---
 
@@ -169,15 +186,17 @@ playwright.config.ts
 playwright.docker.config.ts    (Docker-specific config)
 tests/
   ui/
+    README.md               (test documentation with CI setup guide)
     fixtures.ts
+    smoke.spec.ts
     gallery.spec.ts
     visual-regression.spec.ts
     photography.spec.ts
     cross-browser.spec.ts
-    __screenshots__/        (baseline images)
+    *.spec.ts-snapshots/    (baseline screenshots per browser)
 Dockerfile.test            (created)
 docker-compose.test.yml    (created)
-.github/workflows/ui-tests.yml
+.github/workflows/ui-tests.yml  (created)
 ```
 
 ---

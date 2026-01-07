@@ -19,6 +19,7 @@
 - [ ] I have tested my changes locally
 - [ ] I have updated documentation if needed
 - [ ] All tests pass (`make test`)
+- [ ] UI tests pass (`npm run test:ui`)
 - [ ] Hugo build completes without errors (`hugo --environment production`)
 
 ---
