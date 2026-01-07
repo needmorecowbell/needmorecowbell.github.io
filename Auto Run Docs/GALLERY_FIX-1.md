@@ -77,13 +77,23 @@ Manual testing is error-prone and changes can silently break functionality. We n
 
 ### 1.5 Create Photography Section Tests
 
-- [ ] Create `tests/ui/photography.spec.ts` for photography-specific tests:
+- [x] Create `tests/ui/photography.spec.ts` for photography-specific tests:
   - Test: Photography list page loads with favorites gallery
   - Test: Favorites gallery thumbnails are clickable
   - Test: Individual photography pages load with their galleries
   - Test: Nova Scotia gallery loads all 19 images from S3CDN
   - Test: Image URLs correctly point to S3CDN (not local paths)
   - Test: Thumbnail URLs use `.thumb.jpg` suffix pattern
+
+> **Completed:** Created comprehensive `tests/ui/photography.spec.ts` with 16 tests across 6 test suites:
+> - **Photography List Page (4 tests):** Verifies favorites gallery presence, clickable thumbnails, S3CDN URL patterns, and navigation to individual pages.
+> - **Individual Photography Pages (2 tests):** Tests page loading with galleries and verifies Nova Scotia gallery has exactly 19 images.
+> - **S3CDN URL Patterns (4 tests):** Validates all image URLs point to S3CDN (not local paths), thumbnails use `.thumb.jpg` suffix, full-resolution images don't have the suffix, and base names match between thumbnails and full images.
+> - **Photography Gallery Navigation (2 tests):** Tests keyboard navigation through gallery images and opening specific thumbnails.
+> - **Photography Lazy Loading (1 test):** Verifies all thumbnails use `loading="lazy"` attribute.
+> - **Photography Accessibility (3 tests):** Tests ARIA attributes, alt text, and aria-labels on gallery elements.
+>
+> All 16 tests pass on Chromium, Firefox, and mobile-Chrome viewports.
 
 ### 1.6 Create Cross-Browser Smoke Tests
 
