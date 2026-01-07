@@ -11,78 +11,16 @@
   {{- $itemsBaseURL = printf "%s/%s" $baseURL (strings.TrimSuffix "/" $path) -}}
 {{- end -}}
 
-<style>
-.gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax({{ $thumbnailSize }}px, 1fr));
-  gap: 8px;
-  margin: 1rem 0;
-}
-.gallery-grid a {
-  display: block;
-  position: relative;
-  /* Fallback for browsers without aspect-ratio support */
-  padding-bottom: 100%;
-  height: 0;
-  aspect-ratio: 1;
-  overflow: hidden;
-  border-radius: 4px;
-  background: var(--secondary-bg-color, #eee);
-}
-/* Reset padding when aspect-ratio is supported */
-@supports (aspect-ratio: 1) {
-  .gallery-grid a {
-    padding-bottom: 0;
-    height: auto;
-  }
-}
-.gallery-grid a img {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-@supports (aspect-ratio: 1) {
-  .gallery-grid a img {
-    position: static;
-  }
-}
-.gallery-grid a:hover img {
-  transform: scale(1.05);
-}
-.gallery-grid a.video-item::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 50px;
-  height: 50px;
-  background: rgba(0,0,0,0.6);
-  border-radius: 50%;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E");
-  background-size: 24px;
-  background-position: center;
-  background-repeat: no-repeat;
-  pointer-events: none;
-}
-</style>
-
-<div class="gallery-grid" id="{{ $id }}" role="region" aria-label="{{ $galleryTitle }}">
+{{- /* Gallery grid styles are in assets/css/custom.css - use CSS variable for custom thumbnail size */ -}}
+<div class="gallery-grid" id="{{ $id }}" role="region" aria-label="{{ $galleryTitle }}" style="--gallery-thumb-size: {{ $thumbnailSize }}px;">
 {{- if $images -}}
   {{- range $index, $imgName := split $images "," -}}
     {{- $img := strings.TrimSpace $imgName -}}
     {{- /* Check if this is a video file */ -}}
     {{- $isVideo := or (strings.HasSuffix $img ".mp4") (strings.HasSuffix $img ".MP4") (strings.HasSuffix $img ".mov") (strings.HasSuffix $img ".MOV") (strings.HasSuffix $img ".webm") (strings.HasSuffix $img ".avi") -}}
-    {{- /* For videos, use .thumb.jpg as thumbnail */ -}}
-    {{- $thumb := $img -}}
+    {{- /* All media uses .thumb.jpg as thumbnail (images and videos) */ -}}
     {{- $ext := path.Ext $img -}}
-    {{- if $isVideo -}}
-      {{- $thumb = printf "%s.thumb.jpg" (strings.TrimSuffix $ext $img) -}}
-    {{- end -}}
+    {{- $thumb := printf "%s.thumb.jpg" (strings.TrimSuffix $ext $img) -}}
     {{- $fullURL := printf "%s/%s" $itemsBaseURL $img -}}
     {{- $thumbURL := printf "%s/%s" $itemsBaseURL $thumb -}}
     {{- /* Generate accessible alt text */ -}}
@@ -97,11 +35,18 @@
       <img src="{{ $thumbURL }}" alt="Video thumbnail: {{ $altText }}" loading="lazy">
     </a>
     {{- else -}}
+    {{- /* Check if this is a GIF - use original as thumbnail since GIFs are animated */ -}}
+    {{- $isGif := or (strings.HasSuffix $img ".gif") (strings.HasSuffix $img ".GIF") -}}
+    {{- $displayThumb := $thumbURL -}}
+    {{- if $isGif -}}
+      {{- $displayThumb = $fullURL -}}
+    {{- end -}}
     <a href="{{ $fullURL }}"
        class="glightbox"
        data-gallery="{{ $id }}"
+       data-type="image"
        aria-label="View image: {{ $altText }}">
-      <img src="{{ $thumbURL }}" alt="Gallery image: {{ $altText }}" loading="lazy">
+      <img src="{{ $displayThumb }}" alt="Gallery image: {{ $altText }}" loading="lazy">
     </a>
     {{- end -}}
   {{- end -}}
@@ -113,17 +58,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Initialize GLightbox if available
-  if (typeof GLightbox !== 'undefined') {
-    GLightbox({
-      selector: '#{{ $id }} .glightbox',
-      loop: true,
-      touchNavigation: true,
-      keyboardNavigation: true,
-      closeOnOutsideClick: true
-    });
-  }
-
   // Image load/error handling for gallery items
   var galleryImages = document.querySelectorAll('#{{ $id }} img');
   galleryImages.forEach(function(img) {

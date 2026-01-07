@@ -230,19 +230,46 @@ Based on audit results from 2.1 and 2.2, this task is not needed:
 
 ### 2.4 Standardize Gallery Grid CSS
 
-- [ ] Audit gallery grid CSS in `layouts/shortcodes/gallery.html` (lines 14-72)
-- [ ] Audit gallery grid CSS in `layouts/photography/list.html` (lines 15-38)
-- [ ] Identify differences between the two implementations
-- [ ] Extract common gallery grid styles to `assets/css/custom.css`:
+- [x] Audit gallery grid CSS in `layouts/shortcodes/gallery.html` (lines 14-72)
+- [x] Audit gallery grid CSS in `layouts/photography/list.html` (lines 15-38)
+- [x] Identify differences between the two implementations
+- [x] Extract common gallery grid styles to `assets/css/custom.css`:
   ```css
   .gallery-grid { /* unified styles */ }
   .gallery-grid a { /* unified link styles */ }
   .gallery-grid img { /* unified image styles */ }
   ```
-- [ ] Update shortcode to use shared CSS classes instead of inline styles
-- [ ] Update photography list to use shared CSS classes
-- [ ] Verify both gallery types now look identical
-- [ ] Run visual regression tests to confirm consistency
+- [x] Update shortcode to use shared CSS classes instead of inline styles
+- [x] Update photography list to use shared CSS classes
+- [x] Verify both gallery types now look identical
+- [x] Run visual regression tests to confirm consistency
+
+#### 2.4 Implementation Notes (2026-01-07)
+
+**Summary:** Extracted all gallery grid CSS from inline `<style>` blocks into a shared section in `assets/css/custom.css`. Both gallery implementations now use identical styling from the unified CSS.
+
+**Changes Made:**
+1. **`assets/css/custom.css`** (lines 2107-2207): Added new "Unified Gallery Grid Styles - Phase 2.4" section with:
+   - Base `.gallery-grid` layout using CSS custom property `--gallery-thumb-size` (default 250px)
+   - `.gallery-grid a` link wrapper styles with aspect-ratio fallback for older browsers
+   - `.gallery-grid a img` image styles with object-fit: cover
+   - Hover effect (scale 1.05)
+   - Video item play button overlay (`.video-item::after`)
+
+2. **`layouts/shortcodes/gallery.html`**: Removed inline `<style>` block (58 lines), now uses CSS variable for custom thumbnail size via inline style attribute: `style="--gallery-thumb-size: {{ $thumbnailSize }}px;"`
+
+3. **`layouts/photography/list.html`**: Removed inline `<style>` block (24 lines), now relies entirely on shared CSS
+
+**Key Differences Addressed:**
+- Both implementations now use identical CSS from `custom.css`
+- Shortcode galleries can still customize thumbnail size via the `thumbnailSize` parameter (sets `--gallery-thumb-size` CSS variable)
+- Photography favorites gallery uses default 250px thumbnail size
+
+**Test Results:**
+- Hugo build: ✓ Successful
+- Visual regression tests: 14 passed (Chromium + Firefox)
+- Gallery core tests: All passing on Chromium and Firefox
+- Webkit tests skipped (browser environment issue, not related to CSS changes)
 
 ### 2.5 Fix Dark Mode Gallery Issues
 

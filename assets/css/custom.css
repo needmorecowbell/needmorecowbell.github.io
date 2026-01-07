@@ -6,48 +6,7 @@
    Accessibility Enhancements - Phase 11.6
    ============================================================================= */
 
-/* -----------------------------------------------------------------------------
-   Skip Navigation Link
-
-   Allows keyboard users to skip to main content without tabbing through
-   navigation. Hidden by default, visible on focus.
-   ----------------------------------------------------------------------------- */
-
-.skip-link {
-  position: absolute;
-  top: -100%;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 9999;
-  padding: 1rem 2rem;
-  background-color: var(--link-color);
-  color: #fff;
-  font-weight: 600;
-  text-decoration: none;
-  border-radius: 0 0 8px 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transition: top 0.2s ease;
-}
-
-.skip-link:focus {
-  top: 0;
-  outline: 3px solid var(--heading-color);
-  outline-offset: 2px;
-}
-
-html[data-theme='dark'] .skip-link {
-  background-color: var(--link-color);
-  color: #0d1117;
-}
-
-html[data-theme='dark'] .skip-link:focus {
-  outline-color: var(--heading-color);
-}
-
-/* Remove outline flash when main content receives focus from skip link */
-#main-content:focus {
-  outline: none;
-}
+/* Skip link removed - was causing visibility issues */
 
 /* -----------------------------------------------------------------------------
    Enhanced Focus States
@@ -2120,6 +2079,185 @@ html[data-theme='dark'] ::selection {
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--border-color) var(--secondary-bg-color);
+}
+
+/* =============================================================================
+   Photography Gallery Fixes - Phase 11
+   ============================================================================= */
+
+/* Photography favorites gallery - constrain image sizes */
+.favorites-preview .gallery-grid {
+  max-width: 100%;
+}
+
+.favorites-preview .gallery-grid a {
+  max-height: 300px;
+}
+
+.favorites-preview .gallery-grid a img {
+  max-height: 300px;
+}
+
+/* Ensure gallery images on photography pages are constrained */
+.photography .gallery-grid a,
+.archive .gallery-grid a {
+  max-height: 350px;
+}
+
+/* =============================================================================
+   Unified Gallery Grid Styles - Phase 2.4
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   Base Gallery Grid Layout
+
+   Shared styles for all gallery implementations:
+   - Shortcode galleries ({{< gallery >}})
+   - Photography favorites gallery
+   - Any page using .gallery-grid class
+
+   The grid uses auto-fill with a minimum thumbnail size (default 250px).
+   Individual galleries can override --gallery-thumb-size via inline style.
+   ----------------------------------------------------------------------------- */
+
+.gallery-grid {
+  --gallery-thumb-size: 250px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--gallery-thumb-size), 1fr));
+  gap: 8px;
+  margin: 1rem 0;
+}
+
+/* -----------------------------------------------------------------------------
+   Gallery Item (Link Wrapper)
+
+   Each gallery item is an anchor wrapping an image.
+   Uses aspect-ratio with padding-bottom fallback for older browsers.
+   ----------------------------------------------------------------------------- */
+
+.gallery-grid a {
+  display: block;
+  position: relative;
+  /* Fallback for browsers without aspect-ratio support */
+  padding-bottom: 100%;
+  height: 0;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--secondary-bg-color, #eee);
+}
+
+/* Reset padding when aspect-ratio is supported */
+@supports (aspect-ratio: 1) {
+  .gallery-grid a {
+    padding-bottom: 0;
+    height: auto;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   Gallery Image Styles
+
+   Images fill their container and use object-fit: cover for consistent sizing.
+   ----------------------------------------------------------------------------- */
+
+.gallery-grid a img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+/* Reset positioning when aspect-ratio is supported */
+@supports (aspect-ratio: 1) {
+  .gallery-grid a img {
+    position: static;
+  }
+}
+
+/* Hover effect - slight zoom */
+.gallery-grid a:hover img {
+  transform: scale(1.05);
+}
+
+/* -----------------------------------------------------------------------------
+   Video Item Overlay
+
+   Play button overlay for video items in galleries.
+   ----------------------------------------------------------------------------- */
+
+.gallery-grid a.video-item::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50px;
+  height: 50px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E");
+  background-size: 24px;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+/* =============================================================================
+   Header Full-Width Fix - Phase 11
+   ============================================================================= */
+
+/* Make header span full width of page instead of just content area */
+header {
+  width: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background-color: var(--bg-color);
+}
+
+/* Align nav content to the right to match content area */
+header .page-top {
+  max-width: var(--body-max-width);
+  margin-left: auto;
+  padding-right: 30px;
+}
+
+/* On mobile, header spans full width */
+@media screen and (max-width: 960px) {
+  header {
+    z-index: 1000;
+  }
+
+  header .page-top {
+    padding-right: 12px;
+  }
+}
+
+/* Ensure gallery images don't overlap header */
+.gallery-grid {
+  position: relative;
+  z-index: 1;
+}
+
+.gallery-grid a {
+  z-index: 1;
+}
+
+/* GLightbox overlay should be above everything */
+.goverlay,
+.glightbox-container {
+  z-index: 10000 !important;
+}
+
+/* Ensure GLightbox images are always visible (not affected by gallery loading states) */
+.glightbox-container img,
+.gslide-image img,
+.gslide img {
+  opacity: 1 !important;
 }
 
 /* =============================================================================

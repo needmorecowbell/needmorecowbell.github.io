@@ -11,7 +11,7 @@
 
     {{ end }}"
   >
-  {{/* Featured photos preview using GLightbox */}}
+  {{/* Featured photos preview using GLightbox - gallery grid styles in custom.css */}}
   <div class="favorites-preview">
     <div class="gallery-grid" id="gallery-favorites">
       {{ $baseURL := .Page.Site.Params.S3CDN }}
@@ -28,13 +28,6 @@
         <img src="{{ $baseURL }}/img/favorites/20230426_172633.jpg" alt="Nova Scotia" loading="lazy" />
       </a>
     </div>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        if (typeof GLightbox !== 'undefined') {
-          GLightbox({ selector: '#gallery-favorites .glightbox' });
-        }
-      });
-    </script>
   </div>
   <hr>
     <ul class="list-with-title">
