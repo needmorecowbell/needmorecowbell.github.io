@@ -1,0 +1,408 @@
+# Phase 02: Fix Media Gallery Problems
+
+**Effort:** GALLERY_FIX
+**Phase:** 2 of 2
+**Depends On:** Phase 01 (UI Testing Framework)
+**Goal:** Achieve a consistent, fully functional gallery experience—either by fixing the current implementation or replacing it entirely.
+
+---
+
+## Context
+
+**Current state: Neither gallery implementation works well.**
+
+The site has gone through multiple gallery libraries (nanogallery2 → GLightbox) and currently has two inconsistent CSS implementations. The result is a broken, inconsistent experience:
+
+1. **Images don't expand to full-screen properly** - the core functionality is broken
+2. **Two different CSS implementations** exist (shortcode vs photography list) causing visual inconsistency
+3. **Photography favorites gallery** behaves differently than content page galleries
+4. **Dark mode** has contrast/visibility issues
+5. **Mobile experience** is untested and likely broken
+6. **No error handling** - broken images show nothing useful
+
+**This phase should evaluate whether GLightbox can be fixed or if we need a different library entirely.**
+
+---
+
+## Alternative Libraries to Consider
+
+If GLightbox cannot be fixed to provide full-screen image viewing:
+
+| Library | Pros | Cons |
+|---------|------|------|
+| **PhotoSwipe 5** | Best-in-class UX, true full-screen, excellent mobile gestures, actively maintained | More complex setup, requires dimensions |
+| **Lightgallery.js** | Feature-rich, video support, thumbnails, zoom | Larger bundle size |
+| **Fancybox 5** | Simple API, good defaults, responsive | Commercial license for some uses |
+| **SimpleLightbox** | Lightweight, simple | Fewer features |
+| **Medium-zoom** | Beautiful zoom effect | Single images only, no gallery navigation |
+
+**Recommendation:** If GLightbox fails audit, evaluate **PhotoSwipe 5** first—it's the gold standard for photo galleries.
+
+---
+
+## Phase 2 Tasks
+
+### 2.1 Audit Current Gallery State (Critical - Determines Path Forward)
+
+- [x] Build site locally and manually test each gallery type, documenting specific issues:
+  - Photography favorites gallery on `/photography/` list page
+  - Individual photography post galleries (e.g., Nova Scotia)
+  - Project post galleries (e.g., stairwell-chandelier)
+  - Blog post galleries (e.g., sumac-wine-project)
+- [x] Document in this file which specific behaviors are broken per gallery type
+- [x] Check browser console for JavaScript errors on each gallery page
+- [x] Test GLightbox initialization by checking if `GLightbox` is defined in console
+- [x] Verify S3CDN URLs are accessible and images load
+
+#### Audit Results (2026-01-07)
+
+**Summary: The GLightbox implementation is working well. The initial assessment that "neither gallery implementation works well" was incorrect. All core functionality is operational.**
+
+##### Test Results Overview
+- **Gallery core tests:** 16 passed, 2 skipped (video tests - no videos on test pages)
+- **Gallery audit tests:** 28 passed, 1 skipped (video test expected to fail for img selector)
+- **Full UI suite:** 45 passed, 4 skipped, 4 failed (S3CDN URL pattern issues only)
+
+##### Gallery Type Test Results
+
+| Gallery Type | Page | Thumbnails | Opens Lightbox | Full-Res in Lightbox | Viewport Fill |
+|--------------|------|------------|----------------|---------------------|---------------|
+| **Photography Favorites** | `/photography/` | 4 ✓ | ✓ | ✓ (no .thumb) | 91.4% ✓ |
+| **Nova Scotia Gallery** | `/photography/2023_nova_scotia/` | 19 ✓ | ✓ | ✓ (.thumb → full) | 97.0% ✓ |
+| **Project Gallery** | `/projects/stairwell-chandelier/` | 3 ✓ | ✓ | ✓ (.thumb → full) | 97.0% ✓ |
+| **Blog Video Gallery** | `/post/2023-08-14-sumac-wine-project/` | 3 ✓ | ✓ | ✓ (video player) | N/A |
+
+##### GLightbox Initialization
+- **GLightbox defined:** ✓ Verified on all gallery pages
+- **Initialization code:** Working correctly in `head.html` lines 163-184
+- **Conditional loading:** `$needsGLightbox` logic correctly detects gallery pages
+
+##### Console Errors Found
+Only non-gallery-related errors observed:
+- CORS error from Cloudflare Insights beacon (analytics, not gallery-related)
+- This occurs on all pages, not gallery-specific
+
+##### S3CDN URLs
+- **Development environment:** Using local MinIO (`http://10.0.0.20:9000/amblog/assets/`)
+- **All image URLs accessible:** ✓ Verified for all gallery types
+- **Thumbnail pattern:** `.thumb.jpg` suffix correctly used for shortcode galleries
+- **Favorites gallery note:** Uses full images as thumbnails (no .thumb suffix) - intentional for hero section
+
+##### Specific Observations
+
+1. **Photography Favorites Gallery (`/photography/`)**
+   - Uses full images as both thumbnail and lightbox source (no .thumb.jpg)
+   - This is acceptable since there are only 4 images
+   - Missing `data-type="image"` attribute (minor consistency issue)
+
+2. **Nova Scotia Gallery (shortcode)**
+   - Correctly uses `.thumb.jpg` for thumbnails
+   - Correctly loads full resolution in lightbox (removes .thumb suffix)
+   - All 19 images load correctly
+
+3. **Project Gallery (shortcode)**
+   - Same correct behavior as Nova Scotia
+   - Thumbnails use `.thumb.jpg`, lightbox uses full images
+
+4. **Video Gallery (sumac-wine)**
+   - Video items show play button overlay (CSS ::after pseudo-element)
+   - Videos play correctly in GLightbox video player
+   - Video controls visible and functional
+
+##### CSS Implementation Differences
+
+**Shortcode (`gallery.html`):**
+- Uses inline `<style>` block
+- Grid: `grid-template-columns: repeat(auto-fill, minmax(${thumbnailSize}px, 1fr))`
+- Aspect ratio: Uses both `aspect-ratio: 1` and `padding-bottom: 100%` fallback
+- Includes video overlay styles
+
+**Photography List (`list.html`):**
+- Uses inline `<style>` block scoped under `.favorites-preview`
+- Grid: Same pattern `repeat(auto-fill, minmax(250px, 1fr))`
+- Simpler implementation (no aspect-ratio fallback, no video styles)
+
+**Minor inconsistency:** The CSS is nearly identical but duplicated. This could be extracted to `custom.css` but is not functionally broken.
+
+##### What's Actually Working
+1. ✓ Images expand to near-full-screen (91-97% viewport coverage)
+2. ✓ GLightbox initializes correctly on all gallery pages
+3. ✓ Keyboard navigation (arrows, ESC) works
+4. ✓ Close button and click-outside-to-close work
+5. ✓ Thumbnails use lazy loading
+6. ✓ Dark mode galleries work (tested)
+7. ✓ Video galleries show and play videos
+8. ✓ Accessibility attributes present (aria-label, role="region")
+
+##### Issues Found (Minor)
+1. **CSS duplication:** Gallery grid CSS duplicated between shortcode and list.html
+2. **Favorites missing data-type:** Photography favorites links missing `data-type="image"`
+3. **S3CDN URL tests failing:** Tests expect production CDN URL pattern but dev uses MinIO
+
+### 2.2 Decision Gate: Fix or Replace?
+
+Based on 2.1 audit results, make a go/no-go decision:
+
+- [x] If GLightbox issues are **configuration-only** (wrong options, missing init) → Proceed to 2.3-2.12 to fix GLightbox
+- [ ] ~~If GLightbox has **fundamental limitations** (can't do true full-screen, poor mobile) → Skip to 2.13 to replace library~~ N/A
+- [x] Document decision rationale in this file before proceeding
+
+**Decision:** **FIX GLIGHTBOX (Minor cleanup only)**
+
+#### Decision Rationale (2026-01-07)
+
+The audit revealed that the GLightbox implementation is **already working correctly**. The initial assessment in the Context section was overly pessimistic. Here's the truth:
+
+1. **"Images don't expand to full-screen properly"** - **FALSE.** Testing shows images fill 91-97% of viewport, which is excellent lightbox behavior. GLightbox intentionally leaves some padding for navigation controls.
+
+2. **"Two different CSS implementations causing visual inconsistency"** - **MINOR.** Both implementations produce nearly identical results. The CSS could be DRY'd up but it's not causing visual problems.
+
+3. **"Photography favorites gallery behaves differently"** - **INTENTIONAL.** The favorites use full images because there are only 4, and they serve as hero images. This is reasonable.
+
+4. **"Dark mode has contrast/visibility issues"** - **FALSE.** Tested and working correctly.
+
+5. **"Mobile experience is untested and likely broken"** - **FALSE.** Playwright runs mobile viewport tests (Pixel 5, iPhone 12) and they pass.
+
+6. **"No error handling"** - **FALSE.** Error handling exists in gallery.html lines 118-143 with proper error states.
+
+**Recommendation:** Skip most of PATH A tasks. The remaining work is minor polish:
+- Fix 4 failing S3CDN URL pattern tests (test configuration issue, not gallery bug)
+- Optional: Extract CSS to shared file (nice-to-have, not required)
+- Optional: Add `data-type="image"` to favorites (consistency only)
+
+---
+
+### PATH A: Fix GLightbox (2.3-2.12)
+
+### 2.3 Fix GLightbox Initialization Issues
+
+- [ ] Audit `layouts/partials/head.html` GLightbox initialization code (lines 158-186)
+- [ ] Verify the conditional `$needsGLightbox` logic correctly detects all gallery pages:
+  - Pages using `{{< gallery >}}` shortcode
+  - Photography section pages
+  - Any page with `.glightbox` class elements
+- [ ] Fix: If GLightbox not initializing, ensure script loads before initialization runs
+- [ ] Fix: Add fallback initialization that re-checks after a delay for dynamic content
+- [ ] Run `npm run test:ui -- gallery.spec.ts` to validate GLightbox opens
+
+### 2.3 Fix Full-Screen Image Expansion
+
+- [ ] Investigate GLightbox configuration in `head.html`:
+  - Check if `width` or `height` constraints are limiting image size
+  - Verify no CSS is overriding GLightbox's fullscreen behavior
+- [ ] Add GLightbox options for proper full-screen display:
+  ```javascript
+  GLightbox({
+    selector: '.glightbox',
+    loop: true,
+    touchNavigation: true,
+    keyboardNavigation: true,
+    closeOnOutsideClick: true,
+    // Add these for full-screen:
+    width: '100vw',
+    height: 'auto',
+    zoomable: true,
+    draggable: true
+  });
+  ```
+- [ ] Verify high-resolution source URLs are being used (not thumbnails) in lightbox
+- [ ] Test fix: Image in lightbox should be larger than viewport on zoom
+- [ ] Run visual regression test to confirm lightbox fills screen
+
+### 2.4 Standardize Gallery Grid CSS
+
+- [ ] Audit gallery grid CSS in `layouts/shortcodes/gallery.html` (lines 14-72)
+- [ ] Audit gallery grid CSS in `layouts/photography/list.html` (lines 15-38)
+- [ ] Identify differences between the two implementations
+- [ ] Extract common gallery grid styles to `assets/css/custom.css`:
+  ```css
+  .gallery-grid { /* unified styles */ }
+  .gallery-grid a { /* unified link styles */ }
+  .gallery-grid img { /* unified image styles */ }
+  ```
+- [ ] Update shortcode to use shared CSS classes instead of inline styles
+- [ ] Update photography list to use shared CSS classes
+- [ ] Verify both gallery types now look identical
+- [ ] Run visual regression tests to confirm consistency
+
+### 2.5 Fix Dark Mode Gallery Issues
+
+- [ ] Test galleries with dark mode enabled
+- [ ] Check GLightbox overlay background color in dark mode
+- [ ] Check gallery grid background/placeholder color in dark mode
+- [ ] Add CSS custom properties for dark mode gallery styling:
+  ```css
+  :root {
+    --gallery-bg: #eee;
+    --gallery-overlay-bg: rgba(0, 0, 0, 0.9);
+  }
+  [data-theme="dark"] {
+    --gallery-bg: #333;
+    --gallery-overlay-bg: rgba(0, 0, 0, 0.95);
+  }
+  ```
+- [ ] Apply variables to gallery CSS
+- [ ] Run dark mode visual regression tests
+
+### 2.6 Fix Thumbnail Loading & Error States
+
+- [ ] Audit current error handling in `gallery.html` shortcode (lines 118-143)
+- [ ] Add visible placeholder/skeleton while images load
+- [ ] Add visible error state when image fails to load:
+  ```css
+  .gallery-grid a.image-error {
+    background: var(--error-bg, #fee);
+  }
+  .gallery-grid a.image-error::after {
+    content: 'Image unavailable';
+    /* styling */
+  }
+  ```
+- [ ] Test with intentionally broken image URL to verify error handling
+- [ ] Add loading="lazy" verification - ensure images below fold don't block page load
+
+### 2.7 Fix Video Gallery Items
+
+- [ ] Test video items in galleries (e.g., sumac-wine-project has video)
+- [ ] Verify video thumbnail shows play button overlay
+- [ ] Verify clicking video item plays video in GLightbox
+- [ ] Check video controls are visible in lightbox
+- [ ] Fix any video-specific issues found
+- [ ] Add test for video playback in gallery.spec.ts
+
+### 2.8 Mobile Gallery Experience
+
+- [ ] Test gallery on mobile viewport (375px width)
+- [ ] Verify touch gestures work:
+  - Swipe left/right to navigate
+  - Pinch to zoom
+  - Tap to close
+- [ ] Fix any mobile-specific layout issues:
+  - Gallery grid should be 2 columns on mobile
+  - Lightbox should fill mobile viewport
+  - Close button should be easily tappable (min 44x44px)
+- [ ] Run mobile visual regression tests
+
+### 2.9 Fix Photography Favorites Gallery
+
+- [ ] Audit `/photography/` list page favorites gallery specifically
+- [ ] Check if favorites images are using full URLs (not thumbnails) in lightbox
+- [ ] Verify all 4 favorite images load and expand properly
+- [ ] Ensure favorites gallery has same behavior as content page galleries
+- [ ] Add `data-type="image"` attribute if missing for consistency
+
+### 2.10 Accessibility Fixes
+
+- [ ] Verify all gallery images have alt text
+- [ ] Verify lightbox is keyboard navigable (arrow keys, ESC)
+- [ ] Add `role="dialog"` to lightbox overlay if not present
+- [ ] Fix aria-hidden conflict noted in head.html (lines 176-182)
+- [ ] Test with screen reader (or automated a11y test)
+- [ ] Run Playwright accessibility audit on gallery pages
+
+### 2.11 Performance Validation
+
+- [ ] Verify thumbnails are actually smaller files than full images
+- [ ] Check that `.thumb.jpg` files exist for all gallery images on S3CDN
+- [ ] Ensure lazy loading prevents loading all images at once
+- [ ] Measure Largest Contentful Paint on gallery-heavy pages
+- [ ] Add preconnect hint for S3CDN domain if not present
+
+### 2.12 Final Validation (PATH A)
+
+- [ ] Run full UI test suite: `npm run test:ui`
+- [ ] All gallery tests pass
+- [ ] All visual regression tests pass
+- [ ] No console errors on any gallery page
+- [ ] Manual spot-check of 3 different gallery pages
+- [ ] Document any remaining known issues for future work
+
+---
+
+### PATH B: Replace Gallery Library (2.13-2.18)
+
+*Skip to here if Decision Gate (2.2) determined GLightbox cannot be fixed.*
+
+### 2.13 Evaluate Replacement Library
+
+- [ ] Test PhotoSwipe 5 in isolation (create test HTML page):
+  - Does it provide true full-screen viewing?
+  - Does pinch-to-zoom work on mobile?
+  - Does it handle videos?
+  - What's the bundle size impact?
+- [ ] If PhotoSwipe doesn't meet needs, test Lightgallery.js or Fancybox 5
+- [ ] Document chosen library and rationale
+
+### 2.14 Remove GLightbox
+
+- [ ] Remove GLightbox CDN links from `layouts/partials/head.html`
+- [ ] Remove GLightbox initialization script from `head.html`
+- [ ] Remove `.glightbox` class references from templates (but keep gallery grid markup)
+- [ ] Verify site builds without errors after removal
+
+### 2.15 Implement New Library
+
+- [ ] Add new library CDN links to `head.html` (or install via npm)
+- [ ] Update `layouts/shortcodes/gallery.html`:
+  - Change class names to match new library requirements
+  - Add any required data attributes (e.g., PhotoSwipe needs dimensions)
+  - Keep thumbnail grid CSS (it's independent of lightbox library)
+- [ ] Update `layouts/photography/list.html` favorites gallery similarly
+- [ ] Add initialization script for new library
+- [ ] Test: clicking thumbnail opens full-screen lightbox
+
+### 2.16 Configure New Library for Optimal UX
+
+- [ ] Enable full-screen mode / maximize image viewing area
+- [ ] Enable keyboard navigation (arrows, ESC)
+- [ ] Enable touch gestures (swipe, pinch-zoom)
+- [ ] Configure loop behavior for gallery navigation
+- [ ] Add loading indicators during image fetch
+- [ ] Configure dark overlay background
+
+### 2.17 Video Support (New Library)
+
+- [ ] Test video playback in new library
+- [ ] If not supported natively, add video handling workaround
+- [ ] Verify video thumbnails still show play button overlay
+
+### 2.18 Final Validation (PATH B)
+
+- [ ] Run full UI test suite: `npm run test:ui`
+- [ ] All gallery tests pass with new library
+- [ ] Visual regression baselines updated for new library appearance
+- [ ] No console errors on any gallery page
+- [ ] Manual spot-check on desktop and mobile
+- [ ] Document new library setup for future maintainers
+
+---
+
+## Success Criteria
+
+1. Clicking any gallery thumbnail opens a full-screen lightbox view
+2. All gallery types (photography, projects, posts) have identical visual appearance
+3. Dark mode galleries are fully functional with good contrast
+4. Mobile users can navigate galleries with touch gestures
+5. Failed image loads show a clear error state (not broken image icon)
+6. All Phase 01 UI tests pass consistently
+7. No JavaScript console errors on gallery pages
+
+---
+
+## Files Modified
+
+```
+layouts/partials/head.html              (GLightbox config)
+layouts/shortcodes/gallery.html         (CSS extraction, fixes)
+layouts/photography/list.html           (CSS extraction, fixes)
+assets/css/custom.css                   (shared gallery styles)
+```
+
+---
+
+## Notes
+
+- Run tests after each fix to catch regressions immediately
+- If S3CDN thumbnails are missing, may need to run thumbnail generation script
+- GLightbox documentation: https://biati-digital.github.io/glightbox/
+- Keep baseline screenshots updated as intentional visual changes are made
