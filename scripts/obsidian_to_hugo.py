@@ -9,7 +9,7 @@ This script handles the complete conversion pipeline:
 2. Extract images from ## Pictures section
 3. Handle wikilink removal/conversion
 4. Upload images to MinIO with proper naming (spaces → underscores)
-5. Generate video thumbnails for .mp4/.mov files
+5. Generate thumbnails for all media (images and videos) for faster gallery loading
 6. Create gallery shortcode from Pictures section
 7. Output Hugo markdown to correct directory based on content_type
 
@@ -72,7 +72,14 @@ from gallery_generator import (
 )
 from content_router import determine_content_type, get_hugo_section_path
 from hugo_writer import write_hugo_post, preview_hugo_post
-from media_extractor import resolve_media_path, VIDEO_EXTENSIONS, ALL_MEDIA_EXTENSIONS
+from media_extractor import (
+    resolve_media_path,
+    VIDEO_EXTENSIONS,
+    IMAGE_EXTENSIONS,
+    ALL_MEDIA_EXTENSIONS,
+    generate_thumbnail,
+    THUMBNAIL_SUPPORTED_EXTENSIONS,
+)
 from console import (
     print_success,
     print_warning,
@@ -233,13 +240,13 @@ def upload_media_to_minio(
     return uploaded_files
 
 
-def generate_video_thumbnails(
+def generate_media_thumbnails(
     media_files: List[Tuple[str, str]],
     destination_path: str,
     dry_run: bool = False
 ) -> List[str]:
     """
-    Generate and upload thumbnails for video files.
+    Generate and upload thumbnails for all media files (images and videos).
 
     Args:
         media_files: List of (obsidian_reference, local_path) tuples
@@ -256,28 +263,35 @@ def generate_video_thumbnails(
         if not local_path or not Path(local_path).exists():
             continue
 
-        # Check if this is a video file
         ext = Path(local_path).suffix.lower().lstrip('.')
-        if ext not in VIDEO_EXTENSIONS:
-            continue
-
         original_filename = Path(local_path).name
         sanitized_basename = sanitize_filename(Path(local_path).stem)
         thumb_name = f"{sanitized_basename}.thumb.jpg"
 
+        # Determine if this is a video or image
+        is_video = ext in VIDEO_EXTENSIONS
+        is_image = ext in THUMBNAIL_SUPPORTED_EXTENSIONS
+
+        if not is_video and not is_image:
+            continue
+
         if dry_run:
             print_dim(f"  Would generate thumbnail: {thumb_name}")
             thumbnails.append(thumb_name)
-        else:
-            print_info(f"  Generating thumbnail for: {original_filename}")
-            try:
-                with tempfile.TemporaryDirectory() as tmp_dir:
-                    tmp_thumb = Path(tmp_dir) / thumb_name
+            continue
 
+        print_info(f"  Generating thumbnail for: {original_filename}")
+
+        try:
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                tmp_thumb = Path(tmp_dir) / thumb_name
+
+                if is_video:
+                    # Use ffmpeg for video thumbnails
                     # Try to extract frame at 1 second, fall back to first frame
                     result = subprocess.run(
                         ['ffmpeg', '-y', '-i', local_path, '-ss', '00:00:01',
-                         '-vframes', '1', '-q:v', '2', str(tmp_thumb)],
+                         '-vframes', '1', '-vf', 'scale=400:-1', '-q:v', '2', str(tmp_thumb)],
                         capture_output=True,
                         text=True
                     )
@@ -286,33 +300,78 @@ def generate_video_thumbnails(
                         # Fallback to first frame
                         result = subprocess.run(
                             ['ffmpeg', '-y', '-i', local_path,
-                             '-vframes', '1', '-q:v', '2', str(tmp_thumb)],
+                             '-vframes', '1', '-vf', 'scale=400:-1', '-q:v', '2', str(tmp_thumb)],
                             capture_output=True,
                             text=True
                         )
 
-                    if tmp_thumb.exists():
-                        # Upload thumbnail
-                        dest_full = f"{remote}/{destination_path}/{thumb_name}"
-                        upload_result = subprocess.run(
-                            ['rclone', 'copyto', str(tmp_thumb), dest_full],
-                            capture_output=True,
-                            text=True
-                        )
-                        if upload_result.returncode == 0:
-                            thumbnails.append(thumb_name)
-                            print_success(f"    Generated and uploaded thumbnail")
-                        else:
-                            print_warning(f"    Failed to upload thumbnail")
+                    if not tmp_thumb.exists():
+                        print_warning(f"    Failed to generate video thumbnail")
+                        continue
+
+                else:
+                    # Use Pillow for image thumbnails
+                    thumb_result = generate_thumbnail(
+                        local_path,
+                        str(tmp_thumb),
+                        width=400,
+                        quality=85
+                    )
+
+                    if not thumb_result:
+                        # If thumbnail generation returned None, the image might be
+                        # smaller than target width - copy original as "thumbnail"
+                        shutil.copy2(local_path, tmp_thumb)
+                        # Convert to JPEG if needed
+                        if ext not in ('jpg', 'jpeg'):
+                            from PIL import Image
+                            with Image.open(tmp_thumb) as img:
+                                if img.mode in ('RGBA', 'LA', 'P'):
+                                    background = Image.new('RGB', img.size, (255, 255, 255))
+                                    if img.mode == 'P':
+                                        img = img.convert('RGBA')
+                                    if img.mode in ('RGBA', 'LA'):
+                                        background.paste(img, mask=img.split()[-1])
+                                        img = background
+                                    else:
+                                        img = img.convert('RGB')
+                                img.save(tmp_thumb, 'JPEG', quality=85, optimize=True)
+
+                if tmp_thumb.exists():
+                    # Upload thumbnail
+                    dest_full = f"{remote}/{destination_path}/{thumb_name}"
+                    upload_result = subprocess.run(
+                        ['rclone', 'copyto', str(tmp_thumb), dest_full],
+                        capture_output=True,
+                        text=True
+                    )
+                    if upload_result.returncode == 0:
+                        thumbnails.append(thumb_name)
+                        print_success(f"    Generated and uploaded thumbnail")
                     else:
-                        print_warning(f"    Failed to generate thumbnail")
+                        print_warning(f"    Failed to upload thumbnail")
+                else:
+                    print_warning(f"    Failed to generate thumbnail")
 
-            except FileNotFoundError:
-                print_warning(f"    ffmpeg not found, skipping thumbnail generation")
-            except Exception as e:
+        except FileNotFoundError as e:
+            if 'ffmpeg' in str(e):
+                print_warning(f"    ffmpeg not found, skipping video thumbnail")
+            else:
                 print_warning(f"    Thumbnail error: {e}")
+        except Exception as e:
+            print_warning(f"    Thumbnail error: {e}")
 
     return thumbnails
+
+
+# Keep old function name for backwards compatibility
+def generate_video_thumbnails(
+    media_files: List[Tuple[str, str]],
+    destination_path: str,
+    dry_run: bool = False
+) -> List[str]:
+    """Deprecated: Use generate_media_thumbnails instead."""
+    return generate_media_thumbnails(media_files, destination_path, dry_run)
 
 
 def generate_gallery_shortcode(
@@ -456,10 +515,10 @@ def convert_obsidian_to_hugo(
                     media_files, s3_path, dry_run
                 )
 
-                # Step 5: Generate video thumbnails
+                # Step 5: Generate thumbnails for all media (images and videos)
                 if not skip_video_thumbs:
-                    print_info("Generating video thumbnails...")
-                    generate_video_thumbnails(
+                    print_info("Generating thumbnails...")
+                    generate_media_thumbnails(
                         media_files, s3_path, dry_run
                     )
             else:
@@ -626,9 +685,11 @@ Examples:
     )
 
     parser.add_argument(
-        '--skip-video-thumbs',
+        '--skip-thumbs',
+        '--skip-video-thumbs',  # Keep old flag for backwards compatibility
+        dest='skip_video_thumbs',
         action='store_true',
-        help='Skip video thumbnail generation'
+        help='Skip thumbnail generation for images and videos'
     )
 
     args = parser.parse_args()

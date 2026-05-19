@@ -2248,10 +2248,16 @@ header .page-top {
   z-index: 1;
 }
 
-/* GLightbox overlay should be above everything */
-.goverlay,
+/* GLightbox z-index fix - DO NOT override internal z-indexes!
+   GLightbox uses internal stacking: goverlay < gcontainer (9999) < gslide.current (99999)
+   The overlay is INSIDE the container, so we only need to ensure the container is above page content */
 .glightbox-container {
-  z-index: 10000 !important;
+  z-index: 999999 !important;  /* Above page content */
+}
+
+/* Overlay styling only - no z-index override (uses GLightbox default which is lower than gcontainer) */
+.goverlay {
+  background: rgba(0, 0, 0, 0.92) !important;
 }
 
 /* Ensure GLightbox images are always visible (not affected by gallery loading states) */

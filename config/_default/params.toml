@@ -15,12 +15,12 @@ description = "Projects, crafts, code, and everything in between"
 # The S3CDN parameter sets the public URL prefix for all media assets.
 #
 # PRODUCTION (this file - _default/params.toml):
-#   S3CDN = "https://s3cdn.617a.net/amblog/assets"
+#   S3CDN = "https://cdn.414d.net/amblog/assets"
 #   - Used when building for production: `hugo` or `hugo -e production`
-#   - Points to the production CDN/S3 bucket
+#   - Points to the production CDN (public tunnel to MinIO)
 #
 # DEVELOPMENT (config/development/params.toml):
-#   S3CDN = "http://localhost:9000/blog-assets"
+#   S3CDN = "http://10.0.0.20:9000/amblog/assets"
 #   - Used when running locally: `hugo server -e development`
 #   - Points to local MinIO instance for testing
 #
@@ -37,8 +37,8 @@ description = "Projects, crafts, code, and everything in between"
 #   - scripts/.env.example for configuration template
 # =============================================================================
 
-profilePicture = "https://s3cdn.617a.net/amblog/assets/img/prof.jpg"
-S3CDN = "https://s3cdn.617a.net/amblog/assets"
+profilePicture = "https://cdn.414d.net/amblog/assets/img/prof.jpg"
+S3CDN = "https://cdn.414d.net/amblog/assets"
 
 # Media upload path for the publish script (production bucket)
 # This should match the bucket configured in your production MinIO/S3 setup
